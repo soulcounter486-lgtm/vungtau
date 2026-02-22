@@ -822,8 +822,13 @@ export default function TravelPlanner() {
               </AnimatePresence>
             </Card>
 
+            {(selectedPurposes.length === 0 || !startDate || !endDate) && (
+              <p className="text-xs text-amber-500 text-center mb-1">
+                {selectedPurposes.length === 0 ? "⬆ 위에서 여행 목적을 1개 이상 선택해주세요" : !startDate ? "출발일을 선택해주세요" : "종료일을 선택해주세요"}
+              </p>
+            )}
             <Button
-              className="w-full"
+              className={`w-full ${selectedPurposes.length === 0 || !startDate || !endDate ? "opacity-50 cursor-not-allowed" : ""}`}
               size="lg"
               onClick={handleGenerate}
               disabled={selectedPurposes.length === 0 || !startDate || !endDate || generatePlanMutation.isPending}
