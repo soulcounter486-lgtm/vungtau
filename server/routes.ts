@@ -1439,7 +1439,8 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
             }
             const subtotal = price * players;
             golfTotalPrice += subtotal;
-            golfDescriptions.push(`${selection.date} / ${courseName} / $${price} x ${players}명 = $${subtotal} (캐디팁: ${tip}/인)`);
+            const teeTimeStr = (selection as any).teeTime ? ` [티업:${(selection as any).teeTime}]` : "";
+            golfDescriptions.push(`${selection.date} / ${courseName}${teeTimeStr} / $${price} x ${players}명 = $${subtotal} (캐디팁: ${tip}/인)`);
           } catch (e) {
             console.error("Golf selection calculation error:", e);
           }

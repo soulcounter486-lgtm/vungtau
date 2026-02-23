@@ -732,11 +732,11 @@ export default function Home() {
 
   const golfEstimate = useMemo(() => {
     if (!values.golf?.enabled || !values.golf?.selections || values.golf.selections.length === 0) {
-      return { price: 0, details: [] as { date: string; course: string; players: number; unitPrice: number; subtotal: number; tip: string }[] };
+      return { price: 0, details: [] as { date: string; course: string; players: number; unitPrice: number; subtotal: number; tip: string; teeTime: string }[] };
     }
     try {
       let totalPrice = 0;
-      const details: { date: string; course: string; players: number; unitPrice: number; subtotal: number; tip: string }[] = [];
+      const details: { date: string; course: string; players: number; unitPrice: number; subtotal: number; tip: string; teeTime: string }[] = [];
       for (const selection of values.golf.selections) {
         if (!selection?.date || !selection?.course) continue;
         const date = parseISO(selection.date);
@@ -773,12 +773,13 @@ export default function Home() {
           players,
           unitPrice: price,
           subtotal,
-          tip
+          tip,
+          teeTime: (selection as any).teeTime || ""
         });
       }
       return { price: totalPrice, details };
     } catch {
-      return { price: 0, details: [] as { date: string; course: string; players: number; unitPrice: number; subtotal: number; tip: string }[] };
+      return { price: 0, details: [] as { date: string; course: string; players: number; unitPrice: number; subtotal: number; tip: string; teeTime: string }[] };
     }
   }, [values.golf?.enabled, JSON.stringify(values.golf?.selections), t]);
 
@@ -858,7 +859,7 @@ export default function Home() {
     const nextDate = addDays(lastDate, currentSelections.length > 0 ? 1 : 0);
     const newSelections = [
       ...currentSelections,
-      { date: format(nextDate, "yyyy-MM-dd"), course: "paradise" as const, players: "" as any }
+      { date: format(nextDate, "yyyy-MM-dd"), course: "paradise" as const, players: "" as any, teeTime: "" }
     ];
     form.setValue("golf.selections", [...newSelections], { shouldValidate: true, shouldDirty: true, shouldTouch: true });
   };
@@ -1050,17 +1051,18 @@ export default function Home() {
 
     // Golf 데이터 복원
     if (bd.golf && bd.golf.price > 0 && bd.golf.description) {
-      const golfSelections: { date: string; course: string; players: number }[] = [];
+      const golfSelections: { date: string; course: string; players: number; teeTime: string }[] = [];
       const golfParts = bd.golf.description.split(" | ");
       golfParts.forEach(part => {
         const dateMatch = part.match(/^(\d+\/\d+)/);
         const playersMatch = part.match(/x\s*(\d+)명/);
+        const teeTimeMatch = part.match(/\[티업:(\d{2}:\d{2})\]/);
         const players = playersMatch ? parseInt(playersMatch[1]) : 1;
+        const teeTime = teeTimeMatch ? teeTimeMatch[1] : "";
         let course = "paradise";
         if (part.toLowerCase().includes("chou") || part.includes("저우덕")) course = "chouduc";
         else if (part.toLowerCase().includes("ho") || part.includes("호참")) course = "hocham";
         
-        // Get the date from villa checkIn or use today
         let golfDate = format(new Date(), "yyyy-MM-dd");
         if (bd.villa?.checkIn && dateMatch) {
           const villaStart = parseISO(bd.villa.checkIn);
@@ -1068,7 +1070,7 @@ export default function Home() {
           const year = villaStart.getFullYear();
           golfDate = format(new Date(year, month - 1, day), "yyyy-MM-dd");
         }
-        golfSelections.push({ date: golfDate, course, players });
+        golfSelections.push({ date: golfDate, course, players, teeTime });
       });
       if (golfSelections.length > 0) {
         form.setValue("golf.enabled", true);
@@ -2443,11 +2445,12 @@ export default function Home() {
                     </div>
                     <div className="space-y-4">
                       {values.golf?.selections?.map((selection, index) => (
-                        <div key={`golf-day-${index}`} className="grid grid-cols-1 md:grid-cols-9 gap-3 p-4 bg-white rounded-xl border border-slate-200 relative group shadow-sm items-end overflow-hidden">
+                        <div key={`golf-day-${index}`} className="grid grid-cols-1 md:grid-cols-11 gap-3 p-4 bg-white rounded-xl border border-slate-200 relative group shadow-sm items-end overflow-hidden">
                           <div className="md:col-span-2 space-y-1.5"><Label className="text-xs font-semibold text-slate-500">{t("golf.date")}</Label><Controller control={form.control} name={`golf.selections.${index}.date`} render={({ field }) => (<Input type="date" {...field} className="h-10 rounded-lg text-sm border-slate-200 focus:ring-primary/20 w-full" />)} /></div>
-                          <div className="md:col-span-4 space-y-1.5"><Label className="text-xs font-semibold text-slate-500">{t("golf.courseSelect")}</Label><Controller control={form.control} name={`golf.selections.${index}.course`} render={({ field }) => (<Select onValueChange={field.onChange} defaultValue={field.value}><SelectTrigger className="h-10 rounded-lg text-sm bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 dark:text-slate-100 w-full"><SelectValue placeholder={t("vehicle.select")} /></SelectTrigger><SelectContent className="z-[9999] bg-white dark:bg-slate-800 border shadow-lg opacity-100 dark:border-slate-600"><SelectItem value="paradise">{t("golf.course.paradise_price")}</SelectItem><SelectItem value="chouduc">{t("golf.course.chouduc_price")}</SelectItem><SelectItem value="hocham">{t("golf.course.hocham_price")}</SelectItem></SelectContent></Select>)} /></div>
+                          <div className="md:col-span-3 space-y-1.5"><Label className="text-xs font-semibold text-slate-500">{t("golf.courseSelect")}</Label><Controller control={form.control} name={`golf.selections.${index}.course`} render={({ field }) => (<Select onValueChange={field.onChange} defaultValue={field.value}><SelectTrigger className="h-10 rounded-lg text-sm bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 dark:text-slate-100 w-full"><SelectValue placeholder={t("vehicle.select")} /></SelectTrigger><SelectContent className="z-[9999] bg-white dark:bg-slate-800 border shadow-lg opacity-100 dark:border-slate-600"><SelectItem value="paradise">{t("golf.course.paradise_price")}</SelectItem><SelectItem value="chouduc">{t("golf.course.chouduc_price")}</SelectItem><SelectItem value="hocham">{t("golf.course.hocham_price")}</SelectItem></SelectContent></Select>)} /></div>
+                          <div className="md:col-span-2 space-y-1.5"><Label className="text-xs font-semibold text-slate-500">티업시간</Label><Controller control={form.control} name={`golf.selections.${index}.teeTime`} render={({ field }) => (<Input type="time" {...field} value={field.value ?? ""} className="h-10 rounded-lg text-sm border-slate-200 w-full" data-testid={`golf-tee-time-${index}`} />)} /></div>
                           <div className="md:col-span-2 space-y-1.5"><Label className="text-xs font-semibold text-slate-500">{t("golf.players")}</Label><Controller control={form.control} name={`golf.selections.${index}.players`} render={({ field }) => (<Input type="number" min="1" {...field} value={field.value ?? ""} onChange={(e) => { const val = e.target.value; field.onChange(val === "" ? "" : parseInt(val)); }} className="h-10 rounded-lg text-sm border-slate-200 w-full" />)} /></div>
-                          <div className="md:col-span-1 flex justify-end"><Button variant="ghost" size="icon" className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 h-10 w-10 rounded-lg" onClick={() => handleRemoveGolfDay(index)} type="button"><div className="w-4 h-0.5 bg-current rounded-full" /></Button></div>
+                          <div className="md:col-span-2 flex justify-end"><Button variant="ghost" size="icon" className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 h-10 w-10 rounded-lg" onClick={() => handleRemoveGolfDay(index)} type="button"><div className="w-4 h-0.5 bg-current rounded-full" /></Button></div>
                         </div>
                       ))}
                       <Button type="button" variant="outline" className="w-full h-12 rounded-xl border-dashed border-2 hover:border-primary hover:text-primary transition-all bg-white" onClick={handleAddGolfDay}><Plus className="mr-2 h-4 w-4" /> {t("golf.addDay")}</Button>
@@ -2475,7 +2478,7 @@ export default function Home() {
                         ) : (
                           golfEstimate.details.map((d, i) => (
                             <div key={i} className="flex justify-between items-center">
-                              <span>{d.date} {d.course}</span>
+                              <span>{d.date} {d.course}{d.teeTime ? ` (${d.teeTime})` : ""}</span>
                               <span>${d.unitPrice} × {d.players}{t("golf.person")} = ${d.subtotal}</span>
                             </div>
                           ))

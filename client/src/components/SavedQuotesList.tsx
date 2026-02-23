@@ -406,9 +406,11 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
       // Format: "날짜 / 골프장명 / $가격 x 인원명 = $소계 (캐디팁: 팁/인)"
       const parts = item.split(" / ");
       const date = parts[0] || "";
-      const courseName = parts[1] || "";
+      const courseRaw = parts[1] || "";
+      const teeTimeMatch = courseRaw.match(/\[티업:(\d{2}:\d{2})\]/);
+      const teeTime = teeTimeMatch ? teeTimeMatch[1] : "";
+      const courseName = courseRaw.replace(/\s*\[티업:\d{2}:\d{2}\]/, "").trim();
       
-      // Extract price info and caddy tip
       const priceInfo = parts[2] || "";
       const subtotalMatch = priceInfo.match(/= \$(\d+)/);
       const subtotal = subtotalMatch ? parseInt(subtotalMatch[1]) : 0;
@@ -421,12 +423,12 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
       
       const tipMatch = priceInfo.match(/캐디팁: ([^)]+)/);
       let caddyTip = tipMatch ? tipMatch[1] : "";
-      // 중복된 "/인" 제거 - "50만동/인/인/인" -> "50만동/인"
       caddyTip = caddyTip.replace(/(\/(인|person|人|người|чел|名))+/gi, "/인");
       
       return {
         date,
         courseName,
+        teeTime,
         players,
         unitPrice,
         caddyTip,
@@ -1082,7 +1084,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                         return (
                           <div key={idx} className="border-l-2 border-primary/20 pl-2 py-1">
                             <div className="font-medium text-slate-700 dark:text-slate-300">
-                              {detail.date}
+                              {detail.date}{detail.teeTime ? <span className="ml-1 text-emerald-600 dark:text-emerald-400">⛳ {detail.teeTime}</span> : ""}
                             </div>
                             <div className="flex items-center justify-between gap-2">
                               {isEditing && !isCapturing ? (
