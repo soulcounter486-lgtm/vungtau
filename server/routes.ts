@@ -438,6 +438,7 @@ export async function registerRoutes(
         gender: gender,
         loginMethod: "kakao",
         emailVerified: true,
+        canViewNightlife18: gender === "male",
       }).onConflictDoUpdate({
         target: users.id,
         set: {
