@@ -52,7 +52,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
   const [depositAmount, setDepositAmount] = useState<number>(quote.depositAmount || Math.round(quote.totalPrice * 0.5));
   const [villaAdjustments, setVillaAdjustments] = useState<Record<number, number>>({});
   const [vehicleAdjustments, setVehicleAdjustments] = useState<Record<number, number>>({});
-  const [golfAdjustments, setGolfAdjustments] = useState<Record<number, { unitPrice: number, players: number }>>({});
+  const [golfAdjustments, setGolfAdjustments] = useState<Record<number, { unitPrice: number, players: number, teeTime?: string }>>({});
   const [guideAdjustment, setGuideAdjustment] = useState<number | null>(null);
   const [memo, setMemo] = useState<string>(quote.memo || "");
   const [isSavingMemo, setIsSavingMemo] = useState(false);
@@ -642,7 +642,9 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
           const unitPrice = adj ? adj.unitPrice : parseInt(detail.unitPrice);
           const players = adj ? adj.players : parseInt(detail.players);
           const subtotal = unitPrice * players;
-          return `${detail.date} / ${detail.courseName} / $${unitPrice} x ${players}명 = $${subtotal} (캐디팁: ${detail.caddyTip})`;
+          const teeTime = adj?.teeTime !== undefined ? adj.teeTime : (detail.teeTime || "");
+          const teeTimeStr = teeTime ? ` [티업:${teeTime}]` : "";
+          return `${detail.date} / ${detail.courseName}${teeTimeStr} / $${unitPrice} x ${players}명 = $${subtotal} (캐디팁: ${detail.caddyTip})`;
         });
         updatedBreakdown.golf = {
           ...breakdown.golf,
@@ -752,7 +754,9 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                         const players = adj ? adj.players : parseInt(detail.players);
                         const subtotal = unitPrice * players;
                         golfTotal += subtotal;
-                        return `${detail.date} / ${detail.courseName} / $${unitPrice} x ${players}명 = $${subtotal} (캐디팁: ${detail.caddyTip})`;
+                        const teeTime = adj?.teeTime !== undefined ? adj.teeTime : (detail.teeTime || "");
+                        const teeTimeStr = teeTime ? ` [티업:${teeTime}]` : "";
+                        return `${detail.date} / ${detail.courseName}${teeTimeStr} / $${unitPrice} x ${players}명 = $${subtotal} (캐디팁: ${detail.caddyTip})`;
                       });
                       updatedBreakdown.golf = {
                         ...breakdown.golf,
@@ -1083,8 +1087,30 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                         const displayTotal = displayUnitPrice * displayPlayers;
                         return (
                           <div key={idx} className="border-l-2 border-primary/20 pl-2 py-1">
-                            <div className="font-medium text-slate-700 dark:text-slate-300">
-                              {detail.date}{detail.teeTime ? <span className="ml-1 text-emerald-600 dark:text-emerald-400">⛳ {detail.teeTime}</span> : ""}
+                            <div className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1 flex-wrap">
+                              <span>{detail.date}</span>
+                              {isEditing && !isCapturing ? (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] text-emerald-600">⛳</span>
+                                  <input
+                                    type="time"
+                                    value={adj?.teeTime !== undefined ? adj.teeTime : (detail.teeTime || "")}
+                                    onChange={(e) => setGolfAdjustments(prev => ({
+                                      ...prev,
+                                      [idx]: {
+                                        unitPrice: prev[idx]?.unitPrice ?? parseInt(detail.unitPrice),
+                                        players: prev[idx]?.players ?? parseInt(detail.players),
+                                        teeTime: e.target.value
+                                      }
+                                    }))}
+                                    className="w-[80px] text-[10px] bg-white border border-emerald-300 rounded px-1 h-5"
+                                    onClick={(e) => e.stopPropagation()}
+                                    data-testid={`golf-tee-time-edit-${idx}`}
+                                  />
+                                </div>
+                              ) : (
+                                (adj?.teeTime || detail.teeTime) ? <span className="text-emerald-600 dark:text-emerald-400">⛳ {adj?.teeTime || detail.teeTime}</span> : null
+                              )}
                             </div>
                             <div className="flex items-center justify-between gap-2">
                               {isEditing && !isCapturing ? (
@@ -1100,7 +1126,8 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                                         ...prev,
                                         [idx]: {
                                           unitPrice: e.target.value === "" ? 0 : parseInt(e.target.value),
-                                          players: prev[idx]?.players ?? parseInt(detail.players)
+                                          players: prev[idx]?.players ?? parseInt(detail.players),
+                                          teeTime: prev[idx]?.teeTime
                                         }
                                       }))}
                                       className="w-12 text-right text-[10px] bg-white border border-slate-300 rounded px-1"
@@ -1115,7 +1142,8 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                                         ...prev,
                                         [idx]: {
                                           unitPrice: prev[idx]?.unitPrice ?? parseInt(detail.unitPrice),
-                                          players: e.target.value === "" ? 1 : parseInt(e.target.value)
+                                          players: e.target.value === "" ? 1 : parseInt(e.target.value),
+                                          teeTime: prev[idx]?.teeTime
                                         }
                                       }))}
                                       className="w-8 text-right text-[10px] bg-white border border-slate-300 rounded px-1"
