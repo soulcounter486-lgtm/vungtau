@@ -24,6 +24,7 @@ export const quotes = pgTable("quotes", {
   memoImages: jsonb("memo_images").$type<string[]>().default([]), // 메모 이미지 URL 배열
   ecoPicks: jsonb("eco_picks").$type<Record<string, { first: number[]; second: number[]; third: number[] }>>().default({}), // 날짜별 1/2/3지망 에코프로필 { "2026-02-20": { first: [1,2], second: [3,4], third: [5,6] } }
   assignedBy: text("assigned_by"), // 관리자가 배정한 경우 관리자 ID
+  assignedUsers: jsonb("assigned_users").$type<string[]>().default([]), // 여러 명 배정 (userId 배열)
   createdAt: timestamp("created_at").defaultNow(),
 });
 

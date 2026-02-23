@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { eq, desc, and, isNull, or } from "drizzle-orm";
+import { eq, desc, and, isNull, or, sql } from "drizzle-orm";
 import {
   quotes,
   type InsertQuote,
@@ -25,7 +25,12 @@ export class DatabaseStorage implements IStorage {
 
   async getQuotesByUser(userId?: string): Promise<Quote[]> {
     if (userId) {
-      return await db.select().from(quotes).where(eq(quotes.userId, userId)).orderBy(desc(quotes.createdAt));
+      return await db.select().from(quotes).where(
+        or(
+          eq(quotes.userId, userId),
+          sql`COALESCE(${quotes.assignedUsers}, '[]'::jsonb) @> ${JSON.stringify([userId])}::jsonb`
+        )
+      ).orderBy(desc(quotes.createdAt));
     }
     return [];
   }

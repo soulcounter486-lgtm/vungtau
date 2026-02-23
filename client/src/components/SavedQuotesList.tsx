@@ -132,10 +132,21 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
     const s = assignSearch.toLowerCase();
     return membersList.filter((m: any) => (m.nickname || "").toLowerCase().includes(s) || (m.email || "").toLowerCase().includes(s) || (m.firstName || "").toLowerCase().includes(s));
   }, [membersList, assignSearch]);
-  const handleAssignToUser = async (targetUserId: string | null) => {
+  const assignedUsers: string[] = Array.isArray((quote as any).assignedUsers) ? (quote as any).assignedUsers : (quote.userId ? [quote.userId] : []);
+
+  const handleToggleAssignUser = async (targetUserId: string) => {
     setIsAssigning(true);
     try {
-      await apiRequest("PATCH", `/api/quotes/${quote.id}/user`, { userId: targetUserId });
+      await apiRequest("PATCH", `/api/quotes/${quote.id}/user`, { userId: targetUserId, action: "toggle" });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+    } catch { }
+    setIsAssigning(false);
+  };
+
+  const handleClearAllAssignments = async () => {
+    setIsAssigning(true);
+    try {
+      await apiRequest("PATCH", `/api/quotes/${quote.id}/user`, { userId: null, action: "clear" });
       queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
       setAssignDialogOpen(false);
       setAssignSearch("");
@@ -874,11 +885,12 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                     size="sm"
                     variant="outline"
                     onClick={() => setAssignDialogOpen(true)}
-                    className="h-7 text-xs text-blue-600 border-blue-300"
+                    className={`h-7 text-xs ${assignedUsers.length > 0 ? "text-blue-600 border-blue-400 bg-blue-50" : "text-blue-600 border-blue-300"}`}
                     data-testid={`button-assign-quote-${quote.id}`}
                   >
                     <UserPlus className="w-3 h-3 mr-1" />
                     {language === "ko" ? "배정" : "Assign"}
+                    {assignedUsers.length > 0 && <Badge className="ml-1 h-4 px-1 text-[9px] bg-blue-500">{assignedUsers.length}</Badge>}
                   </Button>
                 </>
               ) : null}
@@ -969,6 +981,11 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                   )}
                   <span className="mx-1">|</span>
                   <span>{quote.createdAt ? format(new Date(quote.createdAt), "yyyy-MM-dd") : "-"}</span>
+                  {assignedUsers.length > 0 && (
+                    <span className="ml-1 text-blue-500">
+                      | <UserPlus className="w-3 h-3 inline" /> {assignedUsers.length}{language === "ko" ? "명" : "p"}
+                    </span>
+                  )}
                 </div>
 
                 {breakdown?.villa?.price > 0 && (
@@ -1461,21 +1478,21 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-blue-500" />
-              {language === "ko" ? "회원에게 견적서 배정" : "Assign Quote to Member"}
+              {language === "ko" ? "회원에게 견적서 배정" : "Assign Quote to Members"}
             </DialogTitle>
           </DialogHeader>
           <div className="relative mb-2">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder={language === "ko" ? "이름/이메일 검색..." : "Search name/email..."} value={assignSearch} onChange={(e) => setAssignSearch(e.target.value)} className="pl-8" data-testid="input-assign-search" />
           </div>
-          {(quote as any).assignedBy && quote.userId && (
+          {assignedUsers.length > 0 && (
             <div className="flex items-center justify-between mb-2">
               <div className="text-xs text-muted-foreground">
-                {language === "ko" ? `현재 배정됨` : `Currently assigned`}
+                {language === "ko" ? `${assignedUsers.length}명 배정됨` : `${assignedUsers.length} assigned`}
               </div>
-              <Button variant="outline" size="sm" className="h-7 text-xs text-orange-600 border-orange-300" onClick={() => handleAssignToUser(null as any)} disabled={isAssigning} data-testid={`button-recall-quote-${quote.id}`}>
+              <Button variant="outline" size="sm" className="h-7 text-xs text-orange-600 border-orange-300" onClick={handleClearAllAssignments} disabled={isAssigning} data-testid={`button-recall-quote-${quote.id}`}>
                 {isAssigning ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <X className="w-3 h-3 mr-1" />}
-                {language === "ko" ? "배정 회수" : "Recall"}
+                {language === "ko" ? "전체 회수" : "Recall All"}
               </Button>
             </div>
           )}
@@ -1485,16 +1502,23 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
             ) : filteredMembers.length === 0 ? (
               <div className="text-center text-sm text-muted-foreground py-4">{language === "ko" ? "검색 결과 없음" : "No results"}</div>
             ) : (
-              filteredMembers.map((m: any) => (
-                <div key={m.id} className={`flex items-center justify-between p-2 rounded-md cursor-pointer hover-elevate ${quote.userId === m.id ? "bg-blue-50 dark:bg-blue-950/30 border border-blue-300 dark:border-blue-700" : "border border-transparent"}`} onClick={() => handleAssignToUser(m.id)} data-testid={`assign-member-${m.id}`}>
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-sm font-medium truncate">{m.nickname || m.firstName || m.email || m.id.slice(0, 8)}</span>
-                    <span className="text-[10px] text-muted-foreground truncate">{m.email || ""} {m.gender === "male" ? "(남)" : m.gender === "female" ? "(여)" : ""}</span>
+              filteredMembers.map((m: any) => {
+                const isAssigned = assignedUsers.includes(m.id);
+                return (
+                  <div key={m.id} className={`flex items-center justify-between p-2 rounded-md cursor-pointer hover-elevate ${isAssigned ? "bg-blue-50 dark:bg-blue-950/30 border border-blue-300 dark:border-blue-700" : "border border-transparent"}`} onClick={() => handleToggleAssignUser(m.id)} data-testid={`assign-member-${m.id}`}>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${isAssigned ? "bg-blue-500 border-blue-500" : "border-slate-300"}`}>
+                        {isAssigned && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-medium truncate">{m.nickname || m.firstName || m.email || m.id.slice(0, 8)}</span>
+                        <span className="text-[10px] text-muted-foreground truncate">{m.email || ""} {m.gender === "male" ? "(남)" : m.gender === "female" ? "(여)" : ""}</span>
+                      </div>
+                    </div>
+                    {isAssigned && <Badge variant="outline" className="text-[10px] shrink-0 bg-blue-50 text-blue-600 border-blue-200">{language === "ko" ? "배정" : "Assigned"}</Badge>}
                   </div>
-                  {quote.userId === m.id && <Badge variant="outline" className="text-[10px] shrink-0">{language === "ko" ? "현재" : "Current"}</Badge>}
-                  {isAssigning && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </DialogContent>

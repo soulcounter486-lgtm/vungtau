@@ -1596,15 +1596,45 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
         return res.status(403).json({ message: "Admin access required" });
       }
       const id = parseInt(req.params.id);
-      const { userId } = req.body;
-      if (userId === null) {
-        const [updated] = await db.update(quotes).set({ userId: null, assignedBy: null }).where(eq(quotes.id, id)).returning();
-        if (!updated) return res.status(404).json({ message: "Quote not found" });
+      const { userId, action } = req.body;
+      const [existing] = await db.select().from(quotes).where(eq(quotes.id, id));
+      if (!existing) return res.status(404).json({ message: "Quote not found" });
+      let currentAssigned: string[] = Array.isArray((existing as any).assignedUsers) ? (existing as any).assignedUsers : [];
+      if (currentAssigned.length === 0 && existing.userId) {
+        currentAssigned = [existing.userId];
+      }
+      if (userId === null && action === "clear") {
+        const [updated] = await db.update(quotes).set({ userId: null, assignedBy: null, assignedUsers: [] } as any).where(eq(quotes.id, id)).returning();
         return res.json(updated);
       }
       if (!userId) return res.status(400).json({ message: "userId required" });
-      const [updated] = await db.update(quotes).set({ userId, assignedBy: adminId }).where(eq(quotes.id, id)).returning();
-      if (!updated) return res.status(404).json({ message: "Quote not found" });
+      if (action === "remove") {
+        const newAssigned = currentAssigned.filter(u => u !== userId);
+        const primaryUser = newAssigned.length > 0 ? newAssigned[0] : null;
+        const [updated] = await db.update(quotes).set({ 
+          userId: primaryUser, 
+          assignedBy: newAssigned.length > 0 ? adminId : null, 
+          assignedUsers: newAssigned 
+        } as any).where(eq(quotes.id, id)).returning();
+        return res.json(updated);
+      }
+      if (action === "toggle") {
+        let newAssigned: string[];
+        if (currentAssigned.includes(userId)) {
+          newAssigned = currentAssigned.filter(u => u !== userId);
+        } else {
+          newAssigned = [...currentAssigned, userId];
+        }
+        const primaryUser = newAssigned.length > 0 ? newAssigned[0] : null;
+        const [updated] = await db.update(quotes).set({ 
+          userId: primaryUser, 
+          assignedBy: newAssigned.length > 0 ? adminId : null, 
+          assignedUsers: newAssigned 
+        } as any).where(eq(quotes.id, id)).returning();
+        return res.json(updated);
+      }
+      const newAssigned = currentAssigned.includes(userId) ? currentAssigned : [...currentAssigned, userId];
+      const [updated] = await db.update(quotes).set({ userId: newAssigned[0] || userId, assignedBy: adminId, assignedUsers: newAssigned } as any).where(eq(quotes.id, id)).returning();
       res.json(updated);
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
