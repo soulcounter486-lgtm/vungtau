@@ -447,6 +447,7 @@ export async function registerRoutes(
           profileImageUrl: profileImage,
           gender: gender,
           loginMethod: "kakao",
+          ...(gender === "male" ? { canViewNightlife18: true } : {}),
           updatedAt: new Date(),
         },
       });
