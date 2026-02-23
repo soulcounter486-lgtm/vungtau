@@ -54,6 +54,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
   const [vehicleAdjustments, setVehicleAdjustments] = useState<Record<number, number>>({});
   const [golfAdjustments, setGolfAdjustments] = useState<Record<number, { unitPrice: number, players: number, teeTime?: string }>>({});
   const [guideAdjustment, setGuideAdjustment] = useState<number | null>(null);
+  const [peopleCount, setPeopleCount] = useState<number>((quote as any).peopleCount || 1);
   const [memo, setMemo] = useState<string>(quote.memo || "");
   const [isSavingMemo, setIsSavingMemo] = useState(false);
   const [userMemo, setUserMemo] = useState<string>((quote as any).userMemo || "");
@@ -981,11 +982,6 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                   )}
                   <span className="mx-1">|</span>
                   <span>{quote.createdAt ? format(new Date(quote.createdAt), "yyyy-MM-dd") : "-"}</span>
-                  {assignedUsers.length > 0 && (
-                    <span className="ml-1 text-blue-500">
-                      | <UserPlus className="w-3 h-3 inline" /> {assignedUsers.length}{language === "ko" ? "명" : "p"}
-                    </span>
-                  )}
                 </div>
 
                 {breakdown?.villa?.price > 0 && (
@@ -1328,6 +1324,28 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                       ${adjustedTotal.toLocaleString()}
                     </span>
                   </div>
+                  <div className="flex justify-between items-center mt-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-muted-foreground">{language === "ko" ? "인원수" : "People"}:</span>
+                      {isEditing && !isCapturing ? (
+                        <input type="number" min="1" max="99" value={peopleCount} onChange={(e) => setPeopleCount(Math.max(1, parseInt(e.target.value) || 1))} className="w-12 text-center text-xs font-medium border border-slate-300 rounded px-1 py-0.5 bg-white" onClick={(e) => e.stopPropagation()} data-testid={`input-people-count-${quote.id}`} />
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <button onClick={(e) => { e.stopPropagation(); setPeopleCount(Math.max(1, peopleCount - 1)); }} className="w-5 h-5 flex items-center justify-center rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 text-xs" data-testid={`button-people-minus-${quote.id}`}><Minus className="w-3 h-3" /></button>
+                          <span className="text-xs font-semibold text-slate-800 w-5 text-center">{peopleCount}</span>
+                          <button onClick={(e) => { e.stopPropagation(); setPeopleCount(peopleCount + 1); }} className="w-5 h-5 flex items-center justify-center rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 text-xs" data-testid={`button-people-plus-${quote.id}`}><Plus className="w-3 h-3" /></button>
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-xs font-semibold text-blue-600">
+                      {language === "ko" ? "1인당" : "Per person"}: ${Math.round(adjustedTotal / peopleCount).toLocaleString()}
+                    </span>
+                  </div>
+                  {currencyInfo.code !== "USD" && (
+                    <div className="text-right text-[10px] text-muted-foreground mt-0.5">
+                      ≈ {language === "ko" ? "1인당" : "pp"} {formatLocalCurrency(Math.round(adjustedTotal / peopleCount))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-3 mt-2 border-t border-slate-100 text-center space-y-1">
