@@ -18,9 +18,10 @@ interface QuoteSummaryProps {
   isLoading: boolean;
   onSave: () => void;
   isSaving: boolean;
+  onPersonCountChange?: (count: number) => void;
 }
 
-export function QuoteSummary({ breakdown, isLoading, onSave, isSaving }: QuoteSummaryProps) {
+export function QuoteSummary({ breakdown, isLoading, onSave, isSaving, onPersonCountChange }: QuoteSummaryProps) {
   const { t, language } = useLanguage();
   const { isAuthenticated } = useAuth();
   const summaryRef = useRef<HTMLDivElement>(null);
@@ -599,7 +600,7 @@ export function QuoteSummary({ breakdown, isLoading, onSave, isSaving }: QuoteSu
                       min="1"
                       max="100"
                       value={personCount}
-                      onChange={(e) => setPersonCount(e.target.value)}
+                      onChange={(e) => { setPersonCount(e.target.value); const val = parseInt(e.target.value); if (!isNaN(val) && val >= 1) onPersonCountChange?.(val); }}
                       placeholder=""
                       className="w-14 h-7 text-center font-bold text-sm bg-white dark:bg-slate-800 border-indigo-200 dark:border-indigo-700"
                       data-testid="input-person-count"

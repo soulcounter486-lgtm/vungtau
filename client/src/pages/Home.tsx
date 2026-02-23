@@ -410,6 +410,7 @@ export default function Home() {
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [loadedQuoteId, setLoadedQuoteId] = useState<number | null>(null);
+  const [quotePeopleCount, setQuotePeopleCount] = useState<number>(1);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
   const isLoadingQuoteRef = useRef(false);
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
@@ -983,7 +984,8 @@ export default function Home() {
       try {
         await apiRequest("PATCH", `/api/quotes/${loadedQuoteId}/total`, {
           totalPrice: breakdown.total,
-          breakdown: breakdown
+          breakdown: breakdown,
+          peopleCount: quotePeopleCount
         });
         toast({ 
           title: language === "ko" ? "견적서 수정 완료" : "Quote Updated", 
@@ -994,7 +996,7 @@ export default function Home() {
         toast({ title: "Error", description: "Failed to update quote.", variant: "destructive" });
       }
     } else {
-      createQuoteMutation.mutate({ customerName: autoName, totalPrice: breakdown.total, breakdown: breakdown }, {
+      createQuoteMutation.mutate({ customerName: autoName, totalPrice: breakdown.total, breakdown: breakdown, peopleCount: quotePeopleCount }, {
         onSuccess: () => {
           toast({ title: language === "ko" ? "견적서 저장 완료" : "Quote Saved", description: `${autoName}` });
         },
@@ -3122,7 +3124,7 @@ export default function Home() {
             })()}
           </div>
           <div className="lg:col-span-4">
-            <QuoteSummary breakdown={breakdown} isLoading={calculateMutation.isPending} onSave={handleSaveQuote} isSaving={createQuoteMutation.isPending} />
+            <QuoteSummary breakdown={breakdown} isLoading={calculateMutation.isPending} onSave={handleSaveQuote} isSaving={createQuoteMutation.isPending} onPersonCountChange={setQuotePeopleCount} />
           </div>
         </div>
         

@@ -54,7 +54,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
   const [vehicleAdjustments, setVehicleAdjustments] = useState<Record<number, number>>({});
   const [golfAdjustments, setGolfAdjustments] = useState<Record<number, { unitPrice: number, players: number, teeTime?: string }>>({});
   const [guideAdjustment, setGuideAdjustment] = useState<number | null>(null);
-  const [peopleCount, setPeopleCount] = useState<number>((quote as any).peopleCount || 1);
+  const [peopleCount, setPeopleCount] = useState<number>(quote.peopleCount || 1);
   const [memo, setMemo] = useState<string>(quote.memo || "");
   const [isSavingMemo, setIsSavingMemo] = useState(false);
   const [userMemo, setUserMemo] = useState<string>((quote as any).userMemo || "");
