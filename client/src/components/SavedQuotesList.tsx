@@ -1227,7 +1227,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                   </div>
                 )}
 
-                {(breakdown?.ecoGirl?.price > 0 || ((isMaleUser || isAdmin || (canViewNightlife18 && canViewEco)) && depositPaid)) && !(isCapturing && (ecoTotalPrice || breakdown?.ecoGirl?.price || 0) === 0 && (!breakdown?.ecoGirl?.selections || breakdown.ecoGirl.selections.length === 0)) && (
+                {(breakdown?.ecoGirl?.price > 0 || ((isAdmin || (canViewNightlife18 && canViewEco)) && depositPaid)) && !(isCapturing && (ecoTotalPrice || breakdown?.ecoGirl?.price || 0) === 0 && (!breakdown?.ecoGirl?.selections || breakdown.ecoGirl.selections.length === 0)) && (
                   <div className="space-y-1">
                     <div className="flex justify-between items-center font-semibold text-sm text-slate-800">
                       <div className="flex items-center gap-2">
@@ -1257,7 +1257,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                         ))}
                       </div>
                     )}
-                    {(!breakdown?.ecoGirl?.details || breakdown.ecoGirl.details.length === 0) && ecoTotalPrice === 0 && (isMaleUser || isAdmin || (canViewNightlife18 && canViewEco)) && depositPaid && (
+                    {(!breakdown?.ecoGirl?.details || breakdown.ecoGirl.details.length === 0) && ecoTotalPrice === 0 && (isAdmin || (canViewNightlife18 && canViewEco)) && depositPaid && (
                       <div className="text-[10px] text-muted-foreground pl-2">
                         {language === "ko" ? "픽하기를 눌러 에코 일정을 추가하세요" : "Click Pick to add eco schedule"}
                       </div>
