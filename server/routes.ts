@@ -1796,6 +1796,21 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
   });
 
   // 메모 업데이트 (관리자 전용)
+  app.patch("/api/quotes/:id/people-count", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { peopleCount } = req.body;
+      if (typeof peopleCount !== "number" || peopleCount < 1) {
+        return res.status(400).json({ message: "Invalid people count" });
+      }
+      const [quote] = await db.update(quotes).set({ peopleCount }).where(eq(quotes.id, id)).returning();
+      if (!quote) return res.status(404).json({ message: "Quote not found" });
+      res.json(quote);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.patch("/api/quotes/:id/memo", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
