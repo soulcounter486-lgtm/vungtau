@@ -1989,12 +1989,10 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
         return res.status(400).json({ message: "Invalid quote ID" });
       }
       const user = (req as any).user;
-      const userId = user?.claims?.sub;
+      const userId = user?.claims?.sub || user?.id || (req.session as any)?.userId;
       const userEmail = user?.claims?.email || user?.email;
-      // isUserAdmin 함수를 사용하여 ID 또는 이메일로 관리자 확인
       const isAdmin = isUserAdmin(userId, userEmail);
       
-      // 관리자는 모든 견적서 삭제 가능
       if (isAdmin) {
         await storage.deleteQuoteAdmin(id);
       } else {

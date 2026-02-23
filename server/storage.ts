@@ -41,7 +41,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteQuote(id: number, userId?: string): Promise<void> {
     if (userId) {
-      await db.delete(quotes).where(and(eq(quotes.id, id), eq(quotes.userId, userId)));
+      await db.delete(quotes).where(and(eq(quotes.id, id), or(eq(quotes.userId, userId), sql`COALESCE(${quotes.assignedUsers}, '[]'::jsonb) @> ${JSON.stringify([userId])}::jsonb`)));
     }
   }
 
