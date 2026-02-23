@@ -1328,7 +1328,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs text-muted-foreground">{language === "ko" ? "인원수" : "People"}:</span>
                       {isEditing && !isCapturing ? (
-                        <input type="number" min="1" max="99" value={peopleCount} onChange={(e) => setPeopleCount(Math.max(1, parseInt(e.target.value) || 1))} className="w-12 text-center text-xs font-medium border border-slate-300 rounded px-1 py-0.5 bg-white" onClick={(e) => e.stopPropagation()} data-testid={`input-people-count-${quote.id}`} />
+                        <input type="number" min="1" max="99" value={peopleCount === 0 ? "" : peopleCount} onChange={(e) => { const val = e.target.value; if (val === "") { setPeopleCount(0); } else { const num = parseInt(val); if (!isNaN(num) && num >= 0) setPeopleCount(num); } }} onBlur={() => { if (peopleCount < 1) setPeopleCount(1); }} className="w-12 text-center text-xs font-medium border border-slate-300 rounded px-1 py-0.5 bg-white" onClick={(e) => e.stopPropagation()} data-testid={`input-people-count-${quote.id}`} />
                       ) : (
                         <div className="flex items-center gap-1">
                           <button onClick={(e) => { e.stopPropagation(); setPeopleCount(Math.max(1, peopleCount - 1)); }} className="w-5 h-5 flex items-center justify-center rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 text-xs" data-testid={`button-people-minus-${quote.id}`}><Minus className="w-3 h-3" /></button>
@@ -1338,12 +1338,12 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                       )}
                     </div>
                     <span className="text-xs font-semibold text-blue-600">
-                      {language === "ko" ? "1인당" : "Per person"}: ${Math.round(adjustedTotal / peopleCount).toLocaleString()}
+                      {language === "ko" ? "1인당" : "Per person"}: ${Math.round(adjustedTotal / Math.max(1, peopleCount)).toLocaleString()}
                     </span>
                   </div>
                   {currencyInfo.code !== "USD" && (
                     <div className="text-right text-[10px] text-muted-foreground mt-0.5">
-                      ≈ {language === "ko" ? "1인당" : "pp"} {formatLocalCurrency(Math.round(adjustedTotal / peopleCount))}
+                      ≈ {language === "ko" ? "1인당" : "pp"} {formatLocalCurrency(Math.round(adjustedTotal / Math.max(1, peopleCount)))}
                     </div>
                   )}
                 </div>
