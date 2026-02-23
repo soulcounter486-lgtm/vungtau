@@ -1227,12 +1227,12 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                   </div>
                 )}
 
-                {(breakdown?.ecoGirl?.price > 0 || ((isAdmin || (canViewNightlife18 && canViewEco)) && depositPaid)) && !(isCapturing && (ecoTotalPrice || breakdown?.ecoGirl?.price || 0) === 0 && (!breakdown?.ecoGirl?.selections || breakdown.ecoGirl.selections.length === 0)) && (
+                {(breakdown?.ecoGirl?.price > 0 || ((isAdmin || canViewNightlife18))) && !(isCapturing && (ecoTotalPrice || breakdown?.ecoGirl?.price || 0) === 0 && (!breakdown?.ecoGirl?.selections || breakdown.ecoGirl.selections.length === 0)) && (
                   <div className="space-y-1">
                     <div className="flex justify-between items-center font-semibold text-sm text-slate-800">
                       <div className="flex items-center gap-2">
                         <span>{language === "ko" ? "에코" : "Eco"}</span>
-                        {depositPaid && ecoProfiles.length > 0 && !isCapturing && (
+                        {(isAdmin || canViewNightlife18) && depositPaid && ecoProfiles.length > 0 && !isCapturing && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -1257,7 +1257,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                         ))}
                       </div>
                     )}
-                    {(!breakdown?.ecoGirl?.details || breakdown.ecoGirl.details.length === 0) && ecoTotalPrice === 0 && (isAdmin || (canViewNightlife18 && canViewEco)) && depositPaid && (
+                    {(!breakdown?.ecoGirl?.details || breakdown.ecoGirl.details.length === 0) && ecoTotalPrice === 0 && (isAdmin || canViewNightlife18) && depositPaid && (
                       <div className="text-[10px] text-muted-foreground pl-2">
                         {language === "ko" ? "픽하기를 눌러 에코 일정을 추가하세요" : "Click Pick to add eco schedule"}
                       </div>
@@ -1684,8 +1684,8 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                           const isSelectedByOther = persons.some((p, idx) => idx !== activePersonIndex && p.first === profile.id);
                           return (
                             <div key={profile.id} className={`relative rounded-lg overflow-hidden border-2 transition-all ${selectedPriority ? "border-pink-500 ring-2 ring-pink-300" : isSelectedByOther ? "border-slate-200 dark:border-slate-600 opacity-30" : "border-slate-200 dark:border-slate-600"}`} data-testid={`eco-pick-profile-${profile.id}`}>
-                              <div className="aspect-[3/4] relative cursor-pointer" onClick={(e) => { e.stopPropagation(); e.preventDefault(); e.nativeEvent.stopImmediatePropagation(); setPreviewImage(profile.imageUrl); }}>
-                                <img src={profile.imageUrl} alt={profile.name} className="w-full h-full object-cover" />
+                              <div className="aspect-[3/4] relative cursor-pointer" onClick={(e) => { e.stopPropagation(); e.preventDefault(); e.nativeEvent.stopImmediatePropagation(); if (canViewEco || isAdmin) setPreviewImage(profile.imageUrl); }}>
+                                <img src={profile.imageUrl} alt={profile.name} className={`w-full h-full object-cover ${!(canViewEco || isAdmin) ? "blur-lg" : ""}`} />
                                 {selectedPriority && (
                                   <div className={`absolute top-1 right-1 w-6 h-6 ${priorityColors[priorityKeys.indexOf(selectedPriority)]} rounded-full flex items-center justify-center`}>
                                     <Check className="w-4 h-4 text-white" />
