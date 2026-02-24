@@ -1407,6 +1407,16 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
 
       // 3. Golf Calculation
       if (input.golf?.enabled && Array.isArray(input.golf.selections)) {
+        const golfSettings = await db.select().from(siteSettings).where(
+          sql`${siteSettings.key} IN ('golf_paradise_weekday','golf_paradise_weekend','golf_paradise_tip','golf_chouduc_weekday','golf_chouduc_weekend','golf_chouduc_tip','golf_hocham_weekday','golf_hocham_weekend','golf_hocham_tip')`
+        );
+        const gs: Record<string, string> = {};
+        golfSettings.forEach(s => { gs[s.key] = s.value; });
+        const golfPriceMap: Record<string, { weekday: number; weekend: number; tip: string; name: string }> = {
+          paradise: { weekday: Number(gs["golf_paradise_weekday"]) || 90, weekend: Number(gs["golf_paradise_weekend"]) || 110, tip: gs["golf_paradise_tip"] || "40만동", name: "파라다이스" },
+          chouduc: { weekday: Number(gs["golf_chouduc_weekday"]) || 80, weekend: Number(gs["golf_chouduc_weekend"]) || 120, tip: gs["golf_chouduc_tip"] || "50만동", name: "쩌우득" },
+          hocham: { weekday: Number(gs["golf_hocham_weekday"]) || 150, weekend: Number(gs["golf_hocham_weekend"]) || 200, tip: gs["golf_hocham_tip"] || "50만동", name: "호짬" },
+        };
         let golfTotalPrice = 0;
         const golfDescriptions: string[] = [];
         for (const selection of input.golf.selections) {
@@ -1416,29 +1426,13 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
             if (isNaN(date.getTime())) continue;
             const dayOfWeek = getDay(date);
             const isHoliday = isVietnamHoliday(date);
-            // 주말 또는 공휴일이면 주말 요금 적용
             const isWeekendOrHoliday = dayOfWeek === 0 || dayOfWeek === 6 || isHoliday;
             const players = Number(selection.players) || 1;
-            let price = 0;
-            let tip = "";
-            let courseName = "";
-            switch (selection.course) {
-              case "paradise":
-                price = isWeekendOrHoliday ? 110 : 90;
-                tip = "40만동";
-                courseName = "파라다이스";
-                break;
-              case "chouduc":
-                price = isWeekendOrHoliday ? 120 : 80;
-                tip = "50만동";
-                courseName = "쩌우득";
-                break;
-              case "hocham":
-                price = isWeekendOrHoliday ? 200 : 150;
-                tip = "50만동";
-                courseName = "호짬";
-                break;
-            }
+            const courseInfo = golfPriceMap[selection.course];
+            if (!courseInfo) continue;
+            const price = isWeekendOrHoliday ? courseInfo.weekend : courseInfo.weekday;
+            const tip = courseInfo.tip;
+            const courseName = courseInfo.name;
             const subtotal = price * players;
             golfTotalPrice += subtotal;
             const teeTimeStr = (selection as any).teeTime ? ` [티업:${(selection as any).teeTime}]` : "";

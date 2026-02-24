@@ -353,6 +353,11 @@ export default function Home() {
   const heroDescription = siteSettingsData["hero_description"] || t("header.description");
   const ecoPrice12 = Number(siteSettingsData["eco_price_12"]) || 220;
   const ecoPrice22 = Number(siteSettingsData["eco_price_22"]) || 380;
+  const golfPrices = {
+    paradise: { weekday: Number(siteSettingsData["golf_paradise_weekday"]) || 90, weekend: Number(siteSettingsData["golf_paradise_weekend"]) || 110, tip: siteSettingsData["golf_paradise_tip"] || "40만동" },
+    chouduc: { weekday: Number(siteSettingsData["golf_chouduc_weekday"]) || 80, weekend: Number(siteSettingsData["golf_chouduc_weekend"]) || 120, tip: siteSettingsData["golf_chouduc_tip"] || "50만동" },
+    hocham: { weekday: Number(siteSettingsData["golf_hocham_weekday"]) || 150, weekend: Number(siteSettingsData["golf_hocham_weekend"]) || 200, tip: siteSettingsData["golf_hocham_tip"] || "50만동" },
+  };
   const ecoDescriptionText = siteSettingsData["eco_description"] || "";
   const ecoImageUrl = siteSettingsData["eco_image_url"] || "";
   const [selectedVillaId, setSelectedVillaId] = useState<number | null>(null);
@@ -746,26 +751,13 @@ export default function Home() {
         const isHoliday = isVietnamHoliday(date);
         const isWeekendOrHoliday = dayOfWeek === 0 || dayOfWeek === 6 || isHoliday;
         const players = Number(selection.players) || 1;
-        let price = 0;
-        let tip = "";
-        let courseName = "";
-        switch (selection.course) {
-          case "paradise":
-            price = isWeekendOrHoliday ? 110 : 90;
-            tip = "40만동";
-            courseName = t("golf.course.paradise");
-            break;
-          case "chouduc":
-            price = isWeekendOrHoliday ? 120 : 80;
-            tip = "50만동";
-            courseName = t("golf.course.chouduc");
-            break;
-          case "hocham":
-            price = isWeekendOrHoliday ? 200 : 150;
-            tip = "50만동";
-            courseName = t("golf.course.hocham");
-            break;
-        }
+        const courseKey = selection.course as keyof typeof golfPrices;
+        const courseInfo = golfPrices[courseKey];
+        if (!courseInfo) continue;
+        const price = isWeekendOrHoliday ? courseInfo.weekend : courseInfo.weekday;
+        const tip = courseInfo.tip;
+        const courseNameMap: Record<string, string> = { paradise: t("golf.course.paradise"), chouduc: t("golf.course.chouduc"), hocham: t("golf.course.hocham") };
+        const courseName = courseNameMap[selection.course] || selection.course;
         const subtotal = price * players;
         totalPrice += subtotal;
         details.push({
@@ -782,7 +774,7 @@ export default function Home() {
     } catch {
       return { price: 0, details: [] as { date: string; course: string; players: number; unitPrice: number; subtotal: number; tip: string; teeTime: string }[] };
     }
-  }, [values.golf?.enabled, JSON.stringify(values.golf?.selections), t]);
+  }, [values.golf?.enabled, JSON.stringify(values.golf?.selections), t, golfPrices]);
 
   const guideEstimate = useMemo(() => {
     if (!values.guide?.enabled) {
@@ -2445,14 +2437,14 @@ export default function Home() {
                   <div className="max-h-[600px] overflow-y-auto p-1 pr-2 custom-scrollbar flex flex-col gap-4">
                     <div className="p-4 bg-emerald-50 rounded-xl text-xs text-emerald-800 space-y-1 border border-emerald-100 shadow-sm">
                       <p><strong>{t("golf.info.included")}</strong></p>
-                      <p><strong>{t("golf.info.notIncluded")}</strong></p>
+                      <p><strong>{`* ${language === "ko" ? "불포함(현장지불): 캐디팁" : "Not included (pay on-site): Caddy tip"} (${t("golf.course.paradise")} ${golfPrices.paradise.tip}${golfPrices.chouduc.tip === golfPrices.hocham.tip ? ` / ${t("golf.course.chouduc")}·${t("golf.course.hocham")} ${golfPrices.chouduc.tip}` : ` / ${t("golf.course.chouduc")} ${golfPrices.chouduc.tip} / ${t("golf.course.hocham")} ${golfPrices.hocham.tip}`})`}</strong></p>
                       <p><strong>{t("golf.info.weekend")}</strong></p>
                     </div>
                     <div className="space-y-4">
                       {values.golf?.selections?.map((selection, index) => (
                         <div key={`golf-day-${index}`} className="grid grid-cols-1 md:grid-cols-11 gap-3 p-4 bg-white rounded-xl border border-slate-200 relative group shadow-sm items-end overflow-hidden">
                           <div className="md:col-span-2 space-y-1.5"><Label className="text-xs font-semibold text-slate-500">{t("golf.date")}</Label><Controller control={form.control} name={`golf.selections.${index}.date`} render={({ field }) => (<Input type="date" {...field} className="h-10 rounded-lg text-sm border-slate-200 focus:ring-primary/20 w-full" />)} /></div>
-                          <div className="md:col-span-3 space-y-1.5"><Label className="text-xs font-semibold text-slate-500">{t("golf.courseSelect")}</Label><Controller control={form.control} name={`golf.selections.${index}.course`} render={({ field }) => (<Select onValueChange={field.onChange} defaultValue={field.value}><SelectTrigger className="h-10 rounded-lg text-sm bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 dark:text-slate-100 w-full"><SelectValue placeholder={t("vehicle.select")} /></SelectTrigger><SelectContent className="z-[9999] bg-white dark:bg-slate-800 border shadow-lg opacity-100 dark:border-slate-600"><SelectItem value="paradise">{t("golf.course.paradise_price")}</SelectItem><SelectItem value="chouduc">{t("golf.course.chouduc_price")}</SelectItem><SelectItem value="hocham">{t("golf.course.hocham_price")}</SelectItem></SelectContent></Select>)} /></div>
+                          <div className="md:col-span-3 space-y-1.5"><Label className="text-xs font-semibold text-slate-500">{t("golf.courseSelect")}</Label><Controller control={form.control} name={`golf.selections.${index}.course`} render={({ field }) => (<Select onValueChange={field.onChange} defaultValue={field.value}><SelectTrigger className="h-10 rounded-lg text-sm bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 dark:text-slate-100 w-full"><SelectValue placeholder={t("vehicle.select")} /></SelectTrigger><SelectContent className="z-[9999] bg-white dark:bg-slate-800 border shadow-lg opacity-100 dark:border-slate-600"><SelectItem value="paradise">{`${t("golf.course.paradise")} (${language === "ko" ? "평일" : "Weekday"} $${golfPrices.paradise.weekday} / ${language === "ko" ? "주말" : "Weekend"} $${golfPrices.paradise.weekend})`}</SelectItem><SelectItem value="chouduc">{`${t("golf.course.chouduc")} (${language === "ko" ? "평일" : "Weekday"} $${golfPrices.chouduc.weekday} / ${language === "ko" ? "주말" : "Weekend"} $${golfPrices.chouduc.weekend})`}</SelectItem><SelectItem value="hocham">{`${t("golf.course.hocham")} (${language === "ko" ? "평일" : "Weekday"} $${golfPrices.hocham.weekday} / ${language === "ko" ? "주말" : "Weekend"} $${golfPrices.hocham.weekend})`}</SelectItem></SelectContent></Select>)} /></div>
                           <div className="md:col-span-2 space-y-1.5"><Label className="text-xs font-semibold text-slate-500">티업시간</Label><Controller control={form.control} name={`golf.selections.${index}.teeTime`} render={({ field }) => (<Input type="time" {...field} value={field.value ?? ""} className="h-10 rounded-lg text-sm border-slate-200 w-full" data-testid={`golf-tee-time-${index}`} />)} /></div>
                           <div className="md:col-span-2 space-y-1.5"><Label className="text-xs font-semibold text-slate-500">{t("golf.players")}</Label><Controller control={form.control} name={`golf.selections.${index}.players`} render={({ field }) => (<Input type="number" min="1" {...field} value={field.value ?? ""} onChange={(e) => { const val = e.target.value; field.onChange(val === "" ? "" : parseInt(val)); }} className="h-10 rounded-lg text-sm border-slate-200 w-full" />)} /></div>
                           <div className="md:col-span-2 flex justify-end"><Button variant="ghost" size="icon" className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 h-10 w-10 rounded-lg" onClick={() => handleRemoveGolfDay(index)} type="button"><div className="w-4 h-0.5 bg-current rounded-full" /></Button></div>

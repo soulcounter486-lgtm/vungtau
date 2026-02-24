@@ -31,6 +31,15 @@ export default function AdminSettings() {
   const [ecoPrice12, setEcoPrice12] = useState("220");
   const [ecoPrice22, setEcoPrice22] = useState("380");
   const [ecoDescription, setEcoDescription] = useState("");
+  const [golfParadiseWeekday, setGolfParadiseWeekday] = useState("90");
+  const [golfParadiseWeekend, setGolfParadiseWeekend] = useState("110");
+  const [golfParadiseTip, setGolfParadiseTip] = useState("40만동");
+  const [golfChouducWeekday, setGolfChouducWeekday] = useState("80");
+  const [golfChouducWeekend, setGolfChouducWeekend] = useState("120");
+  const [golfChouducTip, setGolfChouducTip] = useState("50만동");
+  const [golfHochamWeekday, setGolfHochamWeekday] = useState("150");
+  const [golfHochamWeekend, setGolfHochamWeekend] = useState("200");
+  const [golfHochamTip, setGolfHochamTip] = useState("50만동");
   const [ecoImageUrl, setEcoImageUrl] = useState("");
   const [ecoImageUploading, setEcoImageUploading] = useState(false);
   const [bizEnabled, setBizEnabled] = useState(true);
@@ -52,6 +61,15 @@ export default function AdminSettings() {
       setEcoPrice12(settings["eco_price_12"] || "220");
       setEcoPrice22(settings["eco_price_22"] || "380");
       setEcoDescription(settings["eco_description"] || "");
+      setGolfParadiseWeekday(settings["golf_paradise_weekday"] || "90");
+      setGolfParadiseWeekend(settings["golf_paradise_weekend"] || "110");
+      setGolfParadiseTip(settings["golf_paradise_tip"] || "40만동");
+      setGolfChouducWeekday(settings["golf_chouduc_weekday"] || "80");
+      setGolfChouducWeekend(settings["golf_chouduc_weekend"] || "120");
+      setGolfChouducTip(settings["golf_chouduc_tip"] || "50만동");
+      setGolfHochamWeekday(settings["golf_hocham_weekday"] || "150");
+      setGolfHochamWeekend(settings["golf_hocham_weekend"] || "200");
+      setGolfHochamTip(settings["golf_hocham_tip"] || "50만동");
       setEcoImageUrl(settings["eco_image_url"] || "");
       setBizEnabled(settings["biz_enabled"] !== "false");
       setBizName(settings["biz_name"] || "");
@@ -87,6 +105,15 @@ export default function AdminSettings() {
         ["eco_price_22", ecoPrice22],
         ["eco_description", ecoDescription],
         ["eco_image_url", ecoImageUrl],
+        ["golf_paradise_weekday", golfParadiseWeekday],
+        ["golf_paradise_weekend", golfParadiseWeekend],
+        ["golf_paradise_tip", golfParadiseTip],
+        ["golf_chouduc_weekday", golfChouducWeekday],
+        ["golf_chouduc_weekend", golfChouducWeekend],
+        ["golf_chouduc_tip", golfChouducTip],
+        ["golf_hocham_weekday", golfHochamWeekday],
+        ["golf_hocham_weekend", golfHochamWeekend],
+        ["golf_hocham_tip", golfHochamTip],
         ["biz_enabled", bizEnabled ? "true" : "false"],
         ["biz_name", bizName],
         ["biz_number", bizNumber],
@@ -272,6 +299,69 @@ export default function AdminSettings() {
                 에코 프로필 관리 페이지로 이동
               </Button>
             </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5" />
+              골프 요금 관리
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">골프장별 평일/주말 요금과 캐디팁을 설정합니다</p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">파라다이스 골프장</Label>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">평일 (USD)</Label>
+                  <Input type="number" min="0" value={golfParadiseWeekday} onChange={(e) => setGolfParadiseWeekday(e.target.value)} placeholder="90" data-testid="input-golf-paradise-weekday" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">주말 (USD)</Label>
+                  <Input type="number" min="0" value={golfParadiseWeekend} onChange={(e) => setGolfParadiseWeekend(e.target.value)} placeholder="110" data-testid="input-golf-paradise-weekend" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">캐디팁</Label>
+                  <Input value={golfParadiseTip} onChange={(e) => setGolfParadiseTip(e.target.value)} placeholder="40만동" data-testid="input-golf-paradise-tip" />
+                </div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">쩌우득 골프장</Label>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">평일 (USD)</Label>
+                  <Input type="number" min="0" value={golfChouducWeekday} onChange={(e) => setGolfChouducWeekday(e.target.value)} placeholder="80" data-testid="input-golf-chouduc-weekday" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">주말 (USD)</Label>
+                  <Input type="number" min="0" value={golfChouducWeekend} onChange={(e) => setGolfChouducWeekend(e.target.value)} placeholder="120" data-testid="input-golf-chouduc-weekend" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">캐디팁</Label>
+                  <Input value={golfChouducTip} onChange={(e) => setGolfChouducTip(e.target.value)} placeholder="50만동" data-testid="input-golf-chouduc-tip" />
+                </div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">호짬 골프장</Label>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">평일 (USD)</Label>
+                  <Input type="number" min="0" value={golfHochamWeekday} onChange={(e) => setGolfHochamWeekday(e.target.value)} placeholder="150" data-testid="input-golf-hocham-weekday" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">주말 (USD)</Label>
+                  <Input type="number" min="0" value={golfHochamWeekend} onChange={(e) => setGolfHochamWeekend(e.target.value)} placeholder="200" data-testid="input-golf-hocham-weekend" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">캐디팁</Label>
+                  <Input value={golfHochamTip} onChange={(e) => setGolfHochamTip(e.target.value)} placeholder="50만동" data-testid="input-golf-hocham-tip" />
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
