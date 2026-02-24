@@ -2463,28 +2463,28 @@ export default function Home() {
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-semibold">{t("golf.estimatedPrice")}</span>
                         <div className="text-right">
-                          <span className="text-2xl font-bold">${loadedQuoteId && breakdown?.golf?.price ? breakdown.golf.price : golfEstimate.price}</span>
+                          <span className="text-2xl font-bold">${golfEstimate.price > 0 ? golfEstimate.price : (breakdown?.golf?.price || 0)}</span>
                           {currencyInfo.code !== "USD" && (
-                            <div className="text-sm text-emerald-200">≈ {formatLocalCurrency(loadedQuoteId && breakdown?.golf?.price ? breakdown.golf.price : golfEstimate.price)}</div>
+                            <div className="text-sm text-emerald-200">≈ {formatLocalCurrency(golfEstimate.price > 0 ? golfEstimate.price : (breakdown?.golf?.price || 0))}</div>
                           )}
                         </div>
                       </div>
                       <div className="text-xs text-emerald-100 space-y-1">
-                        {loadedQuoteId && breakdown?.golf?.description ? (
-                          breakdown.golf.description.split(" | ").map((d, i) => (
-                            <div key={i} className="flex justify-between items-center">
-                              <span>{d.split(" / ")[0]} {d.split(" / ")[1]}</span>
-                              <span>{d.split(" / ")[2]?.split(" (")[0]}</span>
-                            </div>
-                          ))
-                        ) : (
+                        {golfEstimate.details.length > 0 ? (
                           golfEstimate.details.map((d, i) => (
                             <div key={i} className="flex justify-between items-center">
                               <span>{d.date} {d.course}{d.teeTime ? ` (${d.teeTime})` : ""}</span>
                               <span>${d.unitPrice} × {d.players}{t("golf.person")} = ${d.subtotal}</span>
                             </div>
                           ))
-                        )}
+                        ) : loadedQuoteId && breakdown?.golf?.description ? (
+                          breakdown.golf.description.split(" | ").map((d, i) => (
+                            <div key={i} className="flex justify-between items-center">
+                              <span>{d.split(" / ")[0]} {d.split(" / ")[1]}</span>
+                              <span>{d.split(" / ")[2]?.split(" (")[0]}</span>
+                            </div>
+                          ))
+                        ) : null}
                       </div>
                       <div className="mt-2 pt-2 border-t border-emerald-400/30 text-xs text-emerald-100 flex justify-between">
                         <span>{t("golf.caddyTipNote")}</span>

@@ -757,10 +757,10 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
               {depositPaid ? (
                 <div className="flex flex-col items-end text-[10px] shrink-0">
                   <span className="text-amber-600 dark:text-amber-400">
-                    {language === "ko" ? "예약금" : "Deposit"}: ${Math.round(quote.totalPrice * 0.5).toLocaleString()}
+                    {language === "ko" ? "예약금" : "Deposit"}: ${depositAmount.toLocaleString()}
                   </span>
                   <span className="text-green-600 dark:text-green-400">
-                    {language === "ko" ? "잔금" : "Balance"}: ${Math.round(quote.totalPrice * 0.5).toLocaleString()}
+                    {language === "ko" ? "잔금" : "Balance"}: ${balanceAmount.toLocaleString()}
                   </span>
                 </div>
               ) : (
