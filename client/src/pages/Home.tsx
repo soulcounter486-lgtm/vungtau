@@ -2397,11 +2397,14 @@ export default function Home() {
                       <div className="text-xs text-indigo-100 space-y-1">
                         {loadedQuoteId && breakdown?.vehicle?.description ? (
                           breakdown.vehicle.description.split(" | ").map((d, i) => {
-                            const parts = d.split(" / ");
+                            const cleaned = d.replace(/\s*\/\s*undefined/g, "").replace(/undefined\s*\/?\s*/g, "");
+                            const priceMatch = cleaned.match(/\$(\d+)/);
+                            const priceStr = priceMatch ? `$${priceMatch[1]}` : "";
+                            const descPart = cleaned.replace(/\s*\$\d+\s*$/, "").trim();
                             return (
                               <div key={i} className="flex justify-between items-center">
-                                <span>{parts[0]} {parts[1]}</span>
-                                <span>{parts[3]}</span>
+                                <span>{descPart}</span>
+                                <span>{priceStr}</span>
                               </div>
                             );
                           })
@@ -2463,28 +2466,28 @@ export default function Home() {
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-semibold">{t("golf.estimatedPrice")}</span>
                         <div className="text-right">
-                          <span className="text-2xl font-bold">${golfEstimate.price > 0 ? golfEstimate.price : (breakdown?.golf?.price || 0)}</span>
+                          <span className="text-2xl font-bold">${loadedQuoteId && breakdown?.golf?.price ? breakdown.golf.price : golfEstimate.price}</span>
                           {currencyInfo.code !== "USD" && (
-                            <div className="text-sm text-emerald-200">≈ {formatLocalCurrency(golfEstimate.price > 0 ? golfEstimate.price : (breakdown?.golf?.price || 0))}</div>
+                            <div className="text-sm text-emerald-200">≈ {formatLocalCurrency(loadedQuoteId && breakdown?.golf?.price ? breakdown.golf.price : golfEstimate.price)}</div>
                           )}
                         </div>
                       </div>
                       <div className="text-xs text-emerald-100 space-y-1">
-                        {golfEstimate.details.length > 0 ? (
-                          golfEstimate.details.map((d, i) => (
-                            <div key={i} className="flex justify-between items-center">
-                              <span>{d.date} {d.course}{d.teeTime ? ` (${d.teeTime})` : ""}</span>
-                              <span>${d.unitPrice} × {d.players}{t("golf.person")} = ${d.subtotal}</span>
-                            </div>
-                          ))
-                        ) : loadedQuoteId && breakdown?.golf?.description ? (
+                        {loadedQuoteId && breakdown?.golf?.description ? (
                           breakdown.golf.description.split(" | ").map((d, i) => (
                             <div key={i} className="flex justify-between items-center">
                               <span>{d.split(" / ")[0]} {d.split(" / ")[1]}</span>
                               <span>{d.split(" / ")[2]?.split(" (")[0]}</span>
                             </div>
                           ))
-                        ) : null}
+                        ) : (
+                          golfEstimate.details.map((d, i) => (
+                            <div key={i} className="flex justify-between items-center">
+                              <span>{d.date} {d.course}{d.teeTime ? ` (${d.teeTime})` : ""}</span>
+                              <span>${d.unitPrice} × {d.players}{t("golf.person")} = ${d.subtotal}</span>
+                            </div>
+                          ))
+                        )}
                       </div>
                       <div className="mt-2 pt-2 border-t border-emerald-400/30 text-xs text-emerald-100 flex justify-between">
                         <span>{t("golf.caddyTipNote")}</span>

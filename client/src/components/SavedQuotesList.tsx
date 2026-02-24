@@ -787,8 +787,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                       const updatedVehicleDescriptions = vehicleParts.map((detail: string, idx: number) => {
                         const currentPrice = vehicleAdjustments[idx] !== undefined ? vehicleAdjustments[idx] : parsePrice(detail);
                         vehicleTotal += currentPrice;
-                        const parts = detail.split(" / ");
-                        return `${parts[0]} / ${parts[1]} / ${parts[2]} / $${currentPrice}`;
+                        return detail.replace(/\$\d+/, `$${currentPrice}`);
                       });
                       updatedBreakdown.vehicle = {
                         ...breakdown.vehicle,
@@ -1101,13 +1100,14 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                     </div>
                     <div className="text-[10px] text-muted-foreground space-y-1 pl-2">
                       {breakdown.vehicle.description.split(" | ").map((detail, idx) => {
-                        const originalPrice = parsePrice(detail);
+                        const cleanedDetail = detail.replace(/\s*\/\s*undefined/g, "").replace(/undefined\s*\/?\s*/g, "");
+                        const originalPrice = parsePrice(cleanedDetail);
                         const currentPrice = vehicleAdjustments[idx] !== undefined ? vehicleAdjustments[idx] : originalPrice;
-                        const dateMatch = detail.match(/^(\d{4}-\d{2}-\d{2})/);
+                        const dateMatch = cleanedDetail.match(/^(\d{4}-\d{2}-\d{2})/);
                         const dateLabel = dateMatch ? dateMatch[1] : `Day ${idx + 1}`;
-                        const typeMatch = detail.match(/^\d{4}-\d{2}-\d{2}:\s*(.+?)\s*\(/);
+                        const typeMatch = cleanedDetail.match(/^\d{4}-\d{2}-\d{2}:\s*(.+?)\s*\(/);
                         const vehicleTypeName = typeMatch ? typeMatch[1] : "";
-                        const routeMatch = detail.match(/\((.*?)\)/);
+                        const routeMatch = cleanedDetail.match(/\((.*?)\)/);
                         const routeInfo = routeMatch ? routeMatch[1] : "";
                         
                         return (
