@@ -143,6 +143,26 @@ input[type="number"]::-webkit-outer-spin-button {
   z-index: 700;
 }
 
+.rdp-day_holiday:not(.rdp-day_selected):not(.rdp-day_outside) {
+  color: #dc2626 !important;
+  font-weight: 600;
+  position: relative;
+}
+.rdp-day_holiday:not(.rdp-day_selected):not(.rdp-day_outside)::after {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #dc2626;
+}
+.rdp-day_sunday:not(.rdp-day_selected):not(.rdp-day_outside) {
+  color: #dc2626 !important;
+}
+
 /* 도깨비 파트너 마커 반짝이 효과 */
 @keyframes partnerGlow {
   0%, 100% {

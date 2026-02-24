@@ -105,8 +105,7 @@ import {
   Download,
   Smartphone,
   Trash2,
-  CalendarDays,
-  Car
+  CalendarDays
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
@@ -404,7 +403,11 @@ export default function Home() {
   const villaMapRef = useRef<L.Map | null>(null);
   const villaMarkersRef = useRef<L.Marker[]>([]);
   
-  // 언어별 달력 locale 매핑
+  const holidayDates = useMemo(() => VIETNAM_HOLIDAYS.map(d => new Date(d + "T00:00:00")), []);
+  const sundayMatcher = (date: Date) => date.getDay() === 0;
+  const calendarModifiers = useMemo(() => ({ holiday: holidayDates, sunday: sundayMatcher }), [holidayDates]);
+  const calendarModifiersClassNames = useMemo(() => ({ holiday: "rdp-day_holiday", sunday: "rdp-day_sunday" }), []);
+
   const calendarLocale = useMemo(() => {
     switch (language) {
       case "ko": return ko;
@@ -2032,7 +2035,7 @@ export default function Home() {
                           render={({ field }) => (
                             <Popover open={isCheckInOpen} onOpenChange={setIsCheckInOpen}>
                               <PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal h-12 rounded-xl", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(new Date(field.value), "PPP", { locale: calendarLocale }) : <span>{t("villa.selectDate")}</span>}</Button></PopoverTrigger>
-                              <PopoverContent className="w-auto p-0 z-[9999]" align="start"><Calendar mode="single" locale={calendarLocale} selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => { field.onChange(date ? format(date, "yyyy-MM-dd") : ""); setIsCheckInOpen(false); }} initialFocus /></PopoverContent>
+                              <PopoverContent className="w-auto p-0 z-[9999]" align="start"><Calendar mode="single" locale={calendarLocale} selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => { field.onChange(date ? format(date, "yyyy-MM-dd") : ""); setIsCheckInOpen(false); }} modifiers={calendarModifiers} modifiersClassNames={calendarModifiersClassNames} initialFocus /></PopoverContent>
                             </Popover>
                           )}
                         />
@@ -2059,6 +2062,8 @@ export default function Home() {
                                   onMonthChange={setCheckOutCalendarMonth}
                                   fromDate={form.watch("villa.checkIn") ? new Date(form.watch("villa.checkIn")) : undefined} 
                                   onSelect={(date) => { field.onChange(date ? format(date, "yyyy-MM-dd") : ""); setIsCheckOutOpen(false); }} 
+                                  modifiers={calendarModifiers}
+                                  modifiersClassNames={calendarModifiersClassNames}
                                   initialFocus 
                                 />
                               </PopoverContent>

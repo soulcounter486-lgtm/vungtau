@@ -1,16 +1,24 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarDays } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/lib/i18n";
 import { type Quote } from "@shared/schema";
 import { format, parseISO, isWithinInterval, startOfDay } from "date-fns";
 import { ko } from "date-fns/locale";
 
+const VIETNAM_HOLIDAYS: string[] = [
+  "2025-01-01","2025-01-29","2025-01-30","2025-01-31","2025-02-01","2025-02-02","2025-02-03","2025-02-04","2025-04-10","2025-04-30","2025-05-01","2025-09-02",
+  "2026-01-01","2026-02-14","2026-02-15","2026-02-16","2026-02-17","2026-02-18","2026-02-19","2026-02-20","2026-02-21","2026-02-22","2026-04-28","2026-04-30","2026-05-01","2026-09-02","2026-11-24",
+  "2027-01-01","2027-02-07","2027-02-08","2027-02-09","2027-02-10","2027-02-11","2027-02-12","2027-02-13","2027-04-18","2027-04-30","2027-05-01","2027-09-02","2027-11-24",
+  "2028-01-01","2028-01-26","2028-01-27","2028-01-28","2028-01-29","2028-01-30","2028-01-31","2028-02-01","2028-04-06","2028-04-30","2028-05-01","2028-09-02","2028-11-24",
+];
+
 export function DepositCalendar() {
   const { language } = useLanguage();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const holidayDates = useMemo(() => VIETNAM_HOLIDAYS.map(d => new Date(d + "T00:00:00")), []);
 
   const { data: adminCheck, isLoading: isAdminLoading } = useQuery<{ isAdmin: boolean }>({
     queryKey: ["/api/admin/check"],
@@ -62,9 +70,13 @@ export function DepositCalendar() {
             className="rounded-md border"
             modifiers={{
               booked: (date) => hasQuotes(date),
+              holiday: holidayDates,
+              sunday: (date: Date) => date.getDay() === 0,
             }}
             modifiersClassNames={{
               booked: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-bold",
+              holiday: "rdp-day_holiday",
+              sunday: "rdp-day_sunday",
             }}
           />
           <div className="flex-1 min-w-0">

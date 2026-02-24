@@ -17,6 +17,8 @@ function Calendar({
   showOutsideDays = true,
   month,
   onMonthChange,
+  modifiers,
+  modifiersClassNames,
   ...props
 }: CalendarProps) {
   const [currentMonth, setCurrentMonth] = React.useState(month || new Date());
@@ -152,6 +154,8 @@ function Calendar({
               day_hidden: "invisible",
               ...classNames,
             }}
+            modifiers={modifiers}
+            modifiersClassNames={modifiersClassNames}
             components={{
               IconLeft: ({ className, ...props }) => (
                 <ChevronLeft className={cn("h-4 w-4", className)} {...props} />
