@@ -5,7 +5,7 @@ import fs from "fs";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { calculateQuoteSchema, visitorCount, expenseGroups, expenses, insertExpenseGroupSchema, insertExpenseSchema, posts, comments, insertPostSchema, insertCommentSchema, instagramSyncedPosts, pushSubscriptions, userLocations, insertUserLocationSchema, users, villas, insertVillaSchema, places, insertPlaceSchema, placeCategories, insertPlaceCategorySchema, siteSettings, adminMessages, insertAdminMessageSchema, coupons, insertCouponSchema, userCoupons, insertUserCouponSchema, announcements, insertAnnouncementSchema, adminNotifications, quoteCategories, insertQuoteCategorySchema, savedTravelPlans, customerChatRooms, customerChatMessages, shopProducts, insertShopProductSchema, ecoProfiles, insertEcoProfileSchema, quotes } from "@shared/schema";
+import { calculateQuoteSchema, visitorCount, expenseGroups, expenses, insertExpenseGroupSchema, insertExpenseSchema, posts, comments, insertPostSchema, insertCommentSchema, instagramSyncedPosts, pushSubscriptions, userLocations, insertUserLocationSchema, users, villas, insertVillaSchema, places, insertPlaceSchema, placeCategories, insertPlaceCategorySchema, siteSettings, adminMessages, insertAdminMessageSchema, coupons, insertCouponSchema, userCoupons, insertUserCouponSchema, announcements, insertAnnouncementSchema, adminNotifications, quoteCategories, insertQuoteCategorySchema, savedTravelPlans, customerChatRooms, customerChatMessages, shopProducts, insertShopProductSchema, ecoProfiles, insertEcoProfileSchema, quotes, vehicleTypes, insertVehicleTypeSchema } from "@shared/schema";
 import { addDays, getDay, parseISO, format, addHours } from "date-fns";
 import { db } from "./db";
 import { eq, sql, desc, and } from "drizzle-orm";
@@ -1253,15 +1253,15 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
   });
 
 
-  const vehiclePrices: Record<string, { city: number; oneway: number; roundtrip: number }> = {
-    "7_seater": { city: 100, oneway: 80, roundtrip: 150 },
-    "16_seater": { city: 130, oneway: 130, roundtrip: 250 },
-    "9_limo": { city: 160, oneway: 160, roundtrip: 300 },
-    "9_lux_limo": { city: 210, oneway: 210, roundtrip: 400 },
-    "12_lux_limo": { city: 250, oneway: 250, roundtrip: 480 },
-    "16_lux_limo": { city: 280, oneway: 280, roundtrip: 530 },
-    "29_seater": { city: 230, oneway: 230, roundtrip: 430 },
-    "45_seater": { city: 280, oneway: 290, roundtrip: 550 },
+  const defaultVehiclePrices: Record<string, { city: number; oneway: number; hochamOneway: number; phanthietOneway: number; roundtrip: number; cityPickupDrop: number; nameKo: string }> = {
+    "7_seater": { city: 100, oneway: 80, hochamOneway: 80, phanthietOneway: 130, roundtrip: 150, cityPickupDrop: 120, nameKo: "7인승" },
+    "16_seater": { city: 130, oneway: 130, hochamOneway: 130, phanthietOneway: 177, roundtrip: 250, cityPickupDrop: 190, nameKo: "16인승" },
+    "9_limo": { city: 160, oneway: 160, hochamOneway: 160, phanthietOneway: 218, roundtrip: 300, cityPickupDrop: 230, nameKo: "9인승 리무진" },
+    "9_lux_limo": { city: 210, oneway: 210, hochamOneway: 210, phanthietOneway: 286, roundtrip: 400, cityPickupDrop: 300, nameKo: "9인승 럭셔리 리무진" },
+    "12_lux_limo": { city: 250, oneway: 250, hochamOneway: 250, phanthietOneway: 340, roundtrip: 480, cityPickupDrop: 350, nameKo: "12인승 럭셔리 리무진" },
+    "16_lux_limo": { city: 280, oneway: 280, hochamOneway: 280, phanthietOneway: 381, roundtrip: 530, cityPickupDrop: 400, nameKo: "16인승 럭셔리 리무진" },
+    "29_seater": { city: 230, oneway: 230, hochamOneway: 230, phanthietOneway: 313, roundtrip: 430, cityPickupDrop: 330, nameKo: "29인승" },
+    "45_seater": { city: 280, oneway: 290, hochamOneway: 290, phanthietOneway: 394, roundtrip: 550, cityPickupDrop: 410, nameKo: "45인승" },
   };
 
   app.post(api.quotes.calculate.path, async (req, res) => {
@@ -1354,52 +1354,43 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
         }
       }
 
-      // 2. Vehicle Calculation
+      // 2. Vehicle Calculation (DB-driven prices)
       if (input.vehicle?.enabled && Array.isArray(input.vehicle.selections)) {
         let vehicleTotalPrice = 0;
         const vehicleDescriptions: string[] = [];
+        const dbVehicleTypes = await db.select().from(vehicleTypes).where(eq(vehicleTypes.isActive, true));
+        const dbVehicleMap: Record<string, typeof dbVehicleTypes[0]> = {};
+        for (const vt of dbVehicleTypes) { dbVehicleMap[vt.key] = vt; }
         for (const selection of input.vehicle.selections) {
           if (!selection || !selection.date || !selection.type || !selection.route) continue;
-          const prices = vehiclePrices[selection.type];
-          if (prices) {
-            let basePrice = 0;
-            let routeDesc = "";
-            if (selection.type === "7_seater" && selection.route === "phanthiet_oneway") {
-              basePrice = 130;
-            } else {
-              switch (selection.route) {
-                case "city": basePrice = prices.city; routeDesc = "시내투어"; break;
-                case "oneway": basePrice = prices.oneway; routeDesc = "편도(붕따우)"; break;
-                case "hocham_oneway": basePrice = prices.oneway; routeDesc = "편도(호짬)"; break;
-                case "phanthiet_oneway": basePrice = Math.round(prices.oneway * 1.6 * 0.85); routeDesc = "편도(판티엣)"; break;
-                case "roundtrip": basePrice = prices.roundtrip; routeDesc = "왕복"; break;
-                case "city_pickup_drop": basePrice = Math.ceil((prices.oneway + prices.city * 0.4) / 10) * 10; routeDesc = "픽드랍+시내"; break;
-              }
+          const dbVt = dbVehicleMap[selection.type];
+          const fallback = defaultVehiclePrices[selection.type];
+          let basePrice = 0;
+          let routeDesc = "";
+          const routeDescMap: Record<string, string> = { city: "시내투어", oneway: "편도(붕따우)", hocham_oneway: "편도(호짬)", phanthiet_oneway: "편도(판티엣)", roundtrip: "왕복", city_pickup_drop: "픽드랍+시내" };
+          routeDesc = routeDescMap[selection.route] || selection.route;
+          if (dbVt) {
+            switch (selection.route) {
+              case "city": basePrice = dbVt.cityPrice; break;
+              case "oneway": basePrice = dbVt.onewayPrice; break;
+              case "hocham_oneway": basePrice = dbVt.hochamOnewayPrice; break;
+              case "phanthiet_oneway": basePrice = dbVt.phanthietOnewayPrice; break;
+              case "roundtrip": basePrice = dbVt.roundtripPrice; break;
+              case "city_pickup_drop": basePrice = dbVt.cityPickupDropPrice; break;
             }
-            if (!routeDesc) {
-              switch (selection.route) {
-                case "city": routeDesc = "시내투어"; break;
-                case "oneway": routeDesc = "편도(붕따우)"; break;
-                case "hocham_oneway": routeDesc = "편도(호짬)"; break;
-                case "phanthiet_oneway": routeDesc = "편도(판티엣)"; break;
-                case "roundtrip": routeDesc = "왕복"; break;
-                case "city_pickup_drop": routeDesc = "픽드랍+시내"; break;
-              }
+          } else if (fallback) {
+            switch (selection.route) {
+              case "city": basePrice = fallback.city; break;
+              case "oneway": basePrice = fallback.oneway; break;
+              case "hocham_oneway": basePrice = fallback.hochamOneway; break;
+              case "phanthiet_oneway": basePrice = fallback.phanthietOneway; break;
+              case "roundtrip": basePrice = fallback.roundtrip; break;
+              case "city_pickup_drop": basePrice = fallback.cityPickupDrop; break;
             }
-            vehicleTotalPrice += basePrice;
-            const vehicleTypeKorean: Record<string, string> = {
-              "7_seater": "7인승",
-              "16_seater": "16인승",
-              "9_limo": "9인승 리무진",
-              "9_lux_limo": "9인승 럭셔리 리무진",
-              "12_lux_limo": "12인승 럭셔리 리무진",
-              "16_lux_limo": "16인승 럭셔리 리무진",
-              "29_seater": "29인승",
-              "45_seater": "45인승",
-            };
-            const vehicleTypeName = vehicleTypeKorean[selection.type] || selection.type.replace(/_/g, " ");
-            vehicleDescriptions.push(`${selection.date}: ${vehicleTypeName} (${routeDesc}) $${basePrice}`);
           }
+          vehicleTotalPrice += basePrice;
+          const vehicleTypeName = dbVt?.nameKo || fallback?.nameKo || selection.type.replace(/_/g, " ");
+          vehicleDescriptions.push(`${selection.date}: ${vehicleTypeName} (${routeDesc}) $${basePrice}`);
         }
         breakdown.vehicle.price = vehicleTotalPrice;
         breakdown.vehicle.description = vehicleDescriptions.join(" | ");
@@ -4874,6 +4865,106 @@ ${adultContext}`;
       res.status(500).json({ error: "Failed to delete eco profile" });
     }
   });
+
+  // Vehicle Types API
+  app.get("/api/vehicle-types", async (req, res) => {
+    try {
+      const types = await db.select().from(vehicleTypes).where(eq(vehicleTypes.isActive, true)).orderBy(vehicleTypes.sortOrder);
+      res.json(types);
+    } catch (error) {
+      console.error("Get vehicle types error:", error);
+      res.status(500).json({ error: "Failed to get vehicle types" });
+    }
+  });
+
+  app.get("/api/admin/vehicle-types", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const userId = user?.claims?.sub || user?.id || (req.session as any)?.userId;
+      const userEmail = user?.claims?.email || user?.email;
+      if (!userId || !isUserAdmin(userId, userEmail)) {
+        return res.status(403).json({ error: "관리자 권한이 필요합니다" });
+      }
+      const types = await db.select().from(vehicleTypes).orderBy(vehicleTypes.sortOrder);
+      res.json(types);
+    } catch (error) {
+      console.error("Get admin vehicle types error:", error);
+      res.status(500).json({ error: "Failed to get vehicle types" });
+    }
+  });
+
+  app.post("/api/admin/vehicle-types", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const userId = user?.claims?.sub || user?.id || (req.session as any)?.userId;
+      const userEmail = user?.claims?.email || user?.email;
+      if (!userId || !isUserAdmin(userId, userEmail)) {
+        return res.status(403).json({ error: "관리자 권한이 필요합니다" });
+      }
+      const [created] = await db.insert(vehicleTypes).values(req.body).returning();
+      res.json(created);
+    } catch (error) {
+      console.error("Create vehicle type error:", error);
+      res.status(500).json({ error: "Failed to create vehicle type" });
+    }
+  });
+
+  app.put("/api/admin/vehicle-types/:id", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const userId = user?.claims?.sub || user?.id || (req.session as any)?.userId;
+      const userEmail = user?.claims?.email || user?.email;
+      if (!userId || !isUserAdmin(userId, userEmail)) {
+        return res.status(403).json({ error: "관리자 권한이 필요합니다" });
+      }
+      const id = parseInt(req.params.id);
+      const [updated] = await db.update(vehicleTypes).set(req.body).where(eq(vehicleTypes.id, id)).returning();
+      res.json(updated);
+    } catch (error) {
+      console.error("Update vehicle type error:", error);
+      res.status(500).json({ error: "Failed to update vehicle type" });
+    }
+  });
+
+  app.delete("/api/admin/vehicle-types/:id", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const userId = user?.claims?.sub || user?.id || (req.session as any)?.userId;
+      const userEmail = user?.claims?.email || user?.email;
+      if (!userId || !isUserAdmin(userId, userEmail)) {
+        return res.status(403).json({ error: "관리자 권한이 필요합니다" });
+      }
+      const id = parseInt(req.params.id);
+      await db.delete(vehicleTypes).where(eq(vehicleTypes.id, id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete vehicle type error:", error);
+      res.status(500).json({ error: "Failed to delete vehicle type" });
+    }
+  });
+
+  // Seed default vehicle types if empty
+  (async () => {
+    try {
+      const existing = await db.select().from(vehicleTypes);
+      if (existing.length === 0) {
+        const defaults = [
+          { key: "7_seater", nameKo: "7인승 SUV", nameEn: "7-Seater SUV", descriptionKo: "- 7인승 SUV 차량(2,3인 추천)|• 최대 4인+캐리어 4개|• 골프백 이용 시 최대 3인(골프백3개 + 캐리어 3개)|• 요청 주신 픽업,드랍장소로 진행|• 기사 포함, 추가금 없음(지연, 대기, 야간 일체)", descriptionEn: "- 7-Seater SUV (Recommended for 2-3 people)|• Max 4 passengers + 4 suitcases|• With golf bags: max 3 passengers|• Pickup/drop-off at your requested location|• Driver included, no extra charges", cityPrice: 100, onewayPrice: 80, hochamOnewayPrice: 80, phanthietOnewayPrice: 130, roundtripPrice: 150, cityPickupDropPrice: 120, sortOrder: 1 },
+          { key: "16_seater", nameKo: "16인승 밴", nameEn: "16-Seater Van", descriptionKo: "- 16인승 미니밴 차량(4~6인 추천, 최대 8인)|• 6인(골프백 6개 + 캐리어 6개)|• 9인(캐리어 9개)|• 요청 주신 픽업,드랍장소로 진행|• 기사 포함, 추가금 없음(지연, 대기, 야간 일체)", descriptionEn: "- 16-Seater Minivan (Recommended for 4-6, max 8)|• 6 passengers (6 golf bags + 6 suitcases)|• Pickup/drop-off at your requested location|• Driver included, no extra charges", cityPrice: 130, onewayPrice: 130, hochamOnewayPrice: 130, phanthietOnewayPrice: 177, roundtripPrice: 250, cityPickupDropPrice: 190, sortOrder: 2 },
+          { key: "9_limo", nameKo: "9인승 리무진", nameEn: "9-Seater Limousine", descriptionKo: "- 9인승 미니밴 차량(4~6인 추천, 최대 6인)|• 4인(골프백 4개 + 캐리어 4개)|• 요청 주신 픽업,드랍장소로 진행|• 기사 포함, 추가금 없음(지연, 대기, 야간 일체)", descriptionEn: "- 9-Seater Minivan (Recommended for 4-6, max 6)|• 4 passengers (4 golf bags + 4 suitcases)|• Driver included, no extra charges", cityPrice: 160, onewayPrice: 160, hochamOnewayPrice: 160, phanthietOnewayPrice: 218, roundtripPrice: 300, cityPickupDropPrice: 230, sortOrder: 3 },
+          { key: "9_lux_limo", nameKo: "9인승 럭셔리 리무진", nameEn: "9-Seater Luxury Limousine", descriptionKo: "- 9인승 럭셔리 리무진 차량(4~6인 추천, 최대 6인)|• VIP 인테리어, 편안한 좌석|• 4인(골프백 4개 + 캐리어 4개)|• 요청 주신 픽업,드랍장소로 진행|• 기사 포함, 추가금 없음(지연, 대기, 야간 일체)", descriptionEn: "- 9-Seater Luxury Limo (Recommended for 4-6, max 6)|• VIP interior, comfortable seats|• Driver included, no extra charges", cityPrice: 210, onewayPrice: 210, hochamOnewayPrice: 210, phanthietOnewayPrice: 286, roundtripPrice: 400, cityPickupDropPrice: 300, sortOrder: 4 },
+          { key: "12_lux_limo", nameKo: "12인승 럭셔리 리무진", nameEn: "12-Seater Luxury Limousine", descriptionKo: "- 12인승 VIP리무진 밴 차량(6~8인 추천, 최대 8인)|• 6인(골프백 6개 + 캐리어 6개)|• 요청 주신 픽업,드랍장소로 진행|• 기사 포함, 추가금 없음(지연, 대기, 야간 일체)", descriptionEn: "- 12-Seater VIP Limo Van (Recommended for 6-8, max 8)|• 6 passengers (6 golf bags + 6 suitcases)|• Driver included, no extra charges", cityPrice: 250, onewayPrice: 250, hochamOnewayPrice: 250, phanthietOnewayPrice: 340, roundtripPrice: 480, cityPickupDropPrice: 350, sortOrder: 5 },
+          { key: "16_lux_limo", nameKo: "16인승 럭셔리 리무진", nameEn: "16-Seater Luxury Limousine", descriptionKo: "- 16인승 미니밴 차량(10인 이상 추천, 최대 16인)|• 16인(골프백 16개 + 캐리어 16개)|• 요청 주신 픽업,드랍장소로 진행|• 기사 포함, 추가금 없음(지연, 대기, 야간 일체)", descriptionEn: "- 16-Seater Minivan (Recommended for 10+, max 16)|• 16 passengers (16 golf bags + 16 suitcases)|• Driver included, no extra charges", cityPrice: 280, onewayPrice: 280, hochamOnewayPrice: 280, phanthietOnewayPrice: 381, roundtripPrice: 530, cityPickupDropPrice: 400, sortOrder: 6 },
+          { key: "29_seater", nameKo: "29인승 버스", nameEn: "29-Seater Bus", descriptionKo: "- 29인승 미니밴 차량(10인 이상 추천, 최대 25인)|• 15인(골프백 15개 + 캐리어 15개)|• 요청 주신 픽업,드랍장소로 진행|• 기사 포함, 추가금 없음(지연, 대기, 야간 일체)", descriptionEn: "- 29-Seater Bus (Recommended for 10+, max 25)|• 15 passengers (15 golf bags + 15 suitcases)|• Driver included, no extra charges", cityPrice: 230, onewayPrice: 230, hochamOnewayPrice: 230, phanthietOnewayPrice: 313, roundtripPrice: 430, cityPickupDropPrice: 330, sortOrder: 7 },
+          { key: "45_seater", nameKo: "45인승 버스", nameEn: "45-Seater Bus", descriptionKo: "- 45인승 대형 버스 차량(20인 이상 추천, 최대 40인)|• 20인(골프백 20개 + 캐리어 20개)|• 요청 주신 픽업,드랍장소로 진행|• 기사 포함, 추가금 없음(지연, 대기, 야간 일체)", descriptionEn: "- 45-Seater Large Bus (Recommended for 20+, max 40)|• 20 passengers (20 golf bags + 20 suitcases)|• Driver included, no extra charges", cityPrice: 280, onewayPrice: 290, hochamOnewayPrice: 290, phanthietOnewayPrice: 394, roundtripPrice: 550, cityPickupDropPrice: 410, sortOrder: 8 },
+        ];
+        await db.insert(vehicleTypes).values(defaults);
+        console.log("Default vehicle types seeded");
+      }
+    } catch (e) {
+      console.error("Vehicle types seed error:", e);
+    }
+  })();
 
   // 모든 빌라 조회 (활성화된 것만)
   app.get("/api/villas", async (req, res) => {

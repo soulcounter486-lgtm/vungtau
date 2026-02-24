@@ -10,6 +10,14 @@ A travel quote calculator application for generating custom trip estimates. The 
 - **빌라 선택 갤러리**: Home 페이지에서 사용자가 빌라 선택 시 해당 빌라의 가격으로 자동 견적 계산
 - **견적 저장**: 저장된 견적에 villaId, villaName 포함
 
+### Vehicle Types Management (2026-02-24 추가)
+- **관리자 차량 관리**: `/admin/vehicle-types` 페이지에서 관리자가 차량 종류 추가/수정/삭제
+- **DB 테이블**: vehicle_types (key, nameKo, nameEn, descriptionKo, descriptionEn, cityPrice, onewayPrice, hochamOnewayPrice, phanthietOnewayPrice, roundtripPrice, cityPickupDropPrice, sortOrder, isActive)
+- **동적 가격**: 견적 계산 시 DB에서 차량 가격 조회 (하드코딩 대신)
+- **홈 화면 연동**: 차량 선택 드롭다운, 가격 표시, 설명 모두 DB 기반
+- **API**: GET /api/vehicle-types, GET/POST/PUT/DELETE /api/admin/vehicle-types
+- **자동 시딩**: 최초 실행 시 기본 8종 차량 자동 등록
+
 ### Admin Site Settings (2026-02-07 추가)
 - **히어로 텍스트 편집**: `/admin/settings` 페이지에서 관리자가 홈 화면 제목, 부제목, 설명 텍스트 수정
 - **SEO 메타태그 편집**: 검색엔진(구글/네이버)에 표시되는 title, description, keywords 수정 가능

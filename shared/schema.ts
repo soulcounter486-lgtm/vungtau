@@ -606,3 +606,25 @@ export const ecoProfiles = pgTable("eco_profiles", {
 export const insertEcoProfileSchema = createInsertSchema(ecoProfiles).omit({ id: true, createdAt: true });
 export type EcoProfile = typeof ecoProfiles.$inferSelect;
 export type InsertEcoProfile = z.infer<typeof insertEcoProfileSchema>;
+
+export const vehicleTypes = pgTable("vehicle_types", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().default(""),
+  nameKo: text("name_ko").notNull().default(""),
+  nameEn: text("name_en").notNull().default(""),
+  descriptionKo: text("description_ko").notNull().default(""),
+  descriptionEn: text("description_en").notNull().default(""),
+  cityPrice: integer("city_price").notNull().default(0),
+  onewayPrice: integer("oneway_price").notNull().default(0),
+  hochamOnewayPrice: integer("hocham_oneway_price").notNull().default(0),
+  phanthietOnewayPrice: integer("phanthiet_oneway_price").notNull().default(0),
+  roundtripPrice: integer("roundtrip_price").notNull().default(0),
+  cityPickupDropPrice: integer("city_pickup_drop_price").notNull().default(0),
+  sortOrder: integer("sort_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertVehicleTypeSchema = createInsertSchema(vehicleTypes).omit({ id: true, createdAt: true });
+export type VehicleType = typeof vehicleTypes.$inferSelect;
+export type InsertVehicleType = z.infer<typeof insertVehicleTypeSchema>;

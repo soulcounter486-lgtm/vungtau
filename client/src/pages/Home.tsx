@@ -105,13 +105,14 @@ import {
   Download,
   Smartphone,
   Trash2,
-  CalendarDays
+  CalendarDays,
+  Car
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { LogIn, LogOut, ChevronRight, ChevronLeft, Settings, X, List, Pencil, ChevronDown, RefreshCw, Mail, Ticket, ArrowUpDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import type { Villa, VillaAmenity, EcoProfile } from "@shared/schema";
+import type { Villa, VillaAmenity, EcoProfile, VehicleType } from "@shared/schema";
 import { villaAmenities, villaAmenityLabels } from "@shared/schema";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -334,6 +335,10 @@ export default function Home() {
   });
 
   // 에코 프로필 조회
+  const { data: vehicleTypesData = [] } = useQuery<VehicleType[]>({
+    queryKey: ["/api/vehicle-types"],
+  });
+
   const { data: ecoProfilesList = [] } = useQuery<EcoProfile[]>({
     queryKey: ["/api/eco-profiles"],
   });
@@ -1218,6 +1223,12 @@ export default function Home() {
                       <Link href="/admin/eco-profiles" className="flex items-center cursor-pointer" data-testid="link-admin-eco-profiles">
                         <Users className="w-4 h-4 mr-2" />
                         에코프로필
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/vehicle-types" className="flex items-center cursor-pointer" data-testid="link-admin-vehicle-types">
+                        <Car className="w-4 h-4 mr-2" />
+                        차량관리
                       </Link>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -2273,14 +2284,9 @@ export default function Home() {
                               <Select onValueChange={(value) => { field.onChange(value); if (document.activeElement instanceof HTMLElement) { document.activeElement.blur(); } }} defaultValue={field.value}>
                                 <SelectTrigger className="h-10 rounded-lg text-sm bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 dark:text-slate-100"><SelectValue placeholder={t("vehicle.select")} /></SelectTrigger>
                                 <SelectContent className="z-[9999] bg-white dark:bg-slate-800 border shadow-lg opacity-100 dark:border-slate-600">
-                                  <SelectItem value="7_seater">{t("vehicle.7_seater")}</SelectItem>
-                                  <SelectItem value="16_seater">{t("vehicle.16_seater")}</SelectItem>
-                                  <SelectItem value="9_limo">{t("vehicle.9_limo")}</SelectItem>
-                                  <SelectItem value="9_lux_limo">{t("vehicle.9_lux_limo")}</SelectItem>
-                                  <SelectItem value="12_lux_limo">{t("vehicle.12_lux_limo")}</SelectItem>
-                                  <SelectItem value="16_lux_limo">{t("vehicle.16_lux_limo")}</SelectItem>
-                                  <SelectItem value="29_seater">{t("vehicle.29_seater")}</SelectItem>
-                                  <SelectItem value="45_seater">{t("vehicle.45_seater")}</SelectItem>
+                                  {vehicleTypesData.map((vt) => (
+                                    <SelectItem key={vt.key} value={vt.key}>{language === "ko" ? vt.nameKo : vt.nameEn}</SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                               {field.value && (
@@ -2294,18 +2300,10 @@ export default function Home() {
                                         const route = values.vehicle?.selections?.[index]?.route;
                                         if (!type || !route) return <span className="text-lg font-bold text-primary">-</span>;
                                         
-                                        const prices: Record<string, any> = {
-                                          "7_seater": { city: 100, oneway: 80, hocham_oneway: 80, phanthiet_oneway: 130, roundtrip: 150, city_pickup_drop: 120 },
-                                          "16_seater": { city: 130, oneway: 130, hocham_oneway: 130, phanthiet_oneway: Math.round(130 * 1.6 * 0.85), roundtrip: 250, city_pickup_drop: 190 },
-                                          "9_limo": { city: 160, oneway: 160, hocham_oneway: 160, phanthiet_oneway: Math.round(160 * 1.6 * 0.85), roundtrip: 300, city_pickup_drop: 230 },
-                                          "9_lux_limo": { city: 210, oneway: 210, hocham_oneway: 210, phanthiet_oneway: Math.round(210 * 1.6 * 0.85), roundtrip: 400, city_pickup_drop: 300 },
-                                          "12_lux_limo": { city: 250, oneway: 250, hocham_oneway: 250, phanthiet_oneway: Math.round(250 * 1.6 * 0.85), roundtrip: 480, city_pickup_drop: 350 },
-                                          "16_lux_limo": { city: 280, oneway: 280, hocham_oneway: 280, phanthiet_oneway: Math.round(280 * 1.6 * 0.85), roundtrip: 530, city_pickup_drop: 400 },
-                                          "29_seater": { city: 230, oneway: 230, hocham_oneway: 230, phanthiet_oneway: Math.round(230 * 1.6 * 0.85), roundtrip: 430, city_pickup_drop: 330 },
-                                          "45_seater": { city: 280, oneway: 290, hocham_oneway: 290, phanthiet_oneway: Math.round(290 * 1.6 * 0.85), roundtrip: 550, city_pickup_drop: 410 },
-                                        };
-                                        
-                                        const price = prices[type]?.[route];
+                                        const vt = vehicleTypesData.find(v => v.key === type);
+                                        if (!vt) return <span className="text-lg font-bold text-primary">-</span>;
+                                        const routePriceMap: Record<string, number> = { city: vt.cityPrice, oneway: vt.onewayPrice, hocham_oneway: vt.hochamOnewayPrice, phanthiet_oneway: vt.phanthietOnewayPrice, roundtrip: vt.roundtripPrice, city_pickup_drop: vt.cityPickupDropPrice };
+                                        const price = routePriceMap[route];
                                         if (!price) return <span className="text-lg font-bold text-primary">-</span>;
                                         return (
                                           <>
@@ -2318,13 +2316,17 @@ export default function Home() {
                                       })()}
                                     </div>
                                   </div>
-                                  {field.value && (
-                                    <div className="space-y-0.5">
-                                      {t(`vehicle.desc.${field.value}`).split("|").map((line, i) => (
-                                        <p key={i} className={i === 0 ? "font-bold text-slate-700" : ""}>{line}</p>
-                                      ))}
-                                    </div>
-                                  )}
+                                  {field.value && (() => {
+                                    const vtDesc = vehicleTypesData.find(v => v.key === field.value);
+                                    const descText = vtDesc ? (language === "ko" ? vtDesc.descriptionKo : vtDesc.descriptionEn) : t(`vehicle.desc.${field.value}`);
+                                    return (
+                                      <div className="space-y-0.5">
+                                        {descText.split("|").map((line: string, i: number) => (
+                                          <p key={i} className={i === 0 ? "font-bold text-slate-700" : ""}>{line}</p>
+                                        ))}
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                               )}
                             </div>
@@ -2346,19 +2348,15 @@ export default function Home() {
                             ${loadedQuoteId && breakdown?.vehicle?.price 
                               ? breakdown.vehicle.price 
                               : (() => {
-                                  const prices: Record<string, any> = {
-                                    "7_seater": { city: 100, oneway: 80, hocham_oneway: 80, phanthiet_oneway: 110, roundtrip: 150, city_pickup_drop: 120 },
-                                    "16_seater": { city: 130, oneway: 130, hocham_oneway: 130, phanthiet_oneway: 177, roundtrip: 250, city_pickup_drop: 190 },
-                                    "9_limo": { city: 160, oneway: 160, hocham_oneway: 160, phanthiet_oneway: 217, roundtrip: 300, city_pickup_drop: 230 },
-                                    "9_lux_limo": { city: 210, oneway: 210, hocham_oneway: 210, phanthiet_oneway: 285, roundtrip: 400, city_pickup_drop: 300 },
-                                    "12_lux_limo": { city: 250, oneway: 250, hocham_oneway: 250, phanthiet_oneway: 340, roundtrip: 480, city_pickup_drop: 350 },
-                                    "16_lux_limo": { city: 280, oneway: 280, hocham_oneway: 280, phanthiet_oneway: 380, roundtrip: 530, city_pickup_drop: 400 },
-                                    "29_seater": { city: 230, oneway: 230, hocham_oneway: 230, phanthiet_oneway: 312, roundtrip: 430, city_pickup_drop: 330 },
-                                    "45_seater": { city: 280, oneway: 290, hocham_oneway: 290, phanthiet_oneway: 394, roundtrip: 550, city_pickup_drop: 410 },
+                                  const getVtPrice = (type: string, route: string) => {
+                                    const vt = vehicleTypesData.find(v => v.key === type);
+                                    if (!vt) return 0;
+                                    const m: Record<string, number> = { city: vt.cityPrice, oneway: vt.onewayPrice, hocham_oneway: vt.hochamOnewayPrice, phanthiet_oneway: vt.phanthietOnewayPrice, roundtrip: vt.roundtripPrice, city_pickup_drop: vt.cityPickupDropPrice };
+                                    return m[route] || 0;
                                   };
                                   return values.vehicle?.selections?.reduce((sum, sel) => {
                                     if (!sel?.type || !sel?.route) return sum;
-                                    return sum + (prices[sel.type]?.[sel.route] || 0);
+                                    return sum + getVtPrice(sel.type, sel.route);
                                   }, 0) || 0;
                                 })()
                             }
@@ -2368,18 +2366,11 @@ export default function Home() {
                               ≈ {formatLocalCurrency(loadedQuoteId && breakdown?.vehicle?.price 
                                 ? breakdown.vehicle.price 
                                 : values.vehicle?.selections?.reduce((sum, sel) => {
-                                    const prices: Record<string, any> = {
-                                      "7_seater": { city: 100, oneway: 80, hocham_oneway: 80, phanthiet_oneway: 110, roundtrip: 150, city_pickup_drop: 120 },
-                                      "16_seater": { city: 130, oneway: 130, hocham_oneway: 130, phanthiet_oneway: 177, roundtrip: 250, city_pickup_drop: 190 },
-                                      "9_limo": { city: 160, oneway: 160, hocham_oneway: 160, phanthiet_oneway: 217, roundtrip: 300, city_pickup_drop: 230 },
-                                      "9_lux_limo": { city: 210, oneway: 210, hocham_oneway: 210, phanthiet_oneway: 285, roundtrip: 400, city_pickup_drop: 300 },
-                                      "12_lux_limo": { city: 250, oneway: 250, hocham_oneway: 250, phanthiet_oneway: 340, roundtrip: 480, city_pickup_drop: 350 },
-                                      "16_lux_limo": { city: 280, oneway: 280, hocham_oneway: 280, phanthiet_oneway: 380, roundtrip: 530, city_pickup_drop: 400 },
-                                      "29_seater": { city: 230, oneway: 230, hocham_oneway: 230, phanthiet_oneway: 312, roundtrip: 430, city_pickup_drop: 330 },
-                                      "45_seater": { city: 280, oneway: 290, hocham_oneway: 290, phanthiet_oneway: 394, roundtrip: 550, city_pickup_drop: 410 },
-                                    };
                                     if (!sel?.type || !sel?.route) return sum;
-                                    return sum + (prices[sel.type]?.[sel.route] || 0);
+                                    const vt = vehicleTypesData.find(v => v.key === sel.type);
+                                    if (!vt) return sum;
+                                    const m: Record<string, number> = { city: vt.cityPrice, oneway: vt.onewayPrice, hocham_oneway: vt.hochamOnewayPrice, phanthiet_oneway: vt.phanthietOnewayPrice, roundtrip: vt.roundtripPrice, city_pickup_drop: vt.cityPickupDropPrice };
+                                    return sum + (m[sel.route] || 0);
                                   }, 0) || 0
                               )}
                             </div>
@@ -2403,20 +2394,13 @@ export default function Home() {
                         ) : (
                           values.vehicle?.selections?.map((sel, i) => {
                             if (!sel?.type || !sel?.route) return null;
-                            const prices: Record<string, any> = {
-                              "7_seater": { city: 100, oneway: 80, hocham_oneway: 80, phanthiet_oneway: 110, roundtrip: 150, city_pickup_drop: 120 },
-                              "16_seater": { city: 130, oneway: 130, hocham_oneway: 130, phanthiet_oneway: 177, roundtrip: 250, city_pickup_drop: 190 },
-                              "9_limo": { city: 160, oneway: 160, hocham_oneway: 160, phanthiet_oneway: 217, roundtrip: 300, city_pickup_drop: 230 },
-                              "9_lux_limo": { city: 210, oneway: 210, hocham_oneway: 210, phanthiet_oneway: 285, roundtrip: 400, city_pickup_drop: 300 },
-                              "12_lux_limo": { city: 250, oneway: 250, hocham_oneway: 250, phanthiet_oneway: 340, roundtrip: 480, city_pickup_drop: 350 },
-                              "16_lux_limo": { city: 280, oneway: 280, hocham_oneway: 280, phanthiet_oneway: 380, roundtrip: 530, city_pickup_drop: 400 },
-                              "29_seater": { city: 230, oneway: 230, hocham_oneway: 230, phanthiet_oneway: 312, roundtrip: 430, city_pickup_drop: 330 },
-                              "45_seater": { city: 280, oneway: 290, hocham_oneway: 290, phanthiet_oneway: 394, roundtrip: 550, city_pickup_drop: 410 },
-                            };
-                            const price = prices[sel.type]?.[sel.route] || 0;
+                            const vt = vehicleTypesData.find(v => v.key === sel.type);
+                            const m: Record<string, number> = vt ? { city: vt.cityPrice, oneway: vt.onewayPrice, hocham_oneway: vt.hochamOnewayPrice, phanthiet_oneway: vt.phanthietOnewayPrice, roundtrip: vt.roundtripPrice, city_pickup_drop: vt.cityPickupDropPrice } : {};
+                            const price = m[sel.route] || 0;
+                            const vtName = vt ? (language === "ko" ? vt.nameKo : vt.nameEn) : sel.type;
                             return (
                               <div key={i} className="flex justify-between items-center">
-                                <span>{sel.date} {t(`vehicle.${sel.type}`)}</span>
+                                <span>{sel.date} {vtName}</span>
                                 <span>${price}</span>
                               </div>
                             );
