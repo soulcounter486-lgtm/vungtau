@@ -1233,15 +1233,34 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                       <div className="flex items-center gap-2">
                         <span>{language === "ko" ? "에코" : "Eco"}</span>
                         {(isAdmin || canViewNightlife18) && depositPaid && ecoProfiles.length > 0 && !isCapturing && (
+                          quote.ecoConfirmed && !isAdmin ? (
+                            <Badge variant="outline" className="h-6 text-[10px] px-2 bg-green-50 text-green-600 border-green-300" data-testid={`badge-eco-confirmed-${quote.id}`}>
+                              <Check className="w-3 h-3 mr-1" />
+                              {language === "ko" ? "확정됨" : "Confirmed"}
+                            </Badge>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-6 text-[10px] px-2 text-pink-500 border-pink-300"
+                              onClick={(e) => { e.stopPropagation(); setEcoPickOpen(true); }}
+                              data-testid={`button-eco-pick-${quote.id}`}
+                            >
+                              <Heart className="w-3 h-3 mr-1" />
+                              {language === "ko" ? "픽하기" : "Pick"}
+                            </Button>
+                          )
+                        )}
+                        {isAdmin && !isCapturing && (
                           <Button
-                            variant="outline"
+                            variant={quote.ecoConfirmed ? "default" : "outline"}
                             size="sm"
-                            className="h-6 text-[10px] px-2 text-pink-500 border-pink-300"
-                            onClick={(e) => { e.stopPropagation(); setEcoPickOpen(true); }}
-                            data-testid={`button-eco-pick-${quote.id}`}
+                            className={`h-6 text-[10px] px-2 ${quote.ecoConfirmed ? "bg-green-600 hover:bg-green-700 text-white" : "text-green-600 border-green-300"}`}
+                            onClick={async (e) => { e.stopPropagation(); try { await apiRequest("PATCH", `/api/quotes/${quote.id}/eco-confirmed`, { ecoConfirmed: !quote.ecoConfirmed }); queryClient.invalidateQueries({ queryKey: ["/api/quotes"] }); } catch {} }}
+                            data-testid={`button-eco-confirm-${quote.id}`}
                           >
-                            <Heart className="w-3 h-3 mr-1" />
-                            {language === "ko" ? "픽하기" : "Pick"}
+                            <Check className="w-3 h-3 mr-1" />
+                            {quote.ecoConfirmed ? (language === "ko" ? "확정해제" : "Unconfirm") : (language === "ko" ? "확정" : "Confirm")}
                           </Button>
                         )}
                       </div>

@@ -1702,6 +1702,24 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
     }
   });
 
+  app.patch("/api/quotes/:id/eco-confirmed", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user as any;
+      const userId = user?.claims?.sub || user?.id || (req.session as any)?.userId;
+      const userEmail = user?.claims?.email || user?.email;
+      if (!isUserAdmin(userId, userEmail)) {
+        return res.status(403).json({ message: "Only admin can confirm eco picks" });
+      }
+      const { ecoConfirmed } = req.body;
+      const [quote] = await db.update(quotes).set({ ecoConfirmed: !!ecoConfirmed }).where(eq(quotes.id, id)).returning();
+      if (!quote) return res.status(404).json({ message: "Quote not found" });
+      res.json(quote);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.patch("/api/quotes/:id/eco-schedule", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -1715,6 +1733,9 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
       }
       if (targetQuote.userId !== userId && !isUserAdmin(userId, userEmail)) {
         return res.status(403).json({ message: "Not authorized" });
+      }
+      if (targetQuote.ecoConfirmed && !isUserAdmin(userId, userEmail)) {
+        return res.status(403).json({ message: "Eco picks are confirmed by admin. Cannot modify." });
       }
       const { ecoSelections, ecoPicks, personNames } = req.body;
       if (!Array.isArray(ecoSelections)) {
