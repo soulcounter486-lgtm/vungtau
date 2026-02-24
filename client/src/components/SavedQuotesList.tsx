@@ -703,26 +703,26 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
     >
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <CollapsibleTrigger asChild>
-          <div className="flex items-center justify-between p-3 cursor-pointer hover-elevate">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform shrink-0 ${isExpanded ? "rotate-90" : ""}`} />
-              {quote.completed && (
-                <span className="text-[10px] bg-slate-500 text-white px-1.5 py-0.5 rounded-full shrink-0" data-testid={`badge-completed-${quote.id}`}>
-                  {language === "ko" ? "완료" : "Done"}
+          <div className="flex flex-col p-3 cursor-pointer hover-elevate gap-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform shrink-0 ${isExpanded ? "rotate-90" : ""}`} />
+                {quote.completed && (
+                  <span className="text-[10px] bg-slate-500 text-white px-1.5 py-0.5 rounded-full shrink-0" data-testid={`badge-completed-${quote.id}`}>
+                    {language === "ko" ? "완료" : "Done"}
+                  </span>
+                )}
+                {depositPaid && !quote.completed && (
+                  <span className="text-[10px] bg-green-500 text-white px-1.5 py-0.5 rounded-full shrink-0">
+                    {language === "ko" ? "입금" : "Paid"}
+                  </span>
+                )}
+                <span className={`font-medium ${quote.completed ? "text-slate-500 dark:text-slate-400" : "text-slate-800 dark:text-slate-200"}`}>
+                  {customerName}
                 </span>
-              )}
-              {depositPaid && !quote.completed && (
-                <span className="text-[10px] bg-green-500 text-white px-1.5 py-0.5 rounded-full shrink-0">
-                  {language === "ko" ? "입금" : "Paid"}
-                </span>
-              )}
-              <span className={`font-medium truncate ${quote.completed ? "text-slate-500 dark:text-slate-400" : "text-slate-800 dark:text-slate-200"}`}>
-                {customerName}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
+              </div>
               {depositPaid ? (
-                <div className="flex flex-col items-end text-[10px]">
+                <div className="flex flex-col items-end text-[10px] shrink-0">
                   <span className="text-amber-600 dark:text-amber-400">
                     {language === "ko" ? "예약금" : "Deposit"}: ${Math.round(quote.totalPrice * 0.5).toLocaleString()}
                   </span>
@@ -731,10 +731,12 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                   </span>
                 </div>
               ) : (
-                <span className="font-bold text-primary">
+                <span className="font-bold text-primary shrink-0">
                   ${quote.totalPrice.toLocaleString()}
                 </span>
               )}
+            </div>
+            <div className="flex items-center justify-end gap-2">
               {onLoad && (
                 <Button
                   size="icon"
