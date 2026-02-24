@@ -706,12 +706,17 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
           <div className="flex items-center justify-between p-3 cursor-pointer hover-elevate">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform shrink-0 ${isExpanded ? "rotate-90" : ""}`} />
-              {depositPaid && (
+              {quote.completed && (
+                <span className="text-[10px] bg-slate-500 text-white px-1.5 py-0.5 rounded-full shrink-0" data-testid={`badge-completed-${quote.id}`}>
+                  {language === "ko" ? "완료" : "Done"}
+                </span>
+              )}
+              {depositPaid && !quote.completed && (
                 <span className="text-[10px] bg-green-500 text-white px-1.5 py-0.5 rounded-full shrink-0">
                   {language === "ko" ? "입금" : "Paid"}
                 </span>
               )}
-              <span className="font-medium text-slate-800 dark:text-slate-200 truncate">
+              <span className={`font-medium truncate ${quote.completed ? "text-slate-500 dark:text-slate-400" : "text-slate-800 dark:text-slate-200"}`}>
                 {customerName}
               </span>
             </div>
@@ -793,6 +798,18 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                   title={language === "ko" ? "불러오기" : "Load"}
                 >
                   <Download className="w-4 h-4 rotate-180" />
+                </Button>
+              )}
+              {isAdmin && !isCapturing && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className={`h-8 w-8 ${quote.completed ? "text-orange-500 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/30" : "text-green-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-950/30"}`}
+                  onClick={async (e) => { e.stopPropagation(); try { await apiRequest("PATCH", `/api/quotes/${quote.id}/completed`, { completed: !quote.completed }); queryClient.invalidateQueries({ queryKey: ["/api/quotes"] }); } catch {} }}
+                  data-testid={`button-complete-quote-${quote.id}`}
+                  title={quote.completed ? (language === "ko" ? "완료 해제" : "Undo Complete") : (language === "ko" ? "완료 처리" : "Mark Complete")}
+                >
+                  <Check className="w-4 h-4" />
                 </Button>
               )}
               {(isAdmin || !(quote as any).assignedBy) && (
@@ -1962,8 +1979,9 @@ export function SavedQuotesList({ onLoad }: SavedQuotesListProps) {
   if (currentUserId && !allAdminIds.includes(currentUserId)) {
     allAdminIds.push(currentUserId);
   }
-  const adminQuotes = isAdmin && quotes ? quotes.filter(q => allAdminIds.includes(q.userId || "")) : [];
-  const userQuotes = isAdmin && quotes ? quotes.filter(q => !allAdminIds.includes(q.userId || "")) : [];
+  const adminQuotes = isAdmin && quotes ? quotes.filter(q => allAdminIds.includes(q.userId || "") && !q.completed) : [];
+  const userQuotes = isAdmin && quotes ? quotes.filter(q => !allAdminIds.includes(q.userId || "") && !q.completed) : [];
+  const completedQuotes = isAdmin && quotes ? quotes.filter(q => q.completed) : [];
 
   return (
     <Card className="rounded-2xl border-slate-200 dark:border-slate-700 shadow-lg bg-background relative z-0">
@@ -2056,27 +2074,89 @@ export function SavedQuotesList({ onLoad }: SavedQuotesListProps) {
                     ))}
                   </div>
                 )}
+
+                {/* 완료된 견적서 섹션 */}
+                {completedQuotes.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-slate-300 dark:border-slate-600">
+                    <div className="flex items-center gap-2 mb-2 px-1">
+                      <div className="w-2 h-2 bg-slate-400 rounded-full"></div>
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        {language === "ko" ? `완료된 여행 (${completedQuotes.length})` : `Completed Trips (${completedQuotes.length})`}
+                      </span>
+                    </div>
+                    {completedQuotes.map((quote) => (
+                      <QuoteItem
+                        key={quote.id}
+                        quote={quote}
+                        language={language}
+                        currencyInfo={currencyInfo}
+                        exchangeRate={exchangeRate}
+                        onDelete={(id) => deleteQuoteMutation.mutate(id)}
+                        isDeleting={deleteQuoteMutation.isPending}
+                        isAdmin={isAdmin}
+                        onToggleDeposit={(id, depositPaid) => depositMutation.mutate({ id, depositPaid })}
+                        onLoad={onLoad}
+                        ecoProfiles={ecoProfilesData || []}
+                        userGender={user?.gender || undefined}
+                        canViewEco={user?.canViewEco || false}
+                        canViewNightlife18={user?.canViewNightlife18 || false}
+                        ecoPrices={ecoPrices}
+                      />
+                    ))}
+                  </div>
+                )}
               </>
             ) : (
-              quotes?.map((quote) => (
-                <QuoteItem
-                  key={quote.id}
-                  quote={quote}
-                  language={language}
-                  currencyInfo={currencyInfo}
-                  exchangeRate={exchangeRate}
-                  onDelete={(id) => deleteQuoteMutation.mutate(id)}
-                  isDeleting={deleteQuoteMutation.isPending}
-                  isAdmin={isAdmin}
-                  onToggleDeposit={(id, depositPaid) => depositMutation.mutate({ id, depositPaid })}
-                  onLoad={onLoad}
-                  ecoProfiles={ecoProfilesData || []}
-                  userGender={user?.gender || undefined}
-                  canViewEco={user?.canViewEco || false}
-                  canViewNightlife18={user?.canViewNightlife18 || false}
-                  ecoPrices={ecoPrices}
-                />
-              ))
+              <>
+                {quotes?.filter(q => !q.completed).map((quote) => (
+                  <QuoteItem
+                    key={quote.id}
+                    quote={quote}
+                    language={language}
+                    currencyInfo={currencyInfo}
+                    exchangeRate={exchangeRate}
+                    onDelete={(id) => deleteQuoteMutation.mutate(id)}
+                    isDeleting={deleteQuoteMutation.isPending}
+                    isAdmin={isAdmin}
+                    onToggleDeposit={(id, depositPaid) => depositMutation.mutate({ id, depositPaid })}
+                    onLoad={onLoad}
+                    ecoProfiles={ecoProfilesData || []}
+                    userGender={user?.gender || undefined}
+                    canViewEco={user?.canViewEco || false}
+                    canViewNightlife18={user?.canViewNightlife18 || false}
+                    ecoPrices={ecoPrices}
+                  />
+                ))}
+                {(quotes?.filter(q => q.completed).length || 0) > 0 && (
+                  <div className="mt-4 pt-4 border-t border-slate-300 dark:border-slate-600">
+                    <div className="flex items-center gap-2 mb-2 px-1">
+                      <div className="w-2 h-2 bg-slate-400 rounded-full"></div>
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        {language === "ko" ? `완료된 여행 (${(quotes || []).filter(q => q.completed).length})` : `Completed Trips (${(quotes || []).filter(q => q.completed).length})`}
+                      </span>
+                    </div>
+                    {quotes?.filter(q => q.completed).map((quote) => (
+                      <QuoteItem
+                        key={quote.id}
+                        quote={quote}
+                        language={language}
+                        currencyInfo={currencyInfo}
+                        exchangeRate={exchangeRate}
+                        onDelete={(id) => deleteQuoteMutation.mutate(id)}
+                        isDeleting={deleteQuoteMutation.isPending}
+                        isAdmin={isAdmin}
+                        onToggleDeposit={(id, depositPaid) => depositMutation.mutate({ id, depositPaid })}
+                        onLoad={onLoad}
+                        ecoProfiles={ecoProfilesData || []}
+                        userGender={user?.gender || undefined}
+                        canViewEco={user?.canViewEco || false}
+                        canViewNightlife18={user?.canViewNightlife18 || false}
+                        ecoPrices={ecoPrices}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </CollapsibleContent>

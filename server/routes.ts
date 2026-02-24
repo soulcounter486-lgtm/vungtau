@@ -1702,6 +1702,30 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
     }
   });
 
+  app.patch("/api/quotes/:id/completed", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user as any;
+      const userId = user?.claims?.sub || user?.id || (req.session as any)?.userId;
+      const userEmail = user?.claims?.email || user?.email;
+      if (!isUserAdmin(userId, userEmail)) {
+        return res.status(403).json({ message: "Only admin can mark as completed" });
+      }
+      const { completed } = req.body;
+      const updateData: any = { completed: !!completed };
+      if (completed) {
+        updateData.completedAt = new Date();
+      } else {
+        updateData.completedAt = null;
+      }
+      const [quote] = await db.update(quotes).set(updateData).where(eq(quotes.id, id)).returning();
+      if (!quote) return res.status(404).json({ message: "Quote not found" });
+      res.json(quote);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.patch("/api/quotes/:id/eco-confirmed", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
