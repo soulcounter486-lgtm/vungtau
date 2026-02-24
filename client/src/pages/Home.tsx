@@ -3222,19 +3222,24 @@ export default function Home() {
             </div>
             {siteSettingsData["biz_enabled"] !== "false" && (
               <div className="text-xs text-slate-400 mt-2 space-y-0.5" data-testid="text-biz-info">
-                {(siteSettingsData["biz_name"] || siteSettingsData["biz_number"] || siteSettingsData["biz_owner"]) ? (
-                  <>
-                    {siteSettingsData["biz_name"] && <span>상호: {siteSettingsData["biz_name"]}</span>}
-                    {siteSettingsData["biz_name"] && siteSettingsData["biz_number"] && <span> | </span>}
-                    {siteSettingsData["biz_number"] && <span>사업자등록번호: {siteSettingsData["biz_number"]}</span>}
-                    {siteSettingsData["biz_owner"] && <span> | 대표: {siteSettingsData["biz_owner"]}</span>}
-                    {siteSettingsData["biz_address"] && <><br /><span>{siteSettingsData["biz_address"]}</span></>}
-                    {siteSettingsData["biz_phone"] && <span> | {siteSettingsData["biz_phone"]}</span>}
-                    {siteSettingsData["biz_email"] && <span> | {siteSettingsData["biz_email"]}</span>}
-                  </>
-                ) : (
-                  <span>사업자등록번호: 붕따우 도깨비 350-70-00679</span>
-                )}
+                {(() => {
+                  const bizName = siteSettingsData["biz_name"];
+                  const bizNumber = siteSettingsData["biz_number"] || "붕따우 도깨비 350-70-00679";
+                  const bizOwner = siteSettingsData["biz_owner"];
+                  const bizAddress = siteSettingsData["biz_address"];
+                  const bizPhone = siteSettingsData["biz_phone"];
+                  const bizEmail = siteSettingsData["biz_email"];
+                  return (
+                    <>
+                      {bizName && <span>상호: {bizName} | </span>}
+                      <span>사업자등록번호: {bizNumber}</span>
+                      {bizOwner && <span> | 대표: {bizOwner}</span>}
+                      {bizAddress && <><br /><span>{bizAddress}</span></>}
+                      {bizPhone && <span> | {bizPhone}</span>}
+                      {bizEmail && <span> | {bizEmail}</span>}
+                    </>
+                  );
+                })()}
               </div>
             )}
           </div>
