@@ -1332,7 +1332,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                                             const profile = ecoProfiles.find(p => p.id === profileId);
                                             if (!profile) return null;
                                             return (
-                                              <div key={pk} className="relative w-9 h-9 rounded-md overflow-hidden border border-pink-300/50 flex-shrink-0 cursor-pointer" onClick={() => setPreviewImage(profile.imageUrl)}>
+                                              <div key={pk} className="relative w-9 h-9 rounded-md overflow-hidden border border-pink-300/50 flex-shrink-0 cursor-pointer" onClick={(e) => { e.stopPropagation(); e.preventDefault(); setPreviewImage(profile.imageUrl); }}>
                                                 <img src={profile.imageUrl} alt={profile.name} className="w-full h-full object-cover" />
                                                 <div className={`absolute top-0 left-0 w-3 h-3 ${priorityColors[pri]} rounded-br-sm flex items-center justify-center`}>
                                                   <span className="text-[6px] font-bold text-white">{pri + 1}</span>
@@ -1889,7 +1889,9 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
         <div
           data-testid="eco-card-preview-overlay"
           style={{ position: "fixed", inset: 0, zIndex: 2147483647, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 24 }}
-          onClick={() => closePreview()}
+          onClick={(e) => { e.stopPropagation(); e.preventDefault(); closePreview(); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
         >
           <img
             src={previewImage}
