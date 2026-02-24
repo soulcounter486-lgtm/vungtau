@@ -3222,7 +3222,7 @@ export default function Home() {
             </div>
             {siteSettingsData["biz_enabled"] !== "false" && (
               <div className="text-xs text-slate-400 mt-2 space-y-0.5" data-testid="text-biz-info">
-                {(siteSettingsData["biz_name"] || siteSettingsData["biz_number"]) ? (
+                {(siteSettingsData["biz_name"] || siteSettingsData["biz_number"] || siteSettingsData["biz_owner"]) ? (
                   <>
                     {siteSettingsData["biz_name"] && <span>상호: {siteSettingsData["biz_name"]}</span>}
                     {siteSettingsData["biz_name"] && siteSettingsData["biz_number"] && <span> | </span>}
