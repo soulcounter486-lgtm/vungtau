@@ -517,16 +517,29 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
     if (!detailRef.current) return;
     setIsCapturing(true);
     
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 150));
     
     try {
-      const canvas = await html2canvas(detailRef.current, {
+      const el = detailRef.current;
+      const origWidth = el.style.width;
+      const origMaxWidth = el.style.maxWidth;
+      el.style.width = "400px";
+      el.style.maxWidth = "400px";
+      
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      const canvas = await html2canvas(el, {
         backgroundColor: "#ffffff",
         scale: 2,
         useCORS: true,
         allowTaint: true,
         logging: false,
+        width: 400,
+        windowWidth: 400,
       });
+      
+      el.style.width = origWidth;
+      el.style.maxWidth = origMaxWidth;
       
       const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
@@ -1322,7 +1335,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                         {language === "ko" ? "픽하기를 눌러 에코 일정을 추가하세요" : "Click Pick to add eco schedule"}
                       </div>
                     )}
-                    {(() => {
+                    {!isCapturing && (() => {
                       const hasAnyPick = Object.values(selectedEcoPicks).some(persons =>
                         Array.isArray(persons) && persons.some(p => p.first || p.second || p.third)
                       );
