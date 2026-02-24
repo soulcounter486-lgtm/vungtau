@@ -338,6 +338,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
   };
 
   const handleToggleEcoPick = (profileId: number, date: string, personIdx: number, priority: keyof PersonPick) => {
+    if (quote.ecoConfirmed && !isAdmin) return;
     setSelectedEcoPicks(prev => {
       const sel = ecoSelections.find(s => s.date === date);
       const cnt = sel?.count || 1;
@@ -1233,23 +1234,24 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                       <div className="flex items-center gap-2">
                         <span>{language === "ko" ? "에코" : "Eco"}</span>
                         {(isAdmin || canViewNightlife18) && depositPaid && ecoProfiles.length > 0 && !isCapturing && (
-                          quote.ecoConfirmed && !isAdmin ? (
-                            <Badge variant="outline" className="h-6 text-[10px] px-2 bg-green-50 text-green-600 border-green-300" data-testid={`badge-eco-confirmed-${quote.id}`}>
-                              <Check className="w-3 h-3 mr-1" />
-                              {language === "ko" ? "확정됨" : "Confirmed"}
-                            </Badge>
-                          ) : (
+                          <>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-6 text-[10px] px-2 text-pink-500 border-pink-300"
+                              className={`h-6 text-[10px] px-2 ${quote.ecoConfirmed && !isAdmin ? "text-slate-400 border-slate-300" : "text-pink-500 border-pink-300"}`}
                               onClick={(e) => { e.stopPropagation(); setEcoPickOpen(true); }}
                               data-testid={`button-eco-pick-${quote.id}`}
                             >
                               <Heart className="w-3 h-3 mr-1" />
-                              {language === "ko" ? "픽하기" : "Pick"}
+                              {quote.ecoConfirmed && !isAdmin ? (language === "ko" ? "보기" : "View") : (language === "ko" ? "픽하기" : "Pick")}
                             </Button>
-                          )
+                            {quote.ecoConfirmed && !isAdmin && (
+                              <Badge variant="outline" className="h-6 text-[10px] px-2 bg-green-50 text-green-600 border-green-300" data-testid={`badge-eco-confirmed-${quote.id}`}>
+                                <Check className="w-3 h-3 mr-1" />
+                                {language === "ko" ? "확정됨" : "Confirmed"}
+                              </Badge>
+                            )}
+                          </>
                         )}
                         {isAdmin && !isCapturing && (
                           <Button
@@ -1568,16 +1570,18 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
               <DialogTitle className="flex items-center justify-between gap-2 pr-6">
                 <span className="flex items-center gap-2">
                   <Heart className="w-5 h-5 text-pink-500" />
-                  {language === "ko" ? "에코 픽하기" : "Eco Pick"}
+                  {quote.ecoConfirmed && !isAdmin ? (language === "ko" ? "에코 픽 (확정됨)" : "Eco Pick (Confirmed)") : (language === "ko" ? "에코 픽하기" : "Eco Pick")}
                 </span>
                 <div className="flex gap-1.5">
                   <Button variant="outline" size="sm" onClick={() => setEcoPickOpen(false)} data-testid="button-eco-pick-cancel-top">
                     {language === "ko" ? "취소" : "Cancel"}
                   </Button>
-                  <Button size="sm" onClick={handleSaveEcoPicks} disabled={isSavingEcoPicks} data-testid={`button-save-eco-picks-top-${quote.id}`}>
-                    {isSavingEcoPicks ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
-                    {language === "ko" ? "저장" : "Save"}
-                  </Button>
+                  {!(quote.ecoConfirmed && !isAdmin) && (
+                    <Button size="sm" onClick={handleSaveEcoPicks} disabled={isSavingEcoPicks} data-testid={`button-save-eco-picks-top-${quote.id}`}>
+                      {isSavingEcoPicks ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Check className="w-4 h-4 mr-1" />}
+                      {language === "ko" ? "저장" : "Save"}
+                    </Button>
+                  )}
                 </div>
               </DialogTitle>
             </DialogHeader>
