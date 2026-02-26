@@ -47,6 +47,7 @@ interface RealEstatePlace {
   longitude?: string;
   website?: string;
   websiteLabel?: string;
+  isActive?: boolean;
 }
 
 interface RealEstateGroup {
@@ -60,8 +61,6 @@ interface RealEstateGroup {
 type Place = RealEstatePlace;
 
 function convertDBListing(dbPlace: RealEstateListing): Place | null {
-  if (!dbPlace.isActive) return null;
-
   const description: Record<string, string> = {};
   if (dbPlace.description) {
     description.ko = dbPlace.description;
@@ -96,6 +95,7 @@ function convertDBListing(dbPlace: RealEstateListing): Place | null {
     longitude: dbPlace.longitude || undefined,
     website: dbPlace.website || undefined,
     websiteLabel: dbPlace.websiteLabel || undefined,
+    isActive: dbPlace.isActive ?? true,
   };
 }
 
@@ -338,8 +338,13 @@ function PlaceCard({
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-bold text-sm text-foreground">{place.name}</h3>
-                {place.isPartner && (
+                <h3 className={`font-bold text-sm ${place.isActive === false ? "text-muted-foreground line-through" : "text-foreground"}`}>{place.name}</h3>
+                {place.isActive === false && (
+                  <Badge variant="destructive" className="text-[9px] px-1.5 py-0">
+                    임대완료
+                  </Badge>
+                )}
+                {place.isPartner && place.isActive !== false && (
                   <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30">
                     협력업체
                   </Badge>

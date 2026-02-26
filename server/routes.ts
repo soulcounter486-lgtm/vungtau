@@ -5937,13 +5937,12 @@ ${adultContext}`;
       if (category && category !== "all") {
         const allListings = await db.select()
           .from(realEstateListings)
-          .where(and(eq(realEstateListings.isActive, true), eq(realEstateListings.category, category)))
+          .where(eq(realEstateListings.category, category))
           .orderBy(realEstateListings.sortOrder);
         return res.json(allListings);
       }
       const allListings = await db.select()
         .from(realEstateListings)
-        .where(eq(realEstateListings.isActive, true))
         .orderBy(realEstateListings.sortOrder);
       res.json(allListings);
     } catch (error) {
