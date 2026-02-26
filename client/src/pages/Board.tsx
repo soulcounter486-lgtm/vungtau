@@ -999,57 +999,42 @@ export default function Board() {
             </div>
             <Card className="overflow-hidden">
               <CardHeader>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-2xl mb-2 break-words">{selectedPost.title}</CardTitle>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
-                      <span className="flex items-center gap-1">
-                        <User className="w-4 h-4" />
-                        {selectedPost.authorName}
-                      </span>
-                      <Badge variant="secondary">{labels.admin}</Badge>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {selectedPost.createdAt && format(new Date(selectedPost.createdAt), "yyyy.MM.dd HH:mm")}
-                      </span>
-                      {isAdmin && (
-                        <span className="flex items-center gap-1 text-primary">
-                          <Eye className="w-4 h-4" />
-                          {selectedPost.viewCount || 0} {language === "ko" ? "조회" : "views"}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  {isAdmin && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setIsEditing(true);
-                          setEditTitle(selectedPost.title);
-                          setEditContent(selectedPost.content);
-                        }}
-                        data-testid="btn-edit-post"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => toggleVisibilityMutation.mutate(selectedPost.id)}
-                        data-testid="btn-toggle-visibility"
-                      >
-                        {selectedPost.isHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </Button>
+                <div>
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <CardTitle className="text-lg sm:text-xl font-bold leading-snug flex-1 min-w-0">{selectedPost.title}</CardTitle>
+                    {isAdmin && (
+                      <div className="flex gap-1.5 shrink-0 mt-0.5">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => {
+                            setIsEditing(true);
+                            setEditTitle(selectedPost.title);
+                            setEditContent(selectedPost.content);
+                          }}
+                          data-testid="btn-edit-post"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => toggleVisibilityMutation.mutate(selectedPost.id)}
+                          data-testid="btn-toggle-visibility"
+                        >
+                          {selectedPost.isHidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
                             variant="destructive"
                             size="sm"
+                            className="h-8 w-8 p-0"
                             data-testid="btn-delete-post"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
@@ -1072,6 +1057,24 @@ export default function Board() {
                       </AlertDialog>
                     </div>
                   )}
+                  </div>
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
+                    <span className="flex items-center gap-1">
+                      <User className="w-4 h-4" />
+                      {selectedPost.authorName}
+                    </span>
+                    <Badge variant="secondary">{labels.admin}</Badge>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      {selectedPost.createdAt && format(new Date(selectedPost.createdAt), "yyyy.MM.dd HH:mm")}
+                    </span>
+                    {isAdmin && (
+                      <span className="flex items-center gap-1 text-primary">
+                        <Eye className="w-4 h-4" />
+                        {selectedPost.viewCount || 0} {language === "ko" ? "조회" : "views"}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6 overflow-hidden">
