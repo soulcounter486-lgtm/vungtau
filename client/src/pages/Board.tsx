@@ -1000,41 +1000,39 @@ export default function Board() {
             <Card className="overflow-hidden">
               <CardHeader>
                 <div>
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <CardTitle className="text-lg sm:text-xl font-bold leading-snug flex-1 min-w-0">{selectedPost.title}</CardTitle>
-                    {isAdmin && (
-                      <div className="flex gap-1.5 shrink-0 mt-0.5">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={() => {
-                            setIsEditing(true);
-                            setEditTitle(selectedPost.title);
-                            setEditContent(selectedPost.content);
-                          }}
-                          data-testid="btn-edit-post"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={() => toggleVisibilityMutation.mutate(selectedPost.id)}
-                          data-testid="btn-toggle-visibility"
-                        >
-                          {selectedPost.isHidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                        </Button>
+                  {isAdmin && (
+                    <div className="flex justify-end gap-1 mb-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                        onClick={() => {
+                          setIsEditing(true);
+                          setEditTitle(selectedPost.title);
+                          setEditContent(selectedPost.content);
+                        }}
+                        data-testid="btn-edit-post"
+                      >
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                        onClick={() => toggleVisibilityMutation.mutate(selectedPost.id)}
+                        data-testid="btn-toggle-visibility"
+                      >
+                        {selectedPost.isHidden ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                      </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
-                            variant="destructive"
+                            variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0"
+                            className="h-6 w-6 p-0 text-destructive hover:text-destructive"
                             data-testid="btn-delete-post"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-3 h-3" />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
@@ -1057,7 +1055,7 @@ export default function Board() {
                       </AlertDialog>
                     </div>
                   )}
-                  </div>
+                  <CardTitle className="text-lg sm:text-xl font-bold leading-snug mb-2">{selectedPost.title}</CardTitle>
                   <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
                     <span className="flex items-center gap-1">
                       <User className="w-4 h-4" />
