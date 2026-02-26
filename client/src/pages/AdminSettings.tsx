@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Save, Loader2, Globe, Type, Search, Users, DollarSign, Upload, X, Building2 } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Globe, Type, Search, Users, DollarSign, Upload, X, Building2, GripVertical, ArrowUp, ArrowDown } from "lucide-react";
 import { Link } from "wouter";
 
 export default function AdminSettings() {
@@ -49,6 +49,9 @@ export default function AdminSettings() {
   const [bizAddress, setBizAddress] = useState("");
   const [bizPhone, setBizPhone] = useState("");
   const [bizEmail, setBizEmail] = useState("");
+  const defaultTabOrder = ["calculator", "planner", "guide", "board", "shop", "chat", "expenses", "realestate"];
+  const tabLabels: Record<string, string> = { calculator: "견적", planner: "AI플래너", guide: "관광", board: "소식", shop: "쇼핑", chat: "채팅", expenses: "가계부", realestate: "부동산" };
+  const [tabOrder, setTabOrder] = useState<string[]>(defaultTabOrder);
 
   useEffect(() => {
     if (settings) {
@@ -78,6 +81,15 @@ export default function AdminSettings() {
       setBizAddress(settings["biz_address"] || "");
       setBizPhone(settings["biz_phone"] || "");
       setBizEmail(settings["biz_email"] || "");
+      if (settings["tab_order"]) {
+        try {
+          const parsed = JSON.parse(settings["tab_order"]);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const missing = defaultTabOrder.filter(t => !parsed.includes(t));
+            setTabOrder([...parsed.filter((t: string) => defaultTabOrder.includes(t)), ...missing]);
+          }
+        } catch {}
+      }
     }
   }, [settings]);
 
@@ -121,6 +133,7 @@ export default function AdminSettings() {
         ["biz_address", bizAddress],
         ["biz_phone", bizPhone],
         ["biz_email", bizEmail],
+        ["tab_order", JSON.stringify(tabOrder)],
       ];
       for (const [key, value] of entries) {
         await saveSetting(key, String(value).trim());
@@ -508,6 +521,52 @@ export default function AdminSettings() {
                 {bizEmail && <p>이메일: {bizEmail}</p>}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <GripVertical className="w-5 h-5" />
+              탭 순서 관리
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {tabOrder.map((key, index) => (
+              <div key={key} className="flex items-center gap-2 p-2 rounded-md border bg-muted/30" data-testid={`tab-order-item-${key}`}>
+                <GripVertical className="w-4 h-4 text-muted-foreground" />
+                <span className="flex-1 text-sm font-medium">{tabLabels[key] || key}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  disabled={index === 0}
+                  onClick={() => {
+                    const newOrder = [...tabOrder];
+                    [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
+                    setTabOrder(newOrder);
+                  }}
+                  data-testid={`tab-order-up-${key}`}
+                >
+                  <ArrowUp className="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  disabled={index === tabOrder.length - 1}
+                  onClick={() => {
+                    const newOrder = [...tabOrder];
+                    [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+                    setTabOrder(newOrder);
+                  }}
+                  data-testid={`tab-order-down-${key}`}
+                >
+                  <ArrowDown className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            ))}
+            <p className="text-xs text-muted-foreground mt-2">화살표를 눌러 탭 순서를 변경한 뒤 상단 저장 버튼을 누르세요</p>
           </CardContent>
         </Card>
 

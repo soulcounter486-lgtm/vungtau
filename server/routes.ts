@@ -5,7 +5,7 @@ import fs from "fs";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { calculateQuoteSchema, visitorCount, expenseGroups, expenses, insertExpenseGroupSchema, insertExpenseSchema, posts, comments, insertPostSchema, insertCommentSchema, instagramSyncedPosts, pushSubscriptions, userLocations, insertUserLocationSchema, users, villas, insertVillaSchema, places, insertPlaceSchema, placeCategories, insertPlaceCategorySchema, siteSettings, adminMessages, insertAdminMessageSchema, coupons, insertCouponSchema, userCoupons, insertUserCouponSchema, announcements, insertAnnouncementSchema, adminNotifications, quoteCategories, insertQuoteCategorySchema, savedTravelPlans, customerChatRooms, customerChatMessages, shopProducts, insertShopProductSchema, ecoProfiles, insertEcoProfileSchema, quotes, vehicleTypes, insertVehicleTypeSchema } from "@shared/schema";
+import { calculateQuoteSchema, visitorCount, expenseGroups, expenses, insertExpenseGroupSchema, insertExpenseSchema, posts, comments, insertPostSchema, insertCommentSchema, instagramSyncedPosts, pushSubscriptions, userLocations, insertUserLocationSchema, users, villas, insertVillaSchema, places, insertPlaceSchema, placeCategories, insertPlaceCategorySchema, siteSettings, adminMessages, insertAdminMessageSchema, coupons, insertCouponSchema, userCoupons, insertUserCouponSchema, announcements, insertAnnouncementSchema, adminNotifications, quoteCategories, insertQuoteCategorySchema, savedTravelPlans, customerChatRooms, customerChatMessages, shopProducts, insertShopProductSchema, ecoProfiles, insertEcoProfileSchema, quotes, vehicleTypes, insertVehicleTypeSchema, realEstateCategories, insertRealEstateCategorySchema, realEstateListings, insertRealEstateListingSchema } from "@shared/schema";
 import { addDays, getDay, parseISO, format, addHours } from "date-fns";
 import { db } from "./db";
 import { eq, sql, desc, and } from "drizzle-orm";
@@ -5783,6 +5783,324 @@ ${adultContext}`;
     } catch (error) {
       console.error("Delete place error:", error);
       res.status(500).json({ error: "Failed to delete place" });
+    }
+  });
+
+  // ========== 부동산 카테고리 API ==========
+
+  app.get("/api/real-estate-categories", async (req, res) => {
+    try {
+      const categories = await db.select()
+        .from(realEstateCategories)
+        .where(eq(realEstateCategories.isActive, true))
+        .orderBy(realEstateCategories.sortOrder);
+      res.json(categories);
+    } catch (error) {
+      console.error("Get real estate categories error:", error);
+      res.status(500).json({ error: "Failed to get categories" });
+    }
+  });
+
+  app.get("/api/admin/real-estate-categories", async (req: any, res) => {
+    try {
+      const oauthUser = req.user as any;
+      let userId = oauthUser?.claims?.sub;
+      let userEmail = oauthUser?.claims?.email || oauthUser?.email;
+      if (!userId && req.session?.userId) {
+        const dbUser = await db.select().from(users).where(eq(users.id, req.session.userId));
+        if (dbUser.length > 0) { userId = dbUser[0].id; userEmail = dbUser[0].email; }
+      }
+      if (!isUserAdmin(userId, userEmail)) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      const categories = await db.select().from(realEstateCategories).orderBy(realEstateCategories.sortOrder);
+      res.json(categories);
+    } catch (error) {
+      console.error("Get admin real estate categories error:", error);
+      res.status(500).json({ error: "Failed to get categories" });
+    }
+  });
+
+  app.post("/api/admin/real-estate-categories", async (req: any, res) => {
+    try {
+      const oauthUser = req.user as any;
+      let userId = oauthUser?.claims?.sub;
+      let userEmail = oauthUser?.claims?.email || oauthUser?.email;
+      if (!userId && req.session?.userId) {
+        const dbUser = await db.select().from(users).where(eq(users.id, req.session.userId));
+        if (dbUser.length > 0) { userId = dbUser[0].id; userEmail = dbUser[0].email; }
+      }
+      if (!await isUserAdminWithDb(userId, userEmail)) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      const data = insertRealEstateCategorySchema.parse(req.body);
+      const existing = await db.select().from(realEstateCategories).where(eq(realEstateCategories.id, data.id)).limit(1);
+      if (existing.length > 0) {
+        return res.status(400).json({ error: "Category ID already exists" });
+      }
+      const maxOrder = await db.select({ max: sql<number>`COALESCE(MAX(sort_order), 0)` }).from(realEstateCategories);
+      const newSortOrder = (maxOrder[0]?.max || 0) + 1;
+      const [category] = await db.insert(realEstateCategories).values({
+        ...data,
+        sortOrder: data.sortOrder ?? newSortOrder,
+      }).returning();
+      res.json(category);
+    } catch (error) {
+      console.error("Create real estate category error:", error);
+      res.status(500).json({ error: "Failed to create category" });
+    }
+  });
+
+  app.patch("/api/admin/real-estate-categories/:id", async (req: any, res) => {
+    try {
+      const oauthUser = req.user as any;
+      let userId = oauthUser?.claims?.sub;
+      let userEmail = oauthUser?.claims?.email || oauthUser?.email;
+      if (!userId && req.session?.userId) {
+        const dbUser = await db.select().from(users).where(eq(users.id, req.session.userId));
+        if (dbUser.length > 0) { userId = dbUser[0].id; userEmail = dbUser[0].email; }
+      }
+      if (!await isUserAdminWithDb(userId, userEmail)) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      const categoryId = req.params.id;
+      const updates = req.body;
+      const [updated] = await db.update(realEstateCategories)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(realEstateCategories.id, categoryId))
+        .returning();
+      if (!updated) {
+        return res.status(404).json({ error: "Category not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Update real estate category error:", error);
+      res.status(500).json({ error: "Failed to update category" });
+    }
+  });
+
+  app.delete("/api/admin/real-estate-categories/:id", async (req: any, res) => {
+    try {
+      const oauthUser = req.user as any;
+      let userId = oauthUser?.claims?.sub;
+      let userEmail = oauthUser?.claims?.email || oauthUser?.email;
+      if (!userId && req.session?.userId) {
+        const dbUser = await db.select().from(users).where(eq(users.id, req.session.userId));
+        if (dbUser.length > 0) { userId = dbUser[0].id; userEmail = dbUser[0].email; }
+      }
+      if (!await isUserAdminWithDb(userId, userEmail)) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      const categoryId = req.params.id;
+      const listingsInCategory = await db.select().from(realEstateListings).where(eq(realEstateListings.category, categoryId)).limit(1);
+      if (listingsInCategory.length > 0) {
+        return res.status(400).json({ error: "Cannot delete category with listings. Move or delete listings first." });
+      }
+      await db.delete(realEstateCategories).where(eq(realEstateCategories.id, categoryId));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete real estate category error:", error);
+      res.status(500).json({ error: "Failed to delete category" });
+    }
+  });
+
+  app.post("/api/admin/real-estate-categories/reorder", async (req: any, res) => {
+    try {
+      const oauthUser = req.user as any;
+      let userId = oauthUser?.claims?.sub;
+      let userEmail = oauthUser?.claims?.email || oauthUser?.email;
+      if (!userId && req.session?.userId) {
+        const dbUser = await db.select().from(users).where(eq(users.id, req.session.userId));
+        if (dbUser.length > 0) { userId = dbUser[0].id; userEmail = dbUser[0].email; }
+      }
+      if (!await isUserAdminWithDb(userId, userEmail)) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      const { categoryIds } = req.body as { categoryIds: string[] };
+      for (let i = 0; i < categoryIds.length; i++) {
+        await db.update(realEstateCategories)
+          .set({ sortOrder: i, updatedAt: new Date() })
+          .where(eq(realEstateCategories.id, categoryIds[i]));
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Reorder real estate categories error:", error);
+      res.status(500).json({ error: "Failed to reorder categories" });
+    }
+  });
+
+  // ========== 부동산 리스팅 API ==========
+
+  app.get("/api/real-estate-listings", async (req, res) => {
+    try {
+      const category = req.query.category as string | undefined;
+      if (category && category !== "all") {
+        const allListings = await db.select()
+          .from(realEstateListings)
+          .where(and(eq(realEstateListings.isActive, true), eq(realEstateListings.category, category)))
+          .orderBy(realEstateListings.sortOrder);
+        return res.json(allListings);
+      }
+      const allListings = await db.select()
+        .from(realEstateListings)
+        .where(eq(realEstateListings.isActive, true))
+        .orderBy(realEstateListings.sortOrder);
+      res.json(allListings);
+    } catch (error) {
+      console.error("Get real estate listings error:", error);
+      res.status(500).json({ error: "Failed to get listings" });
+    }
+  });
+
+  app.get("/api/admin/real-estate-listings", async (req: any, res) => {
+    try {
+      const oauthUser = req.user as any;
+      let userId = oauthUser?.claims?.sub;
+      let userEmail = oauthUser?.claims?.email || oauthUser?.email;
+      if (!userId && req.session?.userId) {
+        const dbUser = await db.select().from(users).where(eq(users.id, req.session.userId));
+        if (dbUser.length > 0) { userId = dbUser[0].id; userEmail = dbUser[0].email; }
+      }
+      if (!isUserAdmin(userId, userEmail)) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      const allListings = await db.select().from(realEstateListings).orderBy(realEstateListings.sortOrder);
+      res.json(allListings);
+    } catch (error) {
+      console.error("Get admin real estate listings error:", error);
+      res.status(500).json({ error: "Failed to get listings" });
+    }
+  });
+
+  app.get("/api/real-estate-listings/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const listing = await db.select().from(realEstateListings).where(eq(realEstateListings.id, id));
+      if (listing.length === 0) {
+        return res.status(404).json({ error: "Listing not found" });
+      }
+      res.json(listing[0]);
+    } catch (error) {
+      console.error("Get real estate listing error:", error);
+      res.status(500).json({ error: "Failed to get listing" });
+    }
+  });
+
+  app.post("/api/admin/real-estate-listings", async (req: any, res) => {
+    try {
+      const oauthUser = req.user as any;
+      let userId = oauthUser?.claims?.sub;
+      let userEmail = oauthUser?.claims?.email || oauthUser?.email;
+      if (!userId && req.session?.userId) {
+        const dbUser = await db.select().from(users).where(eq(users.id, req.session.userId));
+        if (dbUser.length > 0) { userId = dbUser[0].id; userEmail = dbUser[0].email; }
+      }
+      if (!await isUserAdminWithDb(userId, userEmail)) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      const data = insertRealEstateListingSchema.parse(req.body);
+      const existingByName = await db.select().from(realEstateListings).where(eq(realEstateListings.name, data.name)).limit(1);
+      if (existingByName.length > 0) {
+        return res.status(409).json({ error: "이미 같은 이름의 매물이 있습니다", existingListing: existingByName[0] });
+      }
+      const newListing = await db.insert(realEstateListings).values(data).returning();
+      res.json(newListing[0]);
+    } catch (error) {
+      console.error("Create real estate listing error:", error);
+      res.status(500).json({ error: "Failed to create listing" });
+    }
+  });
+
+  app.put("/api/admin/real-estate-listings/:id", async (req: any, res) => {
+    try {
+      const oauthUser = req.user as any;
+      let userId = oauthUser?.claims?.sub;
+      let userEmail = oauthUser?.claims?.email || oauthUser?.email;
+      if (!userId && req.session?.userId) {
+        const dbUser = await db.select().from(users).where(eq(users.id, req.session.userId));
+        if (dbUser.length > 0) { userId = dbUser[0].id; userEmail = dbUser[0].email; }
+      }
+      if (!await isUserAdminWithDb(userId, userEmail)) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      const id = parseInt(req.params.id);
+      const data = insertRealEstateListingSchema.partial().parse(req.body);
+      const updatedListing = await db.update(realEstateListings)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(realEstateListings.id, id))
+        .returning();
+      if (updatedListing.length === 0) {
+        return res.status(404).json({ error: "Listing not found" });
+      }
+      res.json(updatedListing[0]);
+    } catch (error) {
+      console.error("Update real estate listing error:", error);
+      res.status(500).json({ error: "Failed to update listing" });
+    }
+  });
+
+  app.put("/api/admin/real-estate-listings/:id/order", async (req: any, res) => {
+    try {
+      const oauthUser = req.user as any;
+      let userId = oauthUser?.claims?.sub;
+      let userEmail = oauthUser?.claims?.email || oauthUser?.email;
+      if (!userId && req.session?.userId) {
+        const dbUser = await db.select().from(users).where(eq(users.id, req.session.userId));
+        if (dbUser.length > 0) { userId = dbUser[0].id; userEmail = dbUser[0].email; }
+      }
+      if (!await isUserAdminWithDb(userId, userEmail)) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      const id = parseInt(req.params.id);
+      const { newIndex } = req.body;
+      if (typeof newIndex !== "number") {
+        return res.status(400).json({ error: "newIndex is required" });
+      }
+      const [targetListing] = await db.select().from(realEstateListings).where(eq(realEstateListings.id, id));
+      if (!targetListing) {
+        return res.status(404).json({ error: "Listing not found" });
+      }
+      const categoryListings = await db.select().from(realEstateListings)
+        .where(eq(realEstateListings.category, targetListing.category))
+        .orderBy(realEstateListings.sortOrder, realEstateListings.id);
+      const oldIndex = categoryListings.findIndex(l => l.id === id);
+      if (oldIndex === -1) {
+        return res.status(404).json({ error: "Listing not found in category" });
+      }
+      const [movedListing] = categoryListings.splice(oldIndex, 1);
+      const insertIndex = Math.max(0, Math.min(newIndex, categoryListings.length));
+      categoryListings.splice(insertIndex, 0, movedListing);
+      for (let i = 0; i < categoryListings.length; i++) {
+        await db.update(realEstateListings)
+          .set({ sortOrder: (i + 1) * 10, updatedAt: new Date() })
+          .where(eq(realEstateListings.id, categoryListings[i].id));
+      }
+      const [updatedListing] = await db.select().from(realEstateListings).where(eq(realEstateListings.id, id));
+      res.json(updatedListing);
+    } catch (error) {
+      console.error("Update real estate listing order error:", error);
+      res.status(500).json({ error: "Failed to update listing order" });
+    }
+  });
+
+  app.delete("/api/admin/real-estate-listings/:id", async (req: any, res) => {
+    try {
+      const oauthUser = req.user as any;
+      let userId = oauthUser?.claims?.sub;
+      let userEmail = oauthUser?.claims?.email || oauthUser?.email;
+      if (!userId && req.session?.userId) {
+        const dbUser = await db.select().from(users).where(eq(users.id, req.session.userId));
+        if (dbUser.length > 0) { userId = dbUser[0].id; userEmail = dbUser[0].email; }
+      }
+      if (!await isUserAdminWithDb(userId, userEmail)) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      const id = parseInt(req.params.id);
+      await db.delete(realEstateListings).where(eq(realEstateListings.id, id));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete real estate listing error:", error);
+      res.status(500).json({ error: "Failed to delete listing" });
     }
   });
 

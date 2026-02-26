@@ -18,11 +18,24 @@ A travel quote calculator application for generating custom trip estimates. The 
 - **API**: GET /api/vehicle-types, GET/POST/PUT/DELETE /api/admin/vehicle-types
 - **자동 시딩**: 최초 실행 시 기본 8종 차량 자동 등록
 
+### Real Estate Tab (2026-02-26 추가)
+- **부동산 탭**: `/realestate` 경로, 관광탭과 동일한 구조 (카테고리 관리 + 매물 추가)
+- **DB 테이블**: real_estate_categories (place_categories와 동일 구조), real_estate_listings (places와 동일 구조)
+- **관리자 페이지**: `/admin/real-estate`에서 카테고리 CRUD, 매물 CRUD, 이미지 업로드, 구글맵 URL 파싱, 네이버 블로그 스크래핑
+- **사용자 페이지**: RealEstateGuide.tsx - 카테고리 필터, 목록/지도 보기, Leaflet 마커
+- **API**: GET/POST/PATCH/DELETE /api/admin/real-estate-categories, GET/POST/PUT/DELETE /api/admin/real-estate-listings
+
+### Tab Order Management (2026-02-26 추가)
+- **탭 순서 관리**: `/admin/settings`에서 관리자가 탭 순서를 위/아래 화살표로 변경
+- **DB 저장**: site_settings 테이블의 `tab_order` 키에 JSON 배열로 저장
+- **동적 반영**: TabNavigation.tsx에서 DB 순서를 읽어 탭 배치
+- **기본 순서**: calculator, planner, guide, board, shop, chat, expenses, realestate
+
 ### Admin Site Settings (2026-02-07 추가)
 - **히어로 텍스트 편집**: `/admin/settings` 페이지에서 관리자가 홈 화면 제목, 부제목, 설명 텍스트 수정
 - **SEO 메타태그 편집**: 검색엔진(구글/네이버)에 표시되는 title, description, keywords 수정 가능
 - **동적 SEO 주입**: 서버에서 홈페이지 요청 시 DB 설정값을 HTML meta 태그에 동적 주입 (og-tags.ts, index.ts)
-- **설정 키**: hero_title, hero_subtitle, hero_description, seo_title, seo_description, seo_keywords
+- **설정 키**: hero_title, hero_subtitle, hero_description, seo_title, seo_description, seo_keywords, tab_order
 - **API**: GET /api/site-settings, PUT /api/admin/site-settings
 
 ### AI Travel Planner Enhanced (2026-02-08 업그레이드)

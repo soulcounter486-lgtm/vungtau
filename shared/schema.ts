@@ -628,3 +628,52 @@ export const vehicleTypes = pgTable("vehicle_types", {
 export const insertVehicleTypeSchema = createInsertSchema(vehicleTypes).omit({ id: true, createdAt: true });
 export type VehicleType = typeof vehicleTypes.$inferSelect;
 export type InsertVehicleType = z.infer<typeof insertVehicleTypeSchema>;
+
+export const realEstateCategories = pgTable("real_estate_categories", {
+  id: text("id").primaryKey(),
+  labelKo: text("label_ko").notNull(),
+  labelEn: text("label_en").notNull(),
+  labelZh: text("label_zh"),
+  labelVi: text("label_vi"),
+  labelRu: text("label_ru"),
+  labelJa: text("label_ja"),
+  color: text("color").default("#64748b"),
+  gradient: text("gradient").default("from-gray-600 to-gray-700"),
+  icon: text("icon").default("Building"),
+  sortOrder: integer("sort_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertRealEstateCategorySchema = createInsertSchema(realEstateCategories).omit({ createdAt: true, updatedAt: true });
+export type RealEstateCategory = typeof realEstateCategories.$inferSelect;
+export type InsertRealEstateCategory = z.infer<typeof insertRealEstateCategorySchema>;
+
+export const realEstateListings = pgTable("real_estate_listings", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  category: text("category").notNull().default("apartment"),
+  description: text("description"),
+  mainImage: text("main_image"),
+  images: jsonb("images").$type<string[]>().default([]),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
+  address: text("address"),
+  phone: text("phone"),
+  website: text("website"),
+  openingHours: text("opening_hours"),
+  priceRange: text("price_range"),
+  tags: jsonb("tags").$type<string[]>().default([]),
+  isPartner: boolean("is_partner").default(false),
+  discountText: text("discount_text"),
+  menuImages: jsonb("menu_images").$type<string[]>().default([]),
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertRealEstateListingSchema = createInsertSchema(realEstateListings).omit({ id: true, createdAt: true, updatedAt: true });
+export type RealEstateListing = typeof realEstateListings.$inferSelect;
+export type InsertRealEstateListing = z.infer<typeof insertRealEstateListingSchema>;

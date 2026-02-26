@@ -1234,6 +1234,12 @@ export default function Home() {
                         차량관리
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin/real-estate" className="flex items-center cursor-pointer" data-testid="link-admin-real-estate">
+                        <Settings className="w-4 h-4 mr-2" />
+                        부동산관리
+                      </Link>
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}

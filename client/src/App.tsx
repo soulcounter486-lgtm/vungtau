@@ -25,6 +25,8 @@ import AdminChat from "@/pages/AdminChat";
 import AdminShopProducts from "@/pages/AdminShopProducts";
 import AdminEcoProfiles from "@/pages/AdminEcoProfiles";
 import AdminVehicleTypes from "@/pages/AdminVehicleTypes";
+import RealEstateGuide from "@/pages/RealEstateGuide";
+import AdminRealEstate from "@/pages/AdminRealEstate";
 import MyPage from "@/pages/MyPage";
 import MyCoupons from "@/pages/MyCoupons";
 import PushDebug from "@/pages/PushDebug";
@@ -53,6 +55,8 @@ function Router() {
       <Route path="/admin/shop-products" component={AdminShopProducts} />
       <Route path="/admin/eco-profiles" component={AdminEcoProfiles} />
       <Route path="/admin/vehicle-types" component={AdminVehicleTypes} />
+      <Route path="/realestate" component={RealEstateGuide} />
+      <Route path="/admin/real-estate" component={AdminRealEstate} />
       <Route path="/mypage" component={MyPage} />
       <Route path="/my-coupons" component={MyCoupons} />
       <Route path="/push-debug" component={PushDebug} />
