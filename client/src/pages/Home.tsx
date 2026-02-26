@@ -1503,18 +1503,18 @@ export default function Home() {
                 className="cursor-pointer hover:scale-105 transition-transform flex flex-col items-center"
                 data-testid="btn-download-apk"
               >
-                <img src={logoImg} alt={t("header.title")} className="w-28 h-28 sm:w-36 sm:h-36 md:w-52 md:h-52 lg:w-60 lg:h-60 object-contain drop-shadow-md" />
+                <img src={logoImg} alt={t("header.title")} className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 object-contain drop-shadow-md" />
                 <div className="flex flex-col items-center mt-1 animate-bounce">
                   <span className="text-[10px] text-primary font-medium whitespace-nowrap">↑ 앱 다운로드</span>
                 </div>
               </a>
             </div>
             <div className="flex-1">
-              <h1 className="text-lg sm:text-2xl md:text-3xl font-display font-bold text-primary mb-1 leading-tight">
+              <h1 className="text-sm sm:text-base md:text-lg font-display font-bold text-primary mb-0.5 leading-tight">
                 <span className="whitespace-nowrap">{heroTitle}</span><br />
-                <span className="whitespace-nowrap text-base sm:text-xl md:text-2xl">{heroSubtitle}</span>
+                <span className="whitespace-nowrap text-xs sm:text-sm md:text-base">{heroSubtitle}</span>
               </h1>
-              <p className="text-sm md:text-base text-muted-foreground font-light leading-relaxed">{heroDescription}</p>
+              <p className="text-xs md:text-sm text-muted-foreground font-light leading-relaxed">{heroDescription}</p>
             </div>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-2 flex items-center gap-2">
