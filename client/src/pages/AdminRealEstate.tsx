@@ -592,6 +592,7 @@ function RealEstateForm({ place, defaultCategory, onSubmit, isLoading, onCancel,
     address: place?.address || "",
     phone: place?.phone || "",
     website: place?.website || "",
+    websiteLabel: place?.websiteLabel || "",
     openingHours: place?.openingHours || "",
     priceRange: place?.priceRange || "",
     tags: place?.tags || [],
@@ -1314,13 +1315,23 @@ function RealEstateForm({ place, defaultCategory, onSubmit, isLoading, onCancel,
           />
         </div>
         <div>
-          <Label htmlFor="website">웹사이트/SNS</Label>
+          <Label htmlFor="website">웹사이트/SNS URL</Label>
           <Input
             id="website"
             value={formData.website}
             onChange={(e) => setFormData({ ...formData, website: e.target.value })}
             placeholder="예: https://instagram.com/..."
             data-testid="realestate-input-website"
+          />
+        </div>
+        <div>
+          <Label htmlFor="websiteLabel">링크 표시 텍스트</Label>
+          <Input
+            id="websiteLabel"
+            value={formData.websiteLabel}
+            onChange={(e) => setFormData({ ...formData, websiteLabel: e.target.value })}
+            placeholder="예: 360° 투어, 홈페이지, 인스타그램"
+            data-testid="realestate-input-website-label"
           />
         </div>
       </div>

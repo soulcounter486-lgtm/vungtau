@@ -46,6 +46,7 @@ interface RealEstatePlace {
   latitude?: string;
   longitude?: string;
   website?: string;
+  websiteLabel?: string;
 }
 
 interface RealEstateGroup {
@@ -94,6 +95,7 @@ function convertDBListing(dbPlace: RealEstateListing): Place | null {
     latitude: dbPlace.latitude || undefined,
     longitude: dbPlace.longitude || undefined,
     website: dbPlace.website || undefined,
+    websiteLabel: dbPlace.websiteLabel || undefined,
   };
 }
 
@@ -407,7 +409,7 @@ function PlaceCard({
                 {language === "ko" ? "수정" : "Edit"}
               </button>
             )}
-            {place.website && (
+            {place.website && place.websiteLabel && (
               <a
                 href={place.website}
                 target="_blank"
@@ -416,7 +418,7 @@ function PlaceCard({
                 data-testid={`realestate-link-website-${place.name.replace(/\s/g, "-")}`}
               >
                 <Globe className="w-3 h-3" />
-                {language === "ko" ? "홈페이지" : "Website"}
+                {place.websiteLabel}
               </a>
             )}
           </div>

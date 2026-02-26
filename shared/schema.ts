@@ -662,6 +662,7 @@ export const realEstateListings = pgTable("real_estate_listings", {
   address: text("address"),
   phone: text("phone"),
   website: text("website"),
+  websiteLabel: text("website_label"),
   openingHours: text("opening_hours"),
   priceRange: text("price_range"),
   tags: jsonb("tags").$type<string[]>().default([]),
