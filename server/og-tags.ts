@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { eq } from "drizzle-orm";
-import { posts, siteSettings, places } from "@shared/schema";
+import { posts, siteSettings, places, realEstateListings } from "@shared/schema";
 import { execSync } from "child_process";
 import path from "path";
 import fs from "fs";
@@ -257,11 +257,50 @@ async function getPlaceOgData(placeName: string): Promise<OgData | null> {
   }
 }
 
+async function getRealEstateOgDataById(listingId: number): Promise<OgData | null> {
+  try {
+    const [listing] = await db.select().from(realEstateListings).where(eq(realEstateListings.id, listingId)).limit(1);
+    if (!listing) return null;
+    let image: string | null = null;
+    if (listing.mainImage && isAccessibleImagePath(listing.mainImage)) {
+      image = listing.mainImage;
+    } else if (listing.images && listing.images.length > 0) {
+      const found = listing.images.find(img => isAccessibleImagePath(img));
+      if (found) image = found;
+    }
+    if (image && !image.startsWith("http")) {
+      image = `https://vungtau.blog${image}`;
+    }
+    if (!image) image = DEFAULT_OG_IMAGE;
+    const desc = listing.description ? stripContent(listing.description).slice(0, 200) : "베트남 붕따우 부동산 매물";
+    return {
+      title: `${listing.name} - 붕따우 부동산`,
+      description: desc,
+      image,
+      imageWidth: image === DEFAULT_OG_IMAGE ? DEFAULT_OG_IMAGE_WIDTH : undefined,
+      imageHeight: image === DEFAULT_OG_IMAGE ? DEFAULT_OG_IMAGE_HEIGHT : undefined,
+      url: `https://vungtau.blog/realestate?p=${listingId}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function getOgDataForPath(urlPath: string): Promise<OgData | null> {
   const boardMatch = urlPath.match(/^\/board\/(\d+)/);
   if (boardMatch) {
     const postId = parseInt(boardMatch[1], 10);
     return getPostOgData(postId);
+  }
+  const realEstateMatch = urlPath.match(/^\/realestate/);
+  if (realEstateMatch) {
+    try {
+      const url = new URL(urlPath, "https://vungtau.blog");
+      const listingId = url.searchParams.get("p");
+      if (listingId) {
+        return getRealEstateOgDataById(parseInt(listingId, 10));
+      }
+    } catch {}
   }
   const guideMatch = urlPath.match(/^\/guide/);
   if (guideMatch) {
