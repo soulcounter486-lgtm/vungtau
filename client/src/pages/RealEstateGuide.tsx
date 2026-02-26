@@ -113,7 +113,7 @@ function PlaceCard({
   onEdit: (place: Place, categoryId: string) => void;
 }) {
   const [showMap, setShowMap] = useState(false);
-  const [showDescription, setShowDescription] = useState(false);
+  const [showDescription, setShowDescription] = useState(true);
   const [showEnlargedImage, setShowEnlargedImage] = useState(false);
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
