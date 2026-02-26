@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
-import { MapPin, Phone, ExternalLink, Building2, ChevronDown, ChevronUp, AlertTriangle, Eye, Pencil, ChevronLeft, ChevronRight, X, BookOpen, Map, List, DollarSign, Share2, Camera, Sparkles, Home as HomeIcon } from "lucide-react";
+import { MapPin, Phone, ExternalLink, Building2, ChevronDown, ChevronUp, AlertTriangle, Eye, Pencil, ChevronLeft, ChevronRight, X, BookOpen, Map, List, DollarSign, Share2, Camera, Sparkles, Home as HomeIcon, Globe } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 function darkenHex(hex: string, amount: number = 30): string {
@@ -45,6 +45,7 @@ interface RealEstatePlace {
   discountText?: string;
   latitude?: string;
   longitude?: string;
+  website?: string;
 }
 
 interface RealEstateGroup {
@@ -92,6 +93,7 @@ function convertDBListing(dbPlace: RealEstateListing): Place | null {
     discountText: dbPlace.discountText || undefined,
     latitude: dbPlace.latitude || undefined,
     longitude: dbPlace.longitude || undefined,
+    website: dbPlace.website || undefined,
   };
 }
 
@@ -404,6 +406,18 @@ function PlaceCard({
                 <Pencil className="w-3 h-3" />
                 {language === "ko" ? "수정" : "Edit"}
               </button>
+            )}
+            {place.website && (
+              <a
+                href={place.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-[11px] text-cyan-600 dark:text-cyan-400 hover:underline"
+                data-testid={`realestate-link-website-${place.name.replace(/\s/g, "-")}`}
+              >
+                <Globe className="w-3 h-3" />
+                {language === "ko" ? "홈페이지" : "Website"}
+              </a>
             )}
           </div>
 
