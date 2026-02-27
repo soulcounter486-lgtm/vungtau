@@ -1880,6 +1880,25 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                 {isUnavail && (
                   <div style={{ marginTop: 12, color: "#f87171", fontWeight: "bold", fontSize: 14 }}>{language === "ko" ? "✗ 픽불가" : "✗ Unavailable"}</div>
                 )}
+                {isAdmin && currentProfile && (
+                  <div style={{ display: "flex", gap: 8, marginTop: 8 }} onClick={(e) => e.stopPropagation()}>
+                    {(() => {
+                      const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {};
+                      const dc = cp[activePickDate] || {};
+                      const isConfirmedHere = dc[String(activePersonIndex)] === currentProfile.id;
+                      const unavailList: number[] = (quote.ecoUnavailableProfiles as number[] | null) || [];
+                      const isUnavailable = unavailList.includes(currentProfile.id);
+                      return (<>
+                        <button type="button" style={{ padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: "bold", border: "2px solid", cursor: "pointer", transition: "all 0.2s", background: isConfirmedHere ? "#16a34a" : "rgba(255,255,255,0.15)", color: "white", borderColor: isConfirmedHere ? "#16a34a" : "rgba(255,255,255,0.4)" }} onClick={async (e) => { e.stopPropagation(); const prev = { ...cp }; if (!prev[activePickDate]) prev[activePickDate] = {}; if (isConfirmedHere) { delete prev[activePickDate][String(activePersonIndex)]; } else { prev[activePickDate][String(activePersonIndex)] = currentProfile.id; } try { await apiRequest("PATCH", `/api/quotes/${quote.id}/eco-confirmed`, { ecoConfirmed: quote.ecoConfirmed, ecoConfirmedPicks: prev }); queryClient.invalidateQueries({ queryKey: ["/api/quotes"] }); } catch {} }}>
+                          <Check className="w-4 h-4 inline mr-1" />{isConfirmedHere ? (language === "ko" ? "확정됨" : "Confirmed") : (language === "ko" ? "확정" : "Confirm")}
+                        </button>
+                        <button type="button" style={{ padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: "bold", border: "2px solid", cursor: "pointer", transition: "all 0.2s", background: isUnavailable ? "#dc2626" : "rgba(255,255,255,0.15)", color: "white", borderColor: isUnavailable ? "#dc2626" : "rgba(255,255,255,0.4)" }} onClick={async (e) => { e.stopPropagation(); let newList: number[]; if (isUnavailable) { newList = unavailList.filter(id => id !== currentProfile.id); } else { newList = [...unavailList, currentProfile.id]; } try { await apiRequest("PATCH", `/api/quotes/${quote.id}/eco-confirmed`, { ecoConfirmed: quote.ecoConfirmed, ecoUnavailableProfiles: newList }); queryClient.invalidateQueries({ queryKey: ["/api/quotes"] }); } catch {} }}>
+                          <X className="w-4 h-4 inline mr-1" />{isUnavailable ? (language === "ko" ? "픽불가 해제" : "Remove") : (language === "ko" ? "픽불가" : "Unavail")}
+                        </button>
+                      </>);
+                    })()}
+                  </div>
+                )}
                 <button type="button" style={{ color: "white", background: "rgba(255,255,255,0.3)", border: "2px solid rgba(255,255,255,0.6)", borderRadius: "50%", width: 50, height: 50, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, cursor: "pointer", touchAction: "manipulation", WebkitTapHighlightColor: "transparent", marginTop: 12 }} onClick={(e) => { e.stopPropagation(); closePreview(); }}>
                   {"\u2715"}
                 </button>
