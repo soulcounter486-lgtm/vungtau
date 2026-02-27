@@ -426,6 +426,7 @@ export default function Home() {
   const [quotePeopleCount, setQuotePeopleCount] = useState<number>(1);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
   const isLoadingQuoteRef = useRef(false);
+  const ecoTouchStartXRef = useRef(0);
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
   const [isCheckOutOpen, setIsCheckOutOpen] = useState(false);
   const [checkOutCalendarMonth, setCheckOutCalendarMonth] = useState<Date | undefined>(undefined);
@@ -3053,20 +3054,32 @@ export default function Home() {
               const sel = values.ecoGirl?.selections?.[ecoPhotoModal.dayIndex];
               const allPicks = sel?.picks || [];
               const personPicks = allPicks.filter(p => p.person === ecoPhotoModal.person);
-              const currentRank = personPicks.find(p => p.profileId === ecoPhotoModal.profile.id)?.rank || 0;
-              const rankLabels = ["", "1", "2", "3"];
-              const rankColors = ["", "bg-pink-500", "bg-orange-500", "bg-yellow-500"];
-              const handleModalPick = () => {
-                const existing = personPicks.find(p => p.profileId === ecoPhotoModal.profile.id);
+              const currentProfile = ecoPhotoModal.profile;
+              const currentIdx = ecoProfilesList.findIndex(p => p.id === currentProfile.id);
+              const currentRank = personPicks.find(p => p.profileId === currentProfile.id)?.rank || 0;
+              const rankColors = ["", "#ec4899", "#f97316", "#3b82f6"];
+              const handleRankPick = (rank: number) => {
+                const existing = personPicks.find(p => p.profileId === currentProfile.id);
                 let updatedPersonPicks;
-                if (existing) {
-                  updatedPersonPicks = personPicks.filter(p => p.profileId !== ecoPhotoModal.profile.id);
-                  const removedRank = existing.rank;
-                  updatedPersonPicks = updatedPersonPicks.map(p => p.rank > removedRank ? { ...p, rank: p.rank - 1 } : p);
+                if (existing && existing.rank === rank) {
+                  updatedPersonPicks = personPicks.filter(p => p.profileId !== currentProfile.id);
+                  updatedPersonPicks = updatedPersonPicks.map(p => p.rank > rank ? { ...p, rank: p.rank - 1 } : p);
+                } else if (existing) {
+                  const oldRank = existing.rank;
+                  const displaced = personPicks.find(p => p.rank === rank);
+                  updatedPersonPicks = personPicks.map(p => {
+                    if (p.profileId === currentProfile.id) return { ...p, rank };
+                    if (displaced && p.profileId === displaced.profileId) return { ...p, rank: oldRank };
+                    return p;
+                  });
                 } else {
-                  const nextRank = personPicks.length + 1;
-                  if (nextRank > 3) return;
-                  updatedPersonPicks = [...personPicks, { person: ecoPhotoModal.person, profileId: ecoPhotoModal.profile.id, rank: nextRank }];
+                  const displaced = personPicks.find(p => p.rank === rank);
+                  if (displaced) {
+                    updatedPersonPicks = personPicks.filter(p => p.profileId !== displaced.profileId);
+                    updatedPersonPicks = [...updatedPersonPicks, { person: ecoPhotoModal.person, profileId: currentProfile.id, rank }];
+                  } else {
+                    updatedPersonPicks = [...personPicks, { person: ecoPhotoModal.person, profileId: currentProfile.id, rank }];
+                  }
                 }
                 const otherPicks = allPicks.filter(p => p.person !== ecoPhotoModal.person);
                 const newPicks = [...otherPicks, ...updatedPersonPicks];
@@ -3075,40 +3088,35 @@ export default function Home() {
                 updated[ecoPhotoModal.dayIndex] = { ...updated[ecoPhotoModal.dayIndex], picks: newPicks };
                 form.setValue("ecoGirl.selections", updated, { shouldDirty: true });
               };
+              const goToProfile = (newIdx: number) => {
+                if (newIdx >= 0 && newIdx < ecoProfilesList.length) {
+                  setEcoPhotoModal({ ...ecoPhotoModal, profile: ecoProfilesList[newIdx] });
+                }
+              };
               return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" style={{ touchAction: "none", overscrollBehavior: "contain" }} onClick={() => setEcoPhotoModal(null)} onTouchMove={(e) => { e.stopPropagation(); e.preventDefault(); }} data-testid="eco-photo-modal">
-                  <div className="relative max-w-sm w-full bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-                    {ecoPhotoModal.profile.imageUrl ? (
-                      <img src={ecoPhotoModal.profile.imageUrl} alt={ecoPhotoModal.profile.name || ""} className="w-full aspect-[3/4] object-cover" />
-                    ) : (
-                      <div className="w-full aspect-[3/4] bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                        <Users className="w-16 h-16 text-slate-400" />
-                      </div>
-                    )}
-                    {currentRank > 0 && (
-                      <div className={`absolute top-3 right-3 w-8 h-8 rounded-full ${rankColors[currentRank]} text-white text-sm font-bold flex items-center justify-center shadow-lg`}>
-                        {rankLabels[currentRank]}
-                      </div>
-                    )}
-                    <div className="p-4 space-y-3">
-                      {ecoPhotoModal.profile.name && (
-                        <p className="text-center text-lg font-bold">{ecoPhotoModal.profile.name}</p>
-                      )}
-                      <div className="flex gap-2">
-                        <Button
-                          className={`flex-1 ${currentRank > 0 ? "bg-pink-500 hover:bg-pink-600 text-white" : ""}`}
-                          variant={currentRank > 0 ? "default" : "outline"}
-                          onClick={handleModalPick}
-                          data-testid="button-modal-pick"
-                        >
-                          {currentRank > 0 ? `${rankLabels[currentRank]}${language === "ko" ? "지망 선택됨 (해제)" : " Selected (Remove)"}` : (personPicks.length >= 3 ? (language === "ko" ? "3개 모두 선택됨" : "All 3 Selected") : (language === "ko" ? "선택하기" : "Select"))}
-                        </Button>
-                        <Button variant="ghost" onClick={() => setEcoPhotoModal(null)} data-testid="button-modal-close">
-                          {language === "ko" ? "닫기" : "Close"}
-                        </Button>
-                      </div>
-                    </div>
+                <div className="fixed inset-0 flex flex-col items-center justify-center bg-black/95 p-4" style={{ zIndex: 2147483647, touchAction: "none", overscrollBehavior: "contain" }} onClick={() => setEcoPhotoModal(null)} onTouchStart={(e) => { ecoTouchStartXRef.current = e.touches[0].clientX; }} onTouchMove={(e) => { e.stopPropagation(); e.preventDefault(); }} onTouchEnd={(e) => { const diff = ecoTouchStartXRef.current - e.changedTouches[0].clientX; if (Math.abs(diff) > 50) { const nextIdx = diff > 0 ? (currentIdx + 1) % ecoProfilesList.length : (currentIdx - 1 + ecoProfilesList.length) % ecoProfilesList.length; goToProfile(nextIdx); } }} data-testid="eco-photo-modal">
+                  {currentIdx > 0 && (
+                    <button type="button" style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", color: "white", background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, cursor: "pointer", zIndex: 10 }} onClick={(e) => { e.stopPropagation(); goToProfile(currentIdx - 1); }}>‹</button>
+                  )}
+                  {currentIdx < ecoProfilesList.length - 1 && (
+                    <button type="button" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "white", background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, cursor: "pointer", zIndex: 10 }} onClick={(e) => { e.stopPropagation(); goToProfile(currentIdx + 1); }}>›</button>
+                  )}
+                  <div style={{ textAlign: "center", color: "white", marginBottom: 8 }}>
+                    <span style={{ fontSize: 16, fontWeight: "bold" }}>{currentProfile.name || ""}</span>
+                    <span style={{ fontSize: 12, marginLeft: 8, opacity: 0.6 }}>{currentIdx + 1}/{ecoProfilesList.length}</span>
                   </div>
+                  <img src={currentProfile.imageUrl || ""} alt={currentProfile.name || ""} style={{ maxWidth: "90vw", maxHeight: "55vh", objectFit: "contain", borderRadius: 8, pointerEvents: "none", userSelect: "none" }} draggable={false} onClick={(e) => e.stopPropagation()} />
+                  <div style={{ display: "flex", gap: 8, marginTop: 12 }} onClick={(e) => e.stopPropagation()}>
+                    {[1, 2, 3].map(rank => {
+                      const isThis = currentRank === rank;
+                      return (
+                        <button key={rank} type="button" style={{ width: 56, height: 40, borderRadius: 8, fontSize: 14, fontWeight: "bold", border: "2px solid", cursor: "pointer", transition: "all 0.2s", background: isThis ? rankColors[rank] : "rgba(255,255,255,0.15)", color: "white", borderColor: isThis ? rankColors[rank] : "rgba(255,255,255,0.4)" }} onClick={(e) => { e.stopPropagation(); handleRankPick(rank); }}>
+                          {rank}{language === "ko" ? "지망" : ""}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <button type="button" style={{ color: "white", background: "rgba(255,255,255,0.3)", border: "2px solid rgba(255,255,255,0.6)", borderRadius: "50%", width: 50, height: 50, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, cursor: "pointer", marginTop: 12 }} onClick={(e) => { e.stopPropagation(); setEcoPhotoModal(null); }}>{"\u2715"}</button>
                 </div>
               );
             })()}
