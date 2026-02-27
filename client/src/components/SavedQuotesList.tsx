@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { EcoProfile } from "@shared/schema";
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useLanguage } from "@/lib/i18n";
 import { useQuotes } from "@/hooks/use-quotes";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -1921,7 +1922,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
         const activeSel = ecoSelections.find(s => s.date === activePickDate);
         const persons = activeSel ? ensurePersonSlots(selectedEcoPicks, activePickDate, activeSel.count) : [];
         const currentPerson = persons[activePersonIndex] || { first: null, second: null, third: null };
-        return (
+        return createPortal(
         <div
           data-testid="eco-card-preview-overlay"
           style={{ position: "fixed", inset: 0, zIndex: 2147483647, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", touchAction: "none", overscrollBehavior: "contain" }}
@@ -1980,10 +1981,10 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
           >
             {"\u2715"}
           </button>
-        </div>
+        </div>, document.body
         );
       })()}
-      {ecoConfirmPreview && (
+      {ecoConfirmPreview && createPortal(
         <div
           data-testid="eco-confirm-preview-overlay"
           style={{ position: "fixed", inset: 0, zIndex: 2147483647, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}
@@ -2062,7 +2063,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
           >
             {"\u2715"}
           </button>
-        </div>
+        </div>, document.body
       )}
     </div>
   );
