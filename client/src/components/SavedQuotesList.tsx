@@ -1373,7 +1373,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                                               </div>
                                             );
                                           })}
-                                          {(() => { const unavail: number[] = (quote.ecoUnavailableProfiles as number[] | null) || []; const pickedIds = [person.first, person.second, person.third].filter(Boolean) as number[]; const allUnavailable = pickedIds.length > 0 && pickedIds.every(id => unavail.includes(id)); if (allUnavailable) return (<span className="text-[8px] text-red-500 font-bold ml-1 whitespace-nowrap">{language === "ko" ? "다른 에코픽 부탁드립니다" : "Please pick again"}</span>); return null; })()}
+                                          {(() => { const unavail: number[] = (quote.ecoUnavailableProfiles as number[] | null) || []; const pickedIds = [person.first, person.second, person.third].filter(Boolean) as number[]; const allUnavailable = pickedIds.length > 0 && pickedIds.every(id => unavail.includes(id)); if (allUnavailable) return (<span className="text-[7px] text-red-500 font-bold ml-1 leading-tight max-w-[45px] text-center whitespace-pre-line">{language === "ko" ? "다른\n에코픽\n부탁드립니다" : "Please\npick\nagain"}</span>); return null; })()}
                                         </div>
                                       </div>
                                     );
