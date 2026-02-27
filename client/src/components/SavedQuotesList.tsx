@@ -65,14 +65,15 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
   const queryClient = useQueryClient();
   const [ecoPickOpen, setEcoPickOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [ecoConfirmPreview, setEcoConfirmPreview] = useState<{ imageUrl: string; profileName: string; profileId: number; date: string; personIndex: number; priorityLabel: string } | null>(null);
   const [villaPhotoOpen, setVillaPhotoOpen] = useState(false);
   const [villaLinkOpen, setVillaLinkOpen] = useState(false);
   const [villaPhotoIndex, setVillaPhotoIndex] = useState(0);
-  const closePreview = useCallback(() => setPreviewImage(null), []);
+  const closePreview = useCallback(() => { setPreviewImage(null); setEcoConfirmPreview(null); }, []);
   const [isSavingEcoPicks, setIsSavingEcoPicks] = useState(false);
 
   useEffect(() => {
-    const isOverlayOpen = !!previewImage || villaPhotoOpen;
+    const isOverlayOpen = !!previewImage || villaPhotoOpen || !!ecoConfirmPreview;
     if (isOverlayOpen) {
       const scrollY = window.scrollY;
       document.body.style.position = 'fixed';
@@ -89,7 +90,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
         window.scrollTo(0, scrollY);
       };
     }
-  }, [previewImage, villaPhotoOpen]);
+  }, [previewImage, villaPhotoOpen, ecoConfirmPreview]);
 
   const linkedVillaId = breakdown?.villa?.villaId;
   const { data: linkedVilla } = useQuery<any>({
@@ -1365,7 +1366,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                                             const profile = ecoProfiles.find(p => p.id === profileId);
                                             if (!profile) return null;
                                             return (
-                                              <div key={pk} className={`relative w-9 h-9 rounded-md overflow-hidden flex-shrink-0 cursor-pointer ${(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[sel.date] || {}; return dc[String(pi)] === profileId ? "border-2 border-green-500 ring-1 ring-green-400" : "border border-pink-300/50"; })()}`} onClick={(e) => { e.stopPropagation(); e.preventDefault(); setPreviewImage(profile.imageUrl); }}>
+                                              <div key={pk} className={`relative w-9 h-9 rounded-md overflow-hidden flex-shrink-0 cursor-pointer ${(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[sel.date] || {}; return dc[String(pi)] === profileId ? "border-2 border-green-500 ring-1 ring-green-400" : "border border-pink-300/50"; })()}`} onClick={(e) => { e.stopPropagation(); e.preventDefault(); if (isAdmin) { setEcoConfirmPreview({ imageUrl: profile.imageUrl, profileName: profile.name, profileId: profileId, date: sel.date, personIndex: pi, priorityLabel: priorityLabels[pri] }); } else { setPreviewImage(profile.imageUrl); } }}>
                                                 <img src={profile.imageUrl} alt={profile.name} className="w-full h-full object-cover" />
                                                 {(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[sel.date] || {}; if (dc[String(pi)] === profileId) return (<div className="absolute top-0 left-0 right-0 bg-green-600 text-[5px] text-white text-center font-bold py-px z-10">확정</div>); return (<div className={`absolute top-0 left-0 w-3 h-3 ${priorityColors[pri]} rounded-br-sm flex items-center justify-center`}><span className="text-[6px] font-bold text-white">{pri + 1}</span></div>); })()}
                                                 <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-[5px] text-white text-center leading-tight py-px truncate">{profile.name}</div>
@@ -1928,7 +1929,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
         </DialogContent>
       </Dialog>
 
-      {previewImage && !ecoPickOpen && (
+      {previewImage && !ecoPickOpen && !ecoConfirmPreview && (
         <div
           data-testid="eco-card-preview-overlay"
           style={{ position: "fixed", inset: 0, zIndex: 2147483647, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 24 }}
@@ -1946,6 +1947,62 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
             type="button"
             style={{ color: "white", background: "rgba(255,255,255,0.3)", border: "2px solid rgba(255,255,255,0.6)", borderRadius: "50%", width: 60, height: 60, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, cursor: "pointer", touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
             onClick={(e) => { e.stopPropagation(); closePreview(); }}
+          >
+            {"\u2715"}
+          </button>
+        </div>
+      )}
+      {ecoConfirmPreview && (
+        <div
+          data-testid="eco-confirm-preview-overlay"
+          style={{ position: "fixed", inset: 0, zIndex: 2147483647, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}
+          onClick={(e) => { e.stopPropagation(); e.preventDefault(); setEcoConfirmPreview(null); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+        >
+          <img
+            src={ecoConfirmPreview.imageUrl}
+            alt={ecoConfirmPreview.profileName}
+            style={{ maxWidth: "92vw", maxHeight: "60vh", objectFit: "contain", borderRadius: 8, pointerEvents: "none", userSelect: "none" }}
+            draggable={false}
+          />
+          <div className="text-white text-center space-y-1">
+            <p className="text-lg font-bold">{ecoConfirmPreview.profileName}</p>
+            <p className="text-sm text-white/70">{ecoConfirmPreview.date} · {ecoConfirmPreview.priorityLabel}</p>
+          </div>
+          {(() => {
+            const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {};
+            const dc = cp[ecoConfirmPreview.date] || {};
+            const isConfirmed = dc[String(ecoConfirmPreview.personIndex)] === ecoConfirmPreview.profileId;
+            return (
+              <button
+                type="button"
+                className={`px-6 py-3 rounded-xl font-bold text-base transition-all ${isConfirmed ? "bg-green-600 text-white ring-2 ring-green-400" : "bg-white/20 text-white border-2 border-white/50 hover:bg-green-600 hover:border-green-400"}`}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  const prev = { ...cp };
+                  if (!prev[ecoConfirmPreview.date]) prev[ecoConfirmPreview.date] = {};
+                  if (isConfirmed) {
+                    delete prev[ecoConfirmPreview.date][String(ecoConfirmPreview.personIndex)];
+                  } else {
+                    prev[ecoConfirmPreview.date][String(ecoConfirmPreview.personIndex)] = ecoConfirmPreview.profileId;
+                  }
+                  try {
+                    await apiRequest("PATCH", `/api/quotes/${quote.id}/eco-confirmed`, { ecoConfirmed: quote.ecoConfirmed, ecoConfirmedPicks: prev });
+                    queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+                  } catch {}
+                }}
+                data-testid="button-eco-confirm-preview"
+              >
+                <Check className="w-5 h-5 inline mr-2" />
+                {isConfirmed ? (language === "ko" ? "확정됨 (해제하려면 클릭)" : "Confirmed (Click to remove)") : (language === "ko" ? "확정하기" : "Confirm")}
+              </button>
+            );
+          })()}
+          <button
+            type="button"
+            style={{ color: "white", background: "rgba(255,255,255,0.3)", border: "2px solid rgba(255,255,255,0.6)", borderRadius: "50%", width: 50, height: 50, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, cursor: "pointer", touchAction: "manipulation" }}
+            onClick={(e) => { e.stopPropagation(); setEcoConfirmPreview(null); }}
           >
             {"\u2715"}
           </button>
