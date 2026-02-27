@@ -3076,7 +3076,7 @@ export default function Home() {
                 form.setValue("ecoGirl.selections", updated, { shouldDirty: true });
               };
               return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setEcoPhotoModal(null)} data-testid="eco-photo-modal">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" style={{ touchAction: "none", overscrollBehavior: "contain" }} onClick={() => setEcoPhotoModal(null)} onTouchMove={(e) => { e.stopPropagation(); e.preventDefault(); }} data-testid="eco-photo-modal">
                   <div className="relative max-w-sm w-full bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
                     {ecoPhotoModal.profile.imageUrl ? (
                       <img src={ecoPhotoModal.profile.imageUrl} alt={ecoPhotoModal.profile.name || ""} className="w-full aspect-[3/4] object-cover" />

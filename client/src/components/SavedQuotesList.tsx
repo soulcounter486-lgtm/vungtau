@@ -1944,10 +1944,11 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
         return (
         <div
           data-testid="eco-card-preview-overlay"
-          style={{ position: "fixed", inset: 0, zIndex: 2147483647, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}
+          style={{ position: "fixed", inset: 0, zIndex: 2147483647, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", touchAction: "none", overscrollBehavior: "contain" }}
           onClick={(e) => { e.stopPropagation(); e.preventDefault(); closePreview(); }}
           onPointerDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => { e.stopPropagation(); touchStartXRef.current = e.touches[0].clientX; }}
+          onTouchStart={(e) => { e.stopPropagation(); e.preventDefault(); touchStartXRef.current = e.touches[0].clientX; }}
+          onTouchMove={(e) => { e.stopPropagation(); e.preventDefault(); }}
           onTouchEnd={(e) => {
             const touchEndX = e.changedTouches[0].clientX;
             const diff = touchStartXRef.current - touchEndX;
