@@ -1373,7 +1373,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                                               </div>
                                             );
                                           })}
-                                          {(() => { const unavail: number[] = (quote.ecoUnavailableProfiles as number[] | null) || []; const pickedIds = [person.first, person.second, person.third].filter(Boolean) as number[]; const allUnavailable = pickedIds.length > 0 && pickedIds.every(id => unavail.includes(id)); if (allUnavailable) return (<span className="text-[7px] text-red-500 font-bold ml-1 leading-tight max-w-[45px] text-center whitespace-pre-line">{language === "ko" ? "다른\n에코픽\n부탁드립니다" : "Please\npick\nagain"}</span>); return null; })()}
+                                          {(() => { const unavail: number[] = Array.isArray(quote.ecoUnavailableProfiles) ? (quote.ecoUnavailableProfiles as number[]) : []; const pickedIds = [person.first, person.second, person.third].filter((v): v is number => v !== null && v !== undefined && v !== 0); if (pickedIds.length === 0) return null; let unavailCount = 0; pickedIds.forEach(id => { if (unavail.some(u => Number(u) === Number(id))) unavailCount++; }); if (unavailCount === pickedIds.length) return (<span className="text-[7px] text-red-500 font-bold ml-1 leading-tight max-w-[45px] text-center whitespace-pre-line">{language === "ko" ? "다른\n에코픽\n부탁드립니다" : "Please\npick\nagain"}</span>); return null; })()}
                                         </div>
                                       </div>
                                     );
