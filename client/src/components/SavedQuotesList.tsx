@@ -74,6 +74,18 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
   const [villaLinkOpen, setVillaLinkOpen] = useState(false);
   const [villaPhotoIndex, setVillaPhotoIndex] = useState(0);
   const closePreview = useCallback(() => { setPreviewImage(null); setPreviewProfileIdx(null); setEcoConfirmPreview(null); }, []);
+  const portalContainerRef = useRef<HTMLDivElement | null>(null);
+  const [portalReady, setPortalReady] = useState(false);
+  useEffect(() => {
+    const el = document.createElement("div");
+    el.id = `eco-preview-portal-${quote.id}`;
+    el.style.position = "relative";
+    el.style.zIndex = "2147483647";
+    document.body.appendChild(el);
+    portalContainerRef.current = el;
+    setPortalReady(true);
+    return () => { if (el.parentNode) el.parentNode.removeChild(el); };
+  }, []);
   const [isSavingEcoPicks, setIsSavingEcoPicks] = useState(false);
 
   useEffect(() => {
@@ -1911,7 +1923,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
         </DialogContent>
       </Dialog>
 
-      {previewImage && !ecoConfirmPreview && (() => {
+      {portalReady && previewImage && !ecoConfirmPreview && (() => {
         let currentIdx = previewProfileIdx ?? -1;
         if (currentIdx < 0 && previewImage) {
           currentIdx = ecoProfiles.findIndex(p => p.imageUrl === previewImage);
@@ -1981,10 +1993,10 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
           >
             {"\u2715"}
           </button>
-        </div>, document.body
+        </div>, portalContainerRef.current!
         );
       })()}
-      {ecoConfirmPreview && createPortal(
+      {portalReady && ecoConfirmPreview && createPortal(
         <div
           data-testid="eco-confirm-preview-overlay"
           style={{ position: "fixed", inset: 0, zIndex: 2147483647, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}
@@ -2063,7 +2075,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
           >
             {"\u2715"}
           </button>
-        </div>, document.body
+        </div>, portalContainerRef.current!
       )}
     </div>
   );
