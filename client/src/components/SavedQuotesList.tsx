@@ -1366,9 +1366,9 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                                             const profile = ecoProfiles.find(p => p.id === profileId);
                                             if (!profile) return null;
                                             return (
-                                              <div key={pk} className={`relative w-9 h-9 rounded-md overflow-hidden flex-shrink-0 cursor-pointer ${(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[sel.date] || {}; return dc[String(pi)] === profileId ? "border-2 border-green-500 ring-1 ring-green-400" : "border border-pink-300/50"; })()}`} onClick={(e) => { e.stopPropagation(); e.preventDefault(); if (isAdmin) { setEcoConfirmPreview({ imageUrl: profile.imageUrl, profileName: profile.name, profileId: profileId, date: sel.date, personIndex: pi, priorityLabel: priorityLabels[pri] }); } else { setPreviewImage(profile.imageUrl); } }}>
+                                              <div key={pk} className={`relative w-9 h-9 rounded-md overflow-hidden flex-shrink-0 cursor-pointer ${(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[sel.date] || {}; const unavail: number[] = (quote.ecoUnavailableProfiles as number[] | null) || []; if (unavail.includes(profileId)) return "border-2 border-red-500 ring-1 ring-red-400 opacity-50"; return dc[String(pi)] === profileId ? "border-2 border-green-500 ring-1 ring-green-400" : "border border-pink-300/50"; })()}`} onClick={(e) => { e.stopPropagation(); e.preventDefault(); if (isAdmin) { setEcoConfirmPreview({ imageUrl: profile.imageUrl, profileName: profile.name, profileId: profileId, date: sel.date, personIndex: pi, priorityLabel: priorityLabels[pri] }); } else { setPreviewImage(profile.imageUrl); } }}>
                                                 <img src={profile.imageUrl} alt={profile.name} className="w-full h-full object-cover" />
-                                                {(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[sel.date] || {}; if (dc[String(pi)] === profileId) return (<div className="absolute top-0 left-0 right-0 bg-green-600 text-[5px] text-white text-center font-bold py-px z-10">확정</div>); return (<div className={`absolute top-0 left-0 w-3 h-3 ${priorityColors[pri]} rounded-br-sm flex items-center justify-center`}><span className="text-[6px] font-bold text-white">{pri + 1}</span></div>); })()}
+                                                {(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[sel.date] || {}; const unavail: number[] = (quote.ecoUnavailableProfiles as number[] | null) || []; if (unavail.includes(profileId)) return (<div className="absolute top-0 left-0 right-0 bg-red-600 text-[5px] text-white text-center font-bold py-px z-10">픽불가</div>); if (dc[String(pi)] === profileId) return (<div className="absolute top-0 left-0 right-0 bg-green-600 text-[5px] text-white text-center font-bold py-px z-10">확정</div>); return (<div className={`absolute top-0 left-0 w-3 h-3 ${priorityColors[pri]} rounded-br-sm flex items-center justify-center`}><span className="text-[6px] font-bold text-white">{pri + 1}</span></div>); })()}
                                                 <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-[5px] text-white text-center leading-tight py-px truncate">{profile.name}</div>
                                               </div>
                                             );
@@ -1768,10 +1768,10 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                           const selectedPriority = priorityKeys.find(pk => currentPerson[pk] === profile.id);
                           const isSelectedByOther = persons.some((p, idx) => idx !== activePersonIndex && p.first === profile.id);
                           return (
-                            <div key={profile.id} id={`eco-grid-profile-${profile.id}`} className={`relative rounded-lg overflow-hidden border-2 transition-all ${(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[activePickDate] || {}; const isConfirmedForPerson = dc[String(activePersonIndex)] === profile.id; if (isConfirmedForPerson) return "border-green-500 ring-2 ring-green-400"; return selectedPriority ? "border-pink-500 ring-2 ring-pink-300" : isSelectedByOther ? "border-slate-200 dark:border-slate-600 opacity-30" : "border-slate-200 dark:border-slate-600"; })()}`} data-testid={`eco-pick-profile-${profile.id}`}>
+                            <div key={profile.id} id={`eco-grid-profile-${profile.id}`} className={`relative rounded-lg overflow-hidden border-2 transition-all ${(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[activePickDate] || {}; const isConfirmedForPerson = dc[String(activePersonIndex)] === profile.id; const unavail: number[] = (quote.ecoUnavailableProfiles as number[] | null) || []; if (unavail.includes(profile.id)) return "border-red-500 ring-2 ring-red-400 opacity-50"; if (isConfirmedForPerson) return "border-green-500 ring-2 ring-green-400"; return selectedPriority ? "border-pink-500 ring-2 ring-pink-300" : isSelectedByOther ? "border-slate-200 dark:border-slate-600 opacity-30" : "border-slate-200 dark:border-slate-600"; })()}`} data-testid={`eco-pick-profile-${profile.id}`}>
                               <div className="aspect-[3/4] relative cursor-pointer" onClick={(e) => { e.stopPropagation(); e.preventDefault(); e.nativeEvent.stopImmediatePropagation(); setPreviewImage(profile.imageUrl); }}>
                                 <img src={profile.imageUrl} alt={profile.name} className={`w-full h-full object-cover ${!(isAdmin || (canViewNightlife18 && depositPaid)) ? "blur-lg" : ""}`} />
-                                {(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[activePickDate] || {}; const isConfirmedForPerson = dc[String(activePersonIndex)] === profile.id; if (isConfirmedForPerson) return (<div className="absolute top-0 left-0 right-0 bg-green-600 text-white text-[9px] font-bold text-center py-0.5 z-10">{language === "ko" ? "✓ 확정" : "✓ Confirmed"}</div>); return null; })()}
+                                {(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[activePickDate] || {}; const isConfirmedForPerson = dc[String(activePersonIndex)] === profile.id; const unavail: number[] = (quote.ecoUnavailableProfiles as number[] | null) || []; if (unavail.includes(profile.id)) return (<div className="absolute top-0 left-0 right-0 bg-red-600 text-white text-[9px] font-bold text-center py-0.5 z-10">{language === "ko" ? "✗ 픽불가" : "✗ Unavailable"}</div>); if (isConfirmedForPerson) return (<div className="absolute top-0 left-0 right-0 bg-green-600 text-white text-[9px] font-bold text-center py-0.5 z-10">{language === "ko" ? "✓ 확정" : "✓ Confirmed"}</div>); return null; })()}
                                 {selectedPriority && (
                                   <div className={`absolute top-1 right-1 w-6 h-6 ${priorityColors[priorityKeys.indexOf(selectedPriority)]} rounded-full flex items-center justify-center`}>
                                     <Check className="w-4 h-4 text-white" />
@@ -1974,29 +1974,54 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
             const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {};
             const dc = cp[ecoConfirmPreview.date] || {};
             const isConfirmed = dc[String(ecoConfirmPreview.personIndex)] === ecoConfirmPreview.profileId;
+            const unavailList: number[] = (quote.ecoUnavailableProfiles as number[] | null) || [];
+            const isUnavailable = unavailList.includes(ecoConfirmPreview.profileId);
             return (
-              <button
-                type="button"
-                className={`px-6 py-3 rounded-xl font-bold text-base transition-all ${isConfirmed ? "bg-green-600 text-white ring-2 ring-green-400" : "bg-white/20 text-white border-2 border-white/50 hover:bg-green-600 hover:border-green-400"}`}
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  const prev = { ...cp };
-                  if (!prev[ecoConfirmPreview.date]) prev[ecoConfirmPreview.date] = {};
-                  if (isConfirmed) {
-                    delete prev[ecoConfirmPreview.date][String(ecoConfirmPreview.personIndex)];
-                  } else {
-                    prev[ecoConfirmPreview.date][String(ecoConfirmPreview.personIndex)] = ecoConfirmPreview.profileId;
-                  }
-                  try {
-                    await apiRequest("PATCH", `/api/quotes/${quote.id}/eco-confirmed`, { ecoConfirmed: quote.ecoConfirmed, ecoConfirmedPicks: prev });
-                    queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
-                  } catch {}
-                }}
-                data-testid="button-eco-confirm-preview"
-              >
-                <Check className="w-5 h-5 inline mr-2" />
-                {isConfirmed ? (language === "ko" ? "확정됨 (해제하려면 클릭)" : "Confirmed (Click to remove)") : (language === "ko" ? "확정하기" : "Confirm")}
-              </button>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  className={`px-5 py-3 rounded-xl font-bold text-base transition-all ${isConfirmed ? "bg-green-600 text-white ring-2 ring-green-400" : "bg-white/20 text-white border-2 border-white/50 hover:bg-green-600 hover:border-green-400"}`}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const prev = { ...cp };
+                    if (!prev[ecoConfirmPreview.date]) prev[ecoConfirmPreview.date] = {};
+                    if (isConfirmed) {
+                      delete prev[ecoConfirmPreview.date][String(ecoConfirmPreview.personIndex)];
+                    } else {
+                      prev[ecoConfirmPreview.date][String(ecoConfirmPreview.personIndex)] = ecoConfirmPreview.profileId;
+                    }
+                    try {
+                      await apiRequest("PATCH", `/api/quotes/${quote.id}/eco-confirmed`, { ecoConfirmed: quote.ecoConfirmed, ecoConfirmedPicks: prev });
+                      queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+                    } catch {}
+                  }}
+                  data-testid="button-eco-confirm-preview"
+                >
+                  <Check className="w-5 h-5 inline mr-2" />
+                  {isConfirmed ? (language === "ko" ? "확정됨" : "Confirmed") : (language === "ko" ? "확정하기" : "Confirm")}
+                </button>
+                <button
+                  type="button"
+                  className={`px-5 py-3 rounded-xl font-bold text-base transition-all ${isUnavailable ? "bg-red-600 text-white ring-2 ring-red-400" : "bg-white/20 text-white border-2 border-white/50 hover:bg-red-600 hover:border-red-400"}`}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    let newList: number[];
+                    if (isUnavailable) {
+                      newList = unavailList.filter(id => id !== ecoConfirmPreview.profileId);
+                    } else {
+                      newList = [...unavailList, ecoConfirmPreview.profileId];
+                    }
+                    try {
+                      await apiRequest("PATCH", `/api/quotes/${quote.id}/eco-confirmed`, { ecoConfirmed: quote.ecoConfirmed, ecoUnavailableProfiles: newList });
+                      queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+                    } catch {}
+                  }}
+                  data-testid="button-eco-unavailable-preview"
+                >
+                  <X className="w-5 h-5 inline mr-2" />
+                  {isUnavailable ? (language === "ko" ? "픽불가 해제" : "Remove Unavailable") : (language === "ko" ? "픽불가" : "Unavailable")}
+                </button>
+              </div>
             );
           })()}
           <button

@@ -1720,10 +1720,13 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
       if (!isUserAdmin(userId, userEmail)) {
         return res.status(403).json({ message: "Only admin can confirm eco picks" });
       }
-      const { ecoConfirmed, ecoConfirmedPicks } = req.body;
+      const { ecoConfirmed, ecoConfirmedPicks, ecoUnavailableProfiles } = req.body;
       const updateData: any = { ecoConfirmed: !!ecoConfirmed };
       if (ecoConfirmedPicks !== undefined) {
         updateData.ecoConfirmedPicks = ecoConfirmedPicks;
+      }
+      if (ecoUnavailableProfiles !== undefined) {
+        updateData.ecoUnavailableProfiles = ecoUnavailableProfiles;
       }
       const [quote] = await db.update(quotes).set(updateData).where(eq(quotes.id, id)).returning();
       if (!quote) return res.status(404).json({ message: "Quote not found" });
