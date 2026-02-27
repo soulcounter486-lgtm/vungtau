@@ -1934,7 +1934,10 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
       </Dialog>
 
       {previewImage && !ecoConfirmPreview && (() => {
-        const currentIdx = previewProfileIdx ?? -1;
+        let currentIdx = previewProfileIdx ?? -1;
+        if (currentIdx < 0 && previewImage) {
+          currentIdx = ecoProfiles.findIndex(p => p.imageUrl === previewImage);
+        }
         const currentProfile = currentIdx >= 0 ? ecoProfiles[currentIdx] : null;
         const unavail: number[] = (quote.ecoUnavailableProfiles as number[] | null) || [];
         const isUnavail = currentProfile ? unavail.includes(currentProfile.id) : false;
@@ -1974,7 +1977,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
           <img
             src={previewImage || ""}
             alt="preview"
-            style={{ maxWidth: "92vw", maxHeight: "60vh", objectFit: "contain", borderRadius: 8, pointerEvents: "none", userSelect: "none" }}
+            style={{ maxWidth: "90vw", maxHeight: "55vh", objectFit: "contain", borderRadius: 8, pointerEvents: "none", userSelect: "none" }}
             draggable={false}
             onClick={(e) => e.stopPropagation()}
           />
