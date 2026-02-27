@@ -1733,7 +1733,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                           const selectedId = currentPerson[pk];
                           const profile = selectedId ? ecoProfiles.find(p => p.id === selectedId) : null;
                           return (
-                            <Badge key={pk} variant={selectedId ? "default" : "outline"} className={`text-xs ${selectedId ? priorityColors[i] + " text-white border-transparent" : ""}`}>
+                            <Badge key={pk} variant={selectedId ? "default" : "outline"} className={`text-xs cursor-pointer ${selectedId ? priorityColors[i] + " text-white border-transparent" : ""}`} onClick={() => { if (selectedId) { const el = document.getElementById(`eco-grid-profile-${selectedId}`); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); } }}>
                               <span className={`w-2 h-2 rounded-full ${priorityColors[i]} mr-1 inline-block`} />
                               {priorityLabels[i]}: {profile ? profile.name : "-"}
                             </Badge>
@@ -1758,7 +1758,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                           const selectedPriority = priorityKeys.find(pk => currentPerson[pk] === profile.id);
                           const isSelectedByOther = persons.some((p, idx) => idx !== activePersonIndex && p.first === profile.id);
                           return (
-                            <div key={profile.id} className={`relative rounded-lg overflow-hidden border-2 transition-all ${selectedPriority ? "border-pink-500 ring-2 ring-pink-300" : isSelectedByOther ? "border-slate-200 dark:border-slate-600 opacity-30" : "border-slate-200 dark:border-slate-600"}`} data-testid={`eco-pick-profile-${profile.id}`}>
+                            <div key={profile.id} id={`eco-grid-profile-${profile.id}`} className={`relative rounded-lg overflow-hidden border-2 transition-all ${selectedPriority ? "border-pink-500 ring-2 ring-pink-300" : isSelectedByOther ? "border-slate-200 dark:border-slate-600 opacity-30" : "border-slate-200 dark:border-slate-600"}`} data-testid={`eco-pick-profile-${profile.id}`}>
                               <div className="aspect-[3/4] relative cursor-pointer" onClick={(e) => { e.stopPropagation(); e.preventDefault(); e.nativeEvent.stopImmediatePropagation(); setPreviewImage(profile.imageUrl); }}>
                                 <img src={profile.imageUrl} alt={profile.name} className={`w-full h-full object-cover ${!(isAdmin || (canViewNightlife18 && depositPaid)) ? "blur-lg" : ""}`} />
                                 {selectedPriority && (
