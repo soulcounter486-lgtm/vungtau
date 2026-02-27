@@ -1925,6 +1925,84 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
           )}
         </DialogContent>
       </Dialog>
+      {!ecoPickOpen && previewImage && !ecoConfirmPreview && (() => {
+        let currentIdx = previewProfileIdx ?? -1;
+        if (currentIdx < 0 && previewImage) {
+          currentIdx = ecoProfiles.findIndex(p => p.imageUrl === previewImage);
+        }
+        const currentProfile = currentIdx >= 0 ? ecoProfiles[currentIdx] : null;
+        return (
+          <div
+            data-testid="eco-card-preview-standalone"
+            style={{ position: "fixed", inset: 0, zIndex: 2147483647, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", touchAction: "none", overscrollBehavior: "contain" }}
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); closePreview(); }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => { e.stopPropagation(); e.preventDefault(); touchStartXRef.current = e.touches[0].clientX; }}
+            onTouchMove={(e) => { e.stopPropagation(); e.preventDefault(); }}
+            onTouchEnd={(e) => {
+              const touchEndX = e.changedTouches[0].clientX;
+              const diff = touchStartXRef.current - touchEndX;
+              if (Math.abs(diff) > 50) {
+                const nextIdx = diff > 0 ? (currentIdx + 1) % ecoProfiles.length : (currentIdx - 1 + ecoProfiles.length) % ecoProfiles.length;
+                setPreviewProfileIdx(nextIdx);
+                setPreviewImage(ecoProfiles[nextIdx]?.imageUrl || null);
+              }
+            }}
+          >
+            {currentIdx > 0 && (
+              <button type="button" style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", color: "white", background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, cursor: "pointer", zIndex: 10 }} onClick={(e) => { e.stopPropagation(); const prev = currentIdx - 1; setPreviewProfileIdx(prev); setPreviewImage(ecoProfiles[prev]?.imageUrl || null); }}>‹</button>
+            )}
+            {currentIdx < ecoProfiles.length - 1 && (
+              <button type="button" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "white", background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, cursor: "pointer", zIndex: 10 }} onClick={(e) => { e.stopPropagation(); const next = currentIdx + 1; setPreviewProfileIdx(next); setPreviewImage(ecoProfiles[next]?.imageUrl || null); }}>›</button>
+            )}
+            <div style={{ textAlign: "center", color: "white", marginBottom: 8 }}>
+              <span style={{ fontSize: 16, fontWeight: "bold" }}>{currentProfile?.name || ""}</span>
+              <span style={{ fontSize: 12, marginLeft: 8, opacity: 0.6 }}>{currentIdx + 1}/{ecoProfiles.length}</span>
+            </div>
+            <img src={previewImage || ""} alt="preview" style={{ maxWidth: "90vw", maxHeight: "60vh", objectFit: "contain", borderRadius: 8, pointerEvents: "none", userSelect: "none" }} draggable={false} onClick={(e) => e.stopPropagation()} />
+            <button type="button" style={{ color: "white", background: "rgba(255,255,255,0.3)", border: "2px solid rgba(255,255,255,0.6)", borderRadius: "50%", width: 50, height: 50, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, cursor: "pointer", touchAction: "manipulation", WebkitTapHighlightColor: "transparent", marginTop: 12 }} onClick={(e) => { e.stopPropagation(); closePreview(); }}>
+              {"\u2715"}
+            </button>
+          </div>
+        );
+      })()}
+      {!ecoPickOpen && ecoConfirmPreview && (
+        <div
+          data-testid="eco-confirm-preview-standalone"
+          style={{ position: "fixed", inset: 0, zIndex: 2147483647, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}
+          onClick={(e) => { e.stopPropagation(); e.preventDefault(); setEcoConfirmPreview(null); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+        >
+          <img src={ecoConfirmPreview.imageUrl} alt={ecoConfirmPreview.profileName} style={{ maxWidth: "92vw", maxHeight: "60vh", objectFit: "contain", borderRadius: 8, pointerEvents: "none", userSelect: "none" }} draggable={false} />
+          <div className="text-white text-center space-y-1">
+            <p className="text-lg font-bold">{ecoConfirmPreview.profileName}</p>
+            <p className="text-sm text-white/70">{ecoConfirmPreview.date} · {ecoConfirmPreview.priorityLabel}</p>
+          </div>
+          {(() => {
+            const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {};
+            const dc = cp[ecoConfirmPreview.date] || {};
+            const isConfirmed = dc[String(ecoConfirmPreview.personIndex)] === ecoConfirmPreview.profileId;
+            const unavailList: number[] = (quote.ecoUnavailableProfiles as number[] | null) || [];
+            const isUnavailable = unavailList.includes(ecoConfirmPreview.profileId);
+            return (
+              <div className="flex gap-3">
+                <button type="button" className={`px-5 py-3 rounded-xl font-bold text-base transition-all ${isConfirmed ? "bg-green-600 text-white ring-2 ring-green-400" : "bg-white/20 text-white border-2 border-white/50 hover:bg-green-600 hover:border-green-400"}`} onClick={async (e) => { e.stopPropagation(); const prev = { ...cp }; if (!prev[ecoConfirmPreview.date]) prev[ecoConfirmPreview.date] = {}; if (isConfirmed) { delete prev[ecoConfirmPreview.date][String(ecoConfirmPreview.personIndex)]; } else { prev[ecoConfirmPreview.date][String(ecoConfirmPreview.personIndex)] = ecoConfirmPreview.profileId; } try { await apiRequest("PATCH", `/api/quotes/${quote.id}/eco-confirmed`, { ecoConfirmed: quote.ecoConfirmed, ecoConfirmedPicks: prev }); queryClient.invalidateQueries({ queryKey: ["/api/quotes"] }); } catch {} }} data-testid="button-eco-confirm-standalone">
+                  <Check className="w-5 h-5 inline mr-2" />
+                  {isConfirmed ? (language === "ko" ? "확정됨" : "Confirmed") : (language === "ko" ? "확정하기" : "Confirm")}
+                </button>
+                <button type="button" className={`px-5 py-3 rounded-xl font-bold text-base transition-all ${isUnavailable ? "bg-red-600 text-white ring-2 ring-red-400" : "bg-white/20 text-white border-2 border-white/50 hover:bg-red-600 hover:border-red-400"}`} onClick={async (e) => { e.stopPropagation(); let newList: number[]; if (isUnavailable) { newList = unavailList.filter(id => id !== ecoConfirmPreview.profileId); } else { newList = [...unavailList, ecoConfirmPreview.profileId]; } try { await apiRequest("PATCH", `/api/quotes/${quote.id}/eco-confirmed`, { ecoConfirmed: quote.ecoConfirmed, ecoUnavailableProfiles: newList }); queryClient.invalidateQueries({ queryKey: ["/api/quotes"] }); } catch {} }} data-testid="button-eco-unavailable-standalone">
+                  <X className="w-5 h-5 inline mr-2" />
+                  {isUnavailable ? (language === "ko" ? "픽불가 해제" : "Remove Unavailable") : (language === "ko" ? "픽불가" : "Unavailable")}
+                </button>
+              </div>
+            );
+          })()}
+          <button type="button" style={{ color: "white", background: "rgba(255,255,255,0.3)", border: "2px solid rgba(255,255,255,0.6)", borderRadius: "50%", width: 50, height: 50, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, cursor: "pointer", touchAction: "manipulation" }} onClick={(e) => { e.stopPropagation(); setEcoConfirmPreview(null); }}>
+            {"\u2715"}
+          </button>
+        </div>
+      )}
       {villaPhotoOpen && linkedVilla && (() => {
         const photos: string[] = [];
         if (linkedVilla.mainImage) photos.push(linkedVilla.mainImage);
