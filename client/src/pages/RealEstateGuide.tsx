@@ -708,8 +708,12 @@ export default function RealEstateGuide() {
       if (!dbCat.isActive) return;
 
       const categoryListings = dbListings
-        .filter(p => p.category === dbCat.id && p.isActive)
-        .sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999))
+        .filter(p => p.category === dbCat.id)
+        .sort((a, b) => {
+          if (a.isActive !== false && b.isActive === false) return -1;
+          if (a.isActive === false && b.isActive !== false) return 1;
+          return (a.sortOrder ?? 999) - (b.sortOrder ?? 999);
+        })
         .map(p => convertDBListing(p))
         .filter((p): p is Place => p !== null);
 
