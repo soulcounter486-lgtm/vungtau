@@ -64,6 +64,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const [ecoPickOpen, setEcoPickOpen] = useState(false);
+  const [ecoRepickMode, setEcoRepickMode] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [ecoConfirmPreview, setEcoConfirmPreview] = useState<{ imageUrl: string; profileName: string; profileId: number; date: string; personIndex: number; priorityLabel: string } | null>(null);
   const [villaPhotoOpen, setVillaPhotoOpen] = useState(false);
@@ -359,7 +360,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
   };
 
   const handleToggleEcoPick = (profileId: number, date: string, personIdx: number, priority: keyof PersonPick) => {
-    if (quote.ecoConfirmed && !isAdmin) return;
+    if (quote.ecoConfirmed && !isAdmin && !ecoRepickMode) return;
     setSelectedEcoPicks(prev => {
       const sel = ecoSelections.find(s => s.date === date);
       const cnt = sel?.count || 1;
@@ -1373,7 +1374,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                                               </div>
                                             );
                                           })}
-                                          {(() => { const rawUnavail = quote.ecoUnavailableProfiles; const unavail: number[] = Array.isArray(rawUnavail) ? rawUnavail.map(Number) : []; const pickedIds = [person.first, person.second, person.third].filter((v): v is number => v !== null && v !== undefined && v !== 0).map(Number); if (pickedIds.length === 0) return null; const allProblematic = pickedIds.every(id => unavail.includes(id) || !ecoProfiles.find(p => p.id === id)); if (allProblematic) return (<span className="text-[8px] text-red-400 font-bold ml-1 leading-tight text-center whitespace-pre-line bg-red-900/30 px-1 py-0.5 rounded">{language === "ko" ? "다른\n에코픽\n부탁드립니다" : "Please\npick\nagain"}</span>); return null; })()}
+                                          {(() => { const rawUnavail = quote.ecoUnavailableProfiles; const unavail: number[] = Array.isArray(rawUnavail) ? rawUnavail.map(Number) : []; const pickedIds = [person.first, person.second, person.third].filter((v): v is number => v !== null && v !== undefined && v !== 0).map(Number); if (pickedIds.length === 0) return null; const allProblematic = pickedIds.every(id => unavail.includes(id) || !ecoProfiles.find(p => p.id === id)); if (allProblematic) return (<span className="text-[8px] text-red-400 font-bold ml-1 leading-tight text-center whitespace-pre-line bg-red-900/30 px-1 py-0.5 rounded cursor-pointer hover:bg-red-900/50 active:scale-95 transition-all" onClick={(e) => { e.stopPropagation(); setSelectedEcoPicks(prev => { const updated = { ...prev }; if (updated[sel.date]) { const persons = [...updated[sel.date]]; if (persons[pi]) { persons[pi] = { first: null, second: null, third: null }; } updated[sel.date] = persons; } return updated; }); setActivePickDate(sel.date); setActivePersonIndex(pi); setEcoRepickMode(true); setEcoPickOpen(true); }}>{language === "ko" ? "다른\n에코픽\n부탁드립니다" : "Please\npick\nagain"}</span>); return null; })()}
                                         </div>
                                       </div>
                                     );
@@ -1615,7 +1616,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
         </DialogContent>
       </Dialog>
 
-      <Dialog open={ecoPickOpen} onOpenChange={(open) => { setEcoPickOpen(open); if (open) { setEditableEcoSelections([...origEcoSelections]); setSelectedEcoPicks(initEcoPicks()); if (origEcoSelections.length > 0) { setActivePickDate(origEcoSelections[0].date); } setActivePersonIndex(0); setEditingPersonIdx(null); const savedNames = (quote.ecoPicks as any)?.personNames; setPersonNames(Array.isArray(savedNames) ? savedNames : [...defaultPersonLabels]); } }}>
+      <Dialog open={ecoPickOpen} onOpenChange={(open) => { setEcoPickOpen(open); if (open) { if (!ecoRepickMode) { setEditableEcoSelections([...origEcoSelections]); setSelectedEcoPicks(initEcoPicks()); if (origEcoSelections.length > 0) { setActivePickDate(origEcoSelections[0].date); } setActivePersonIndex(0); } setEditingPersonIdx(null); const savedNames = (quote.ecoPicks as any)?.personNames; setPersonNames(Array.isArray(savedNames) ? savedNames : [...defaultPersonLabels]); } else { setEcoRepickMode(false); } }}>
         <DialogContent className="max-w-md max-h-[90vh] flex flex-col overflow-hidden p-0">
           <div className="flex-shrink-0 px-4 pt-3 pb-0">
             <DialogHeader>
