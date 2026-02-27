@@ -1815,29 +1815,6 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
               </div>
             </div>
           )}
-          {previewImage && (
-            <div
-              data-testid="eco-preview-overlay"
-              style={{ position: "fixed", inset: 0, zIndex: 2147483647, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 24 }}
-              onClick={(e) => { e.stopPropagation(); closePreview(); }}
-              onPointerDown={(e) => e.stopPropagation()}
-            >
-              <img
-                src={previewImage}
-                alt="preview"
-                style={{ maxWidth: "92vw", maxHeight: "72vh", objectFit: "contain", borderRadius: 8, pointerEvents: "none", userSelect: "none" }}
-                draggable={false}
-              />
-              <button
-                type="button"
-                data-testid="eco-preview-close"
-                style={{ color: "white", background: "rgba(255,255,255,0.3)", border: "2px solid rgba(255,255,255,0.6)", borderRadius: "50%", width: 60, height: 60, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, cursor: "pointer", touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
-                onClick={(e) => { e.stopPropagation(); closePreview(); }}
-              >
-                {"\u2715"}
-              </button>
-            </div>
-          )}
         </DialogContent>
       </Dialog>
       {villaPhotoOpen && linkedVilla && (() => {
