@@ -10,7 +10,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { EcoProfile } from "@shared/schema";
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
-import { createPortal } from "react-dom";
 import { useLanguage } from "@/lib/i18n";
 import { useQuotes } from "@/hooks/use-quotes";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -73,18 +72,17 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
   const [villaPhotoOpen, setVillaPhotoOpen] = useState(false);
   const [villaLinkOpen, setVillaLinkOpen] = useState(false);
   const [villaPhotoIndex, setVillaPhotoIndex] = useState(0);
-  const closePreview = useCallback(() => { setPreviewImage(null); setPreviewProfileIdx(null); setEcoConfirmPreview(null); }, []);
-  const portalContainerRef = useRef<HTMLDivElement | null>(null);
-  const [portalReady, setPortalReady] = useState(false);
-  useEffect(() => {
-    const el = document.createElement("div");
-    el.id = `eco-preview-portal-${quote.id}`;
-    el.style.position = "relative";
-    el.style.zIndex = "2147483647";
-    document.body.appendChild(el);
-    portalContainerRef.current = el;
-    setPortalReady(true);
-    return () => { if (el.parentNode) el.parentNode.removeChild(el); };
+  const [dialogHiddenForPreview, setDialogHiddenForPreview] = useState(false);
+  const openPreview = useCallback((image: string, idx: number | null) => {
+    setPreviewProfileIdx(idx);
+    setPreviewImage(image);
+    setDialogHiddenForPreview(true);
+  }, []);
+  const closePreview = useCallback(() => {
+    setPreviewImage(null);
+    setPreviewProfileIdx(null);
+    setEcoConfirmPreview(null);
+    setDialogHiddenForPreview(false);
   }, []);
   const [isSavingEcoPicks, setIsSavingEcoPicks] = useState(false);
 
@@ -1382,7 +1380,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                                             const profile = ecoProfiles.find(p => p.id === profileId);
                                             if (!profile) return null;
                                             return (
-                                              <div key={pk} className={`relative w-9 h-9 rounded-md overflow-hidden flex-shrink-0 cursor-pointer ${(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[sel.date] || {}; const unavail: number[] = (quote.ecoUnavailableProfiles as number[] | null) || []; if (unavail.includes(profileId)) return "border-2 border-red-500 ring-1 ring-red-400 opacity-50"; return dc[String(pi)] === profileId ? "border-2 border-green-500 ring-1 ring-green-400" : "border border-pink-300/50"; })()}`} onClick={(e) => { e.stopPropagation(); e.preventDefault(); if (isAdmin) { setEcoConfirmPreview({ imageUrl: profile.imageUrl, profileName: profile.name, profileId: profileId, date: sel.date, personIndex: pi, priorityLabel: priorityLabels[pri] }); } else { const idx = ecoProfiles.findIndex(p => p.id === profileId); setPreviewProfileIdx(idx >= 0 ? idx : null); setPreviewImage(profile.imageUrl); } }}>
+                                              <div key={pk} className={`relative w-9 h-9 rounded-md overflow-hidden flex-shrink-0 cursor-pointer ${(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[sel.date] || {}; const unavail: number[] = (quote.ecoUnavailableProfiles as number[] | null) || []; if (unavail.includes(profileId)) return "border-2 border-red-500 ring-1 ring-red-400 opacity-50"; return dc[String(pi)] === profileId ? "border-2 border-green-500 ring-1 ring-green-400" : "border border-pink-300/50"; })()}`} onClick={(e) => { e.stopPropagation(); e.preventDefault(); if (isAdmin) { setEcoConfirmPreview({ imageUrl: profile.imageUrl, profileName: profile.name, profileId: profileId, date: sel.date, personIndex: pi, priorityLabel: priorityLabels[pri] }); } else { const idx = ecoProfiles.findIndex(p => p.id === profileId); openPreview(profile.imageUrl, idx >= 0 ? idx : null); } }}>
                                                 <img src={profile.imageUrl} alt={profile.name} className="w-full h-full object-cover" />
                                                 {(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[sel.date] || {}; const unavail: number[] = (quote.ecoUnavailableProfiles as number[] | null) || []; if (unavail.includes(profileId)) return (<div className="absolute top-0 left-0 right-0 bg-red-600 text-[5px] text-white text-center font-bold py-px z-10">픽불가</div>); if (dc[String(pi)] === profileId) return (<div className="absolute top-0 left-0 right-0 bg-green-600 text-[5px] text-white text-center font-bold py-px z-10">확정</div>); return (<div className={`absolute top-0 left-0 w-3 h-3 ${priorityColors[pri]} rounded-br-sm flex items-center justify-center`}><span className="text-[6px] font-bold text-white">{pri + 1}</span></div>); })()}
                                                 <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-[5px] text-white text-center leading-tight py-px truncate">{profile.name}</div>
@@ -1631,7 +1629,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
         </DialogContent>
       </Dialog>
 
-      <Dialog open={ecoPickOpen} onOpenChange={(open) => { setEcoPickOpen(open); if (open) { if (!ecoRepickMode) { setEditableEcoSelections([...origEcoSelections]); setSelectedEcoPicks(initEcoPicks()); if (origEcoSelections.length > 0) { setActivePickDate(origEcoSelections[0].date); } setActivePersonIndex(0); } setEditingPersonIdx(null); const savedNames = (quote.ecoPicks as any)?.personNames; setPersonNames(Array.isArray(savedNames) ? savedNames : [...defaultPersonLabels]); } else { setEcoRepickMode(false); } }}>
+      <Dialog open={ecoPickOpen && !dialogHiddenForPreview} onOpenChange={(open) => { if (!open && dialogHiddenForPreview) return; setEcoPickOpen(open); if (open) { if (!ecoRepickMode) { setEditableEcoSelections([...origEcoSelections]); setSelectedEcoPicks(initEcoPicks()); if (origEcoSelections.length > 0) { setActivePickDate(origEcoSelections[0].date); } setActivePersonIndex(0); } setEditingPersonIdx(null); const savedNames = (quote.ecoPicks as any)?.personNames; setPersonNames(Array.isArray(savedNames) ? savedNames : [...defaultPersonLabels]); } else { setEcoRepickMode(false); } }}>
         <DialogContent className="max-w-md max-h-[90vh] flex flex-col overflow-hidden p-0">
           <div className="flex-shrink-0 px-4 pt-3 pb-0">
             <DialogHeader>
@@ -1786,7 +1784,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                           const isSelectedByOther = persons.some((p, idx) => idx !== activePersonIndex && p.first === profile.id);
                           return (
                             <div key={profile.id} id={`eco-grid-profile-${profile.id}`} className={`relative rounded-lg overflow-hidden border-2 transition-all ${(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[activePickDate] || {}; const isConfirmedForPerson = dc[String(activePersonIndex)] === profile.id; const unavail: number[] = (quote.ecoUnavailableProfiles as number[] | null) || []; if (unavail.includes(profile.id)) return "border-red-500 ring-2 ring-red-400 opacity-50"; if (isConfirmedForPerson) return "border-green-500 ring-2 ring-green-400"; return selectedPriority ? "border-pink-500 ring-2 ring-pink-300" : isSelectedByOther ? "border-slate-200 dark:border-slate-600 opacity-30" : "border-slate-200 dark:border-slate-600"; })()}`} data-testid={`eco-pick-profile-${profile.id}`}>
-                              <div className="aspect-[3/4] relative cursor-pointer" onClick={(e) => { e.stopPropagation(); e.preventDefault(); e.nativeEvent.stopImmediatePropagation(); const idx = ecoProfiles.findIndex(p => p.id === profile.id); setPreviewProfileIdx(idx >= 0 ? idx : null); setPreviewImage(profile.imageUrl); }}>
+                              <div className="aspect-[3/4] relative cursor-pointer" onClick={(e) => { e.stopPropagation(); e.preventDefault(); e.nativeEvent.stopImmediatePropagation(); const idx = ecoProfiles.findIndex(p => p.id === profile.id); openPreview(profile.imageUrl, idx >= 0 ? idx : null); }}>
                                 <img src={profile.imageUrl} alt={profile.name} className={`w-full h-full object-cover ${!(isAdmin || (canViewNightlife18 && depositPaid)) ? "blur-lg" : ""}`} />
                                 {(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[activePickDate] || {}; const isConfirmedForPerson = dc[String(activePersonIndex)] === profile.id; const unavail: number[] = (quote.ecoUnavailableProfiles as number[] | null) || []; if (unavail.includes(profile.id)) return (<div className="absolute top-0 left-0 right-0 bg-red-600 text-white text-[9px] font-bold text-center py-0.5 z-10">{language === "ko" ? "✗ 픽불가" : "✗ Unavailable"}</div>); if (isConfirmedForPerson) return (<div className="absolute top-0 left-0 right-0 bg-green-600 text-white text-[9px] font-bold text-center py-0.5 z-10">{language === "ko" ? "✓ 확정" : "✓ Confirmed"}</div>); return null; })()}
                                 {selectedPriority && (
@@ -1923,7 +1921,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
         </DialogContent>
       </Dialog>
 
-      {portalReady && previewImage && !ecoConfirmPreview && (() => {
+      {previewImage && !ecoConfirmPreview && (() => {
         let currentIdx = previewProfileIdx ?? -1;
         if (currentIdx < 0 && previewImage) {
           currentIdx = ecoProfiles.findIndex(p => p.imageUrl === previewImage);
@@ -1993,10 +1991,10 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
           >
             {"\u2715"}
           </button>
-        </div>, portalContainerRef.current!
+        </div>
         );
       })()}
-      {portalReady && ecoConfirmPreview && createPortal(
+      {ecoConfirmPreview && (
         <div
           data-testid="eco-confirm-preview-overlay"
           style={{ position: "fixed", inset: 0, zIndex: 2147483647, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}
@@ -2075,7 +2073,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
           >
             {"\u2715"}
           </button>
-        </div>, portalContainerRef.current!
+        </div>
       )}
     </div>
   );
