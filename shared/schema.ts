@@ -24,6 +24,7 @@ export const quotes = pgTable("quotes", {
   memoImages: jsonb("memo_images").$type<string[]>().default([]), // 메모 이미지 URL 배열
   ecoPicks: jsonb("eco_picks").$type<Record<string, { first: number[]; second: number[]; third: number[] }>>().default({}), // 날짜별 1/2/3지망 에코프로필 { "2026-02-20": { first: [1,2], second: [3,4], third: [5,6] } }
   ecoConfirmed: boolean("eco_confirmed").default(false), // 관리자 에코픽 확정 여부
+  ecoConfirmedPicks: jsonb("eco_confirmed_picks").$type<Record<string, Record<string, number>>>().default({}), // 관리자 확정 픽 { "2026-03-15": { "0": profileId, "1": profileId } }
   completed: boolean("completed").default(false), // 여행 완료 여부
   completedAt: timestamp("completed_at"), // 완료 처리 시각
   peopleCount: integer("people_count").default(1), // 인원수

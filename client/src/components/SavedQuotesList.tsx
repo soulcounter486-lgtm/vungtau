@@ -1365,11 +1365,9 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                                             const profile = ecoProfiles.find(p => p.id === profileId);
                                             if (!profile) return null;
                                             return (
-                                              <div key={pk} className="relative w-9 h-9 rounded-md overflow-hidden border border-pink-300/50 flex-shrink-0 cursor-pointer" onClick={(e) => { e.stopPropagation(); e.preventDefault(); setPreviewImage(profile.imageUrl); }}>
+                                              <div key={pk} className={`relative w-9 h-9 rounded-md overflow-hidden flex-shrink-0 cursor-pointer ${(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[sel.date] || {}; return dc[String(pi)] === profileId ? "border-2 border-green-500 ring-1 ring-green-400" : "border border-pink-300/50"; })()}`} onClick={(e) => { e.stopPropagation(); e.preventDefault(); setPreviewImage(profile.imageUrl); }}>
                                                 <img src={profile.imageUrl} alt={profile.name} className="w-full h-full object-cover" />
-                                                <div className={`absolute top-0 left-0 w-3 h-3 ${priorityColors[pri]} rounded-br-sm flex items-center justify-center`}>
-                                                  <span className="text-[6px] font-bold text-white">{pri + 1}</span>
-                                                </div>
+                                                {(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[sel.date] || {}; if (dc[String(pi)] === profileId) return (<div className="absolute top-0 left-0 right-0 bg-green-600 text-[5px] text-white text-center font-bold py-px z-10">확정</div>); return (<div className={`absolute top-0 left-0 w-3 h-3 ${priorityColors[pri]} rounded-br-sm flex items-center justify-center`}><span className="text-[6px] font-bold text-white">{pri + 1}</span></div>); })()}
                                                 <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-[5px] text-white text-center leading-tight py-px truncate">{profile.name}</div>
                                               </div>
                                             );
@@ -1728,15 +1726,26 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                           <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setEditingPersonIdx(null)} data-testid="button-cancel-person-name"><X className="w-3 h-3" /></Button>
                         </div>
                       )}
-                      <div className="flex gap-1 flex-wrap">
+                      <div className="flex gap-1 flex-wrap items-center">
                         {priorityKeys.map((pk, i) => {
                           const selectedId = currentPerson[pk];
                           const profile = selectedId ? ecoProfiles.find(p => p.id === selectedId) : null;
+                          const confirmedPicks = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {};
+                          const dateConfirmed = confirmedPicks[activePickDate] || {};
+                          const isThisConfirmed = selectedId && dateConfirmed[String(activePersonIndex)] === selectedId;
                           return (
-                            <Badge key={pk} variant={selectedId ? "default" : "outline"} className={`text-xs cursor-pointer ${selectedId ? priorityColors[i] + " text-white border-transparent" : ""}`} onClick={() => { if (selectedId) { const el = document.getElementById(`eco-grid-profile-${selectedId}`); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); } }}>
-                              <span className={`w-2 h-2 rounded-full ${priorityColors[i]} mr-1 inline-block`} />
-                              {priorityLabels[i]}: {profile ? profile.name : "-"}
-                            </Badge>
+                            <div key={pk} className="flex items-center gap-0.5">
+                              <Badge variant={selectedId ? "default" : "outline"} className={`text-xs cursor-pointer ${isThisConfirmed ? "bg-green-600 text-white border-transparent ring-2 ring-green-400" : selectedId ? priorityColors[i] + " text-white border-transparent" : ""}`} onClick={() => { if (selectedId) { const el = document.getElementById(`eco-grid-profile-${selectedId}`); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); } }}>
+                                <span className={`w-2 h-2 rounded-full ${isThisConfirmed ? "bg-white" : priorityColors[i]} mr-1 inline-block`} />
+                                {priorityLabels[i]}: {profile ? profile.name : "-"}
+                                {isThisConfirmed && <Check className="w-3 h-3 ml-1" />}
+                              </Badge>
+                              {isAdmin && selectedId && (
+                                <button className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold transition-all ${isThisConfirmed ? "bg-green-600 text-white" : "bg-slate-200 dark:bg-slate-600 text-slate-500 dark:text-slate-300 hover:bg-green-500 hover:text-white"}`} onClick={async (e) => { e.stopPropagation(); const prev = { ...confirmedPicks }; if (!prev[activePickDate]) prev[activePickDate] = {}; if (isThisConfirmed) { delete prev[activePickDate][String(activePersonIndex)]; } else { prev[activePickDate][String(activePersonIndex)] = selectedId; } try { await apiRequest("PATCH", `/api/quotes/${quote.id}/eco-confirmed`, { ecoConfirmed: quote.ecoConfirmed, ecoConfirmedPicks: prev }); queryClient.invalidateQueries({ queryKey: ["/api/quotes"] }); } catch {} }} data-testid={`button-eco-confirm-pick-${pk}`}>
+                                  <Check className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
                           );
                         })}
                       </div>
@@ -1758,9 +1767,10 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                           const selectedPriority = priorityKeys.find(pk => currentPerson[pk] === profile.id);
                           const isSelectedByOther = persons.some((p, idx) => idx !== activePersonIndex && p.first === profile.id);
                           return (
-                            <div key={profile.id} id={`eco-grid-profile-${profile.id}`} className={`relative rounded-lg overflow-hidden border-2 transition-all ${selectedPriority ? "border-pink-500 ring-2 ring-pink-300" : isSelectedByOther ? "border-slate-200 dark:border-slate-600 opacity-30" : "border-slate-200 dark:border-slate-600"}`} data-testid={`eco-pick-profile-${profile.id}`}>
+                            <div key={profile.id} id={`eco-grid-profile-${profile.id}`} className={`relative rounded-lg overflow-hidden border-2 transition-all ${(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[activePickDate] || {}; const isConfirmedForPerson = dc[String(activePersonIndex)] === profile.id; if (isConfirmedForPerson) return "border-green-500 ring-2 ring-green-400"; return selectedPriority ? "border-pink-500 ring-2 ring-pink-300" : isSelectedByOther ? "border-slate-200 dark:border-slate-600 opacity-30" : "border-slate-200 dark:border-slate-600"; })()}`} data-testid={`eco-pick-profile-${profile.id}`}>
                               <div className="aspect-[3/4] relative cursor-pointer" onClick={(e) => { e.stopPropagation(); e.preventDefault(); e.nativeEvent.stopImmediatePropagation(); setPreviewImage(profile.imageUrl); }}>
                                 <img src={profile.imageUrl} alt={profile.name} className={`w-full h-full object-cover ${!(isAdmin || (canViewNightlife18 && depositPaid)) ? "blur-lg" : ""}`} />
+                                {(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[activePickDate] || {}; const isConfirmedForPerson = dc[String(activePersonIndex)] === profile.id; if (isConfirmedForPerson) return (<div className="absolute top-0 left-0 right-0 bg-green-600 text-white text-[9px] font-bold text-center py-0.5 z-10">{language === "ko" ? "✓ 확정" : "✓ Confirmed"}</div>); return null; })()}
                                 {selectedPriority && (
                                   <div className={`absolute top-1 right-1 w-6 h-6 ${priorityColors[priorityKeys.indexOf(selectedPriority)]} rounded-full flex items-center justify-center`}>
                                     <Check className="w-4 h-4 text-white" />
