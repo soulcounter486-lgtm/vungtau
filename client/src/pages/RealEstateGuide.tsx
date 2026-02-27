@@ -180,7 +180,11 @@ function PlaceCard({
   useEffect(() => {
     if (showEnlargedImage || showMenuModal) {
       setShowDescription(true);
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
     }
+    return () => { document.body.style.overflow = ""; };
   }, [showEnlargedImage, showMenuModal]);
 
   useEffect(() => {
@@ -482,6 +486,7 @@ function PlaceCard({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+            style={{ touchAction: "none", overscrollBehavior: "contain" }}
             onClick={() => setShowMenuModal(false)}
           >
             <motion.div
@@ -558,6 +563,7 @@ function PlaceCard({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+            style={{ touchAction: "none", overscrollBehavior: "contain" }}
             onClick={() => setShowEnlargedImage(false)}
           >
             <motion.div
