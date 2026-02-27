@@ -1629,7 +1629,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
         </DialogContent>
       </Dialog>
 
-      <Dialog open={ecoPickOpen && !dialogHiddenForPreview} onOpenChange={(open) => { if (!open && dialogHiddenForPreview) return; setEcoPickOpen(open); if (open) { if (!ecoRepickMode) { setEditableEcoSelections([...origEcoSelections]); setSelectedEcoPicks(initEcoPicks()); if (origEcoSelections.length > 0) { setActivePickDate(origEcoSelections[0].date); } setActivePersonIndex(0); } setEditingPersonIdx(null); const savedNames = (quote.ecoPicks as any)?.personNames; setPersonNames(Array.isArray(savedNames) ? savedNames : [...defaultPersonLabels]); } else { setEcoRepickMode(false); } }}>
+      <Dialog open={ecoPickOpen} onOpenChange={(open) => { if (!open && (previewImage || ecoConfirmPreview)) return; setEcoPickOpen(open); if (open) { if (!ecoRepickMode) { setEditableEcoSelections([...origEcoSelections]); setSelectedEcoPicks(initEcoPicks()); if (origEcoSelections.length > 0) { setActivePickDate(origEcoSelections[0].date); } setActivePersonIndex(0); } setEditingPersonIdx(null); const savedNames = (quote.ecoPicks as any)?.personNames; setPersonNames(Array.isArray(savedNames) ? savedNames : [...defaultPersonLabels]); } else { setEcoRepickMode(false); } }}>
         <DialogContent className="max-w-md max-h-[90vh] flex flex-col overflow-hidden p-0">
           <div className="flex-shrink-0 px-4 pt-3 pb-0">
             <DialogHeader>
