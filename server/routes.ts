@@ -2007,6 +2007,17 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
     }
   });
 
+  app.get("/api/debug-eco/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const result = await db.execute(sql`SELECT id, eco_unavailable_profiles, eco_picks, eco_confirmed_picks FROM quotes WHERE id = ${id}`);
+      const row = result.rows?.[0];
+      res.json({ row, hasColumn: row ? 'eco_unavailable_profiles' in row : false, keys: row ? Object.keys(row) : [] });
+    } catch (err: any) {
+      res.json({ error: err.message });
+    }
+  });
+
   app.get(api.quotes.list.path, async (req, res) => {
     const user = (req as any).user;
     const claimsSub = user?.claims?.sub;
