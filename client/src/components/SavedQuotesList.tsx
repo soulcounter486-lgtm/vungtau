@@ -1359,7 +1359,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                                     return (
                                       <div key={pi} className="mb-1">
                                         <div className="text-[9px] font-medium text-muted-foreground mb-0.5">{pNames[pi] || `${String.fromCharCode(65 + pi)}`}</div>
-                                        <div className="flex gap-1">
+                                        <div className="flex gap-1 items-center">
                                           {priorityKeys.map((pk, pri) => {
                                             const profileId = person[pk];
                                             if (!profileId) return null;
@@ -1373,6 +1373,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                                               </div>
                                             );
                                           })}
+                                          {(() => { const unavail: number[] = (quote.ecoUnavailableProfiles as number[] | null) || []; const pickedIds = [person.first, person.second, person.third].filter(Boolean) as number[]; const allUnavailable = pickedIds.length > 0 && pickedIds.every(id => unavail.includes(id)); if (allUnavailable) return (<span className="text-[8px] text-red-500 font-bold ml-1 whitespace-nowrap">{language === "ko" ? "다른 에코픽 부탁드립니다" : "Please pick again"}</span>); return null; })()}
                                         </div>
                                       </div>
                                     );
