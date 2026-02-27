@@ -66,11 +66,13 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
   const [ecoPickOpen, setEcoPickOpen] = useState(false);
   const [ecoRepickMode, setEcoRepickMode] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewProfileIdx, setPreviewProfileIdx] = useState<number | null>(null);
+  const touchStartXRef = useRef(0);
   const [ecoConfirmPreview, setEcoConfirmPreview] = useState<{ imageUrl: string; profileName: string; profileId: number; date: string; personIndex: number; priorityLabel: string } | null>(null);
   const [villaPhotoOpen, setVillaPhotoOpen] = useState(false);
   const [villaLinkOpen, setVillaLinkOpen] = useState(false);
   const [villaPhotoIndex, setVillaPhotoIndex] = useState(0);
-  const closePreview = useCallback(() => { setPreviewImage(null); setEcoConfirmPreview(null); }, []);
+  const closePreview = useCallback(() => { setPreviewImage(null); setPreviewProfileIdx(null); setEcoConfirmPreview(null); }, []);
   const [isSavingEcoPicks, setIsSavingEcoPicks] = useState(false);
 
   useEffect(() => {
@@ -1771,7 +1773,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                           const isSelectedByOther = persons.some((p, idx) => idx !== activePersonIndex && p.first === profile.id);
                           return (
                             <div key={profile.id} id={`eco-grid-profile-${profile.id}`} className={`relative rounded-lg overflow-hidden border-2 transition-all ${(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[activePickDate] || {}; const isConfirmedForPerson = dc[String(activePersonIndex)] === profile.id; const unavail: number[] = (quote.ecoUnavailableProfiles as number[] | null) || []; if (unavail.includes(profile.id)) return "border-red-500 ring-2 ring-red-400 opacity-50"; if (isConfirmedForPerson) return "border-green-500 ring-2 ring-green-400"; return selectedPriority ? "border-pink-500 ring-2 ring-pink-300" : isSelectedByOther ? "border-slate-200 dark:border-slate-600 opacity-30" : "border-slate-200 dark:border-slate-600"; })()}`} data-testid={`eco-pick-profile-${profile.id}`}>
-                              <div className="aspect-[3/4] relative cursor-pointer" onClick={(e) => { e.stopPropagation(); e.preventDefault(); e.nativeEvent.stopImmediatePropagation(); setPreviewImage(profile.imageUrl); }}>
+                              <div className="aspect-[3/4] relative cursor-pointer" onClick={(e) => { e.stopPropagation(); e.preventDefault(); e.nativeEvent.stopImmediatePropagation(); const idx = ecoProfiles.findIndex(p => p.id === profile.id); setPreviewProfileIdx(idx >= 0 ? idx : null); setPreviewImage(profile.imageUrl); }}>
                                 <img src={profile.imageUrl} alt={profile.name} className={`w-full h-full object-cover ${!(isAdmin || (canViewNightlife18 && depositPaid)) ? "blur-lg" : ""}`} />
                                 {(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[activePickDate] || {}; const isConfirmedForPerson = dc[String(activePersonIndex)] === profile.id; const unavail: number[] = (quote.ecoUnavailableProfiles as number[] | null) || []; if (unavail.includes(profile.id)) return (<div className="absolute top-0 left-0 right-0 bg-red-600 text-white text-[9px] font-bold text-center py-0.5 z-10">{language === "ko" ? "✗ 픽불가" : "✗ Unavailable"}</div>); if (isConfirmedForPerson) return (<div className="absolute top-0 left-0 right-0 bg-green-600 text-white text-[9px] font-bold text-center py-0.5 z-10">{language === "ko" ? "✓ 확정" : "✓ Confirmed"}</div>); return null; })()}
                                 {selectedPriority && (
@@ -1931,29 +1933,75 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
         </DialogContent>
       </Dialog>
 
-      {previewImage && !ecoPickOpen && !ecoConfirmPreview && (
+      {previewImage && !ecoConfirmPreview && (() => {
+        const currentIdx = previewProfileIdx ?? -1;
+        const currentProfile = currentIdx >= 0 ? ecoProfiles[currentIdx] : null;
+        const unavail: number[] = (quote.ecoUnavailableProfiles as number[] | null) || [];
+        const isUnavail = currentProfile ? unavail.includes(currentProfile.id) : false;
+        const activeSel = ecoSelections.find(s => s.date === activePickDate);
+        const persons = activeSel ? ensurePersonSlots(selectedEcoPicks, activePickDate, activeSel.count) : [];
+        const currentPerson = persons[activePersonIndex] || { first: null, second: null, third: null };
+        return (
         <div
           data-testid="eco-card-preview-overlay"
-          style={{ position: "fixed", inset: 0, zIndex: 2147483647, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 24 }}
+          style={{ position: "fixed", inset: 0, zIndex: 2147483647, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}
           onClick={(e) => { e.stopPropagation(); e.preventDefault(); closePreview(); }}
           onPointerDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
+          onTouchStart={(e) => { e.stopPropagation(); touchStartXRef.current = e.touches[0].clientX; }}
+          onTouchEnd={(e) => {
+            const touchEndX = e.changedTouches[0].clientX;
+            const diff = touchStartXRef.current - touchEndX;
+            if (Math.abs(diff) > 50) {
+              const nextIdx = diff > 0
+                ? (currentIdx + 1) % ecoProfiles.length
+                : (currentIdx - 1 + ecoProfiles.length) % ecoProfiles.length;
+              setPreviewProfileIdx(nextIdx);
+              setPreviewImage(ecoProfiles[nextIdx]?.imageUrl || null);
+            }
+          }}
         >
+          {currentIdx > 0 && (
+            <button type="button" style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", color: "white", background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, cursor: "pointer", zIndex: 10 }} onClick={(e) => { e.stopPropagation(); const prev = currentIdx - 1; setPreviewProfileIdx(prev); setPreviewImage(ecoProfiles[prev]?.imageUrl || null); }}>‹</button>
+          )}
+          {currentIdx < ecoProfiles.length - 1 && (
+            <button type="button" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "white", background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, cursor: "pointer", zIndex: 10 }} onClick={(e) => { e.stopPropagation(); const next = currentIdx + 1; setPreviewProfileIdx(next); setPreviewImage(ecoProfiles[next]?.imageUrl || null); }}>›</button>
+          )}
+          <div style={{ textAlign: "center", color: "white", marginBottom: 8 }}>
+            <span style={{ fontSize: 16, fontWeight: "bold" }}>{currentProfile?.name || ""}</span>
+            <span style={{ fontSize: 12, marginLeft: 8, opacity: 0.6 }}>{currentIdx + 1}/{ecoProfiles.length}</span>
+          </div>
           <img
-            src={previewImage}
+            src={previewImage || ""}
             alt="preview"
-            style={{ maxWidth: "92vw", maxHeight: "72vh", objectFit: "contain", borderRadius: 8, pointerEvents: "none", userSelect: "none" }}
+            style={{ maxWidth: "92vw", maxHeight: "60vh", objectFit: "contain", borderRadius: 8, pointerEvents: "none", userSelect: "none" }}
             draggable={false}
+            onClick={(e) => e.stopPropagation()}
           />
+          {currentProfile && !isUnavail && activeSel && (
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }} onClick={(e) => e.stopPropagation()}>
+              {priorityKeys.map((pk, i) => {
+                const isThisPri = currentPerson[pk] === currentProfile.id;
+                return (
+                  <button key={pk} type="button" style={{ width: 48, height: 40, borderRadius: 8, fontSize: 14, fontWeight: "bold", border: "2px solid", cursor: "pointer", transition: "all 0.2s", background: isThisPri ? ["#ec4899","#f97316","#3b82f6"][i] : "rgba(255,255,255,0.15)", color: "white", borderColor: isThisPri ? ["#ec4899","#f97316","#3b82f6"][i] : "rgba(255,255,255,0.4)" }} onClick={(e) => { e.stopPropagation(); handleToggleEcoPick(currentProfile.id, activePickDate, activePersonIndex, pk); }}>
+                    {i + 1}{language === "ko" ? "지망" : ""}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {isUnavail && (
+            <div style={{ marginTop: 12, color: "#f87171", fontWeight: "bold", fontSize: 14 }}>{language === "ko" ? "✗ 픽불가" : "✗ Unavailable"}</div>
+          )}
           <button
             type="button"
-            style={{ color: "white", background: "rgba(255,255,255,0.3)", border: "2px solid rgba(255,255,255,0.6)", borderRadius: "50%", width: 60, height: 60, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, cursor: "pointer", touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
+            style={{ color: "white", background: "rgba(255,255,255,0.3)", border: "2px solid rgba(255,255,255,0.6)", borderRadius: "50%", width: 50, height: 50, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, cursor: "pointer", touchAction: "manipulation", WebkitTapHighlightColor: "transparent", marginTop: 12 }}
             onClick={(e) => { e.stopPropagation(); closePreview(); }}
           >
             {"\u2715"}
           </button>
         </div>
-      )}
+        );
+      })()}
       {ecoConfirmPreview && (
         <div
           data-testid="eco-confirm-preview-overlay"
