@@ -8,6 +8,13 @@ export * from "./models/auth";
 // Re-export chat models for AI integrations
 export * from "./models/chat";
 
+export const ecoDateUnavailability = pgTable("eco_date_unavailability", {
+  id: serial("id").primaryKey(),
+  profileId: integer("profile_id").notNull(),
+  date: text("date").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // === TABLE DEFINITIONS ===
 export const quotes = pgTable("quotes", {
   id: serial("id").primaryKey(),

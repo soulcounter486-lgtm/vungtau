@@ -34,13 +34,14 @@ interface QuoteItemProps {
   canViewEco?: boolean;
   canViewNightlife18?: boolean;
   ecoPrices?: { price12: number; price22: number };
+  globalUnavail?: Record<string, number[]>;
 }
 
 interface SavedQuotesListProps {
   onLoad?: (quote: Quote) => void;
 }
 
-function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDeleting, isAdmin, onToggleDeposit, onLoad, ecoProfiles = [], userGender, canViewEco = false, canViewNightlife18 = false, ecoPrices = { price12: 220, price22: 380 } }: QuoteItemProps) {
+function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDeleting, isAdmin, onToggleDeposit, onLoad, ecoProfiles = [], userGender, canViewEco = false, canViewNightlife18 = false, ecoPrices = { price12: 220, price22: 380 }, globalUnavail = {} }: QuoteItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [depositPaid, setDepositPaid] = useState(quote.depositPaid || false);
@@ -104,15 +105,22 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
   }, [previewImage, villaPhotoOpen, ecoConfirmPreview]);
 
   const getUnavailForDate = useCallback((date: string): number[] => {
+    const globalList = Array.isArray(globalUnavail[date]) ? globalUnavail[date] : [];
     const raw = quote.ecoUnavailableProfiles;
-    if (!raw) return [];
-    if (Array.isArray(raw)) return raw.map(Number);
-    if (typeof raw === "object") {
-      const byDate = raw as Record<string, number[]>;
-      return Array.isArray(byDate[date]) ? byDate[date].map(Number) : [];
+    let perQuoteList: number[] = [];
+    if (raw) {
+      if (Array.isArray(raw)) perQuoteList = raw.map(Number);
+      else if (typeof raw === "object") {
+        const byDate = raw as Record<string, number[]>;
+        perQuoteList = Array.isArray(byDate[date]) ? byDate[date].map(Number) : [];
+      }
     }
-    return [];
-  }, [quote.ecoUnavailableProfiles]);
+    const combined = [...globalList];
+    for (const id of perQuoteList) {
+      if (!combined.includes(id)) combined.push(id);
+    }
+    return combined;
+  }, [quote.ecoUnavailableProfiles, globalUnavail]);
 
   const linkedVillaId = breakdown?.villa?.villaId;
   const { data: linkedVilla } = useQuery<any>({
@@ -1923,7 +1931,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                         <button type="button" style={{ padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: "bold", border: "2px solid", cursor: "pointer", transition: "all 0.2s", background: isConfirmedHere ? "#16a34a" : "rgba(255,255,255,0.15)", color: "white", borderColor: isConfirmedHere ? "#16a34a" : "rgba(255,255,255,0.4)" }} onClick={async (e) => { e.stopPropagation(); const prev = { ...cp }; if (!prev[activePickDate]) prev[activePickDate] = {}; if (isConfirmedHere) { delete prev[activePickDate][String(activePersonIndex)]; } else { prev[activePickDate][String(activePersonIndex)] = currentProfile.id; } try { await apiRequest("PATCH", `/api/quotes/${quote.id}/eco-confirmed`, { ecoConfirmed: quote.ecoConfirmed, ecoConfirmedPicks: prev }); queryClient.invalidateQueries({ queryKey: ["/api/quotes"] }); } catch {} }}>
                           <Check className="w-4 h-4 inline mr-1" />{isConfirmedHere ? (language === "ko" ? "확정됨" : "Confirmed") : (language === "ko" ? "확정" : "Confirm")}
                         </button>
-                        <button type="button" style={{ padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: "bold", border: "2px solid", cursor: "pointer", transition: "all 0.2s", background: isUnavailable ? "#dc2626" : "rgba(255,255,255,0.15)", color: "white", borderColor: isUnavailable ? "#dc2626" : "rgba(255,255,255,0.4)" }} onClick={async (e) => { e.stopPropagation(); let newList: number[]; if (isUnavailable) { newList = unavailList.filter(id => id !== currentProfile.id); } else { newList = [...unavailList, currentProfile.id]; } const raw = quote.ecoUnavailableProfiles; const prevByDate: Record<string, number[]> = (raw && !Array.isArray(raw) && typeof raw === "object") ? { ...(raw as Record<string, number[]>) } : {}; prevByDate[activePickDate] = newList; try { await apiRequest("PATCH", `/api/quotes/${quote.id}/eco-confirmed`, { ecoConfirmed: quote.ecoConfirmed, ecoUnavailableProfiles: prevByDate }); queryClient.invalidateQueries({ queryKey: ["/api/quotes"] }); } catch {} }}>
+                        <button type="button" style={{ padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: "bold", border: "2px solid", cursor: "pointer", transition: "all 0.2s", background: isUnavailable ? "#dc2626" : "rgba(255,255,255,0.15)", color: "white", borderColor: isUnavailable ? "#dc2626" : "rgba(255,255,255,0.4)" }} onClick={async (e) => { e.stopPropagation(); try { if (isUnavailable) { await apiRequest("DELETE", `/api/admin/eco-date-unavailability`, { profileId: currentProfile.id, date: activePickDate }); } else { await apiRequest("POST", `/api/admin/eco-date-unavailability`, { profileId: currentProfile.id, date: activePickDate }); } queryClient.invalidateQueries({ queryKey: ["/api/eco-date-unavailability"] }); queryClient.invalidateQueries({ queryKey: ["/api/quotes"] }); } catch {} }}>
                           <X className="w-4 h-4 inline mr-1" />{isUnavailable ? (language === "ko" ? "픽불가 해제" : "Remove") : (language === "ko" ? "픽불가" : "Unavail")}
                         </button>
                       </>);
@@ -1961,7 +1969,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                       <Check className="w-5 h-5 inline mr-2" />
                       {isConfirmed ? (language === "ko" ? "확정됨" : "Confirmed") : (language === "ko" ? "확정하기" : "Confirm")}
                     </button>
-                    <button type="button" className={`px-5 py-3 rounded-xl font-bold text-base transition-all ${isUnavailable ? "bg-red-600 text-white ring-2 ring-red-400" : "bg-white/20 text-white border-2 border-white/50 hover:bg-red-600 hover:border-red-400"}`} onClick={async (e) => { e.stopPropagation(); let newList: number[]; if (isUnavailable) { newList = unavailList.filter(id => id !== ecoConfirmPreview.profileId); } else { newList = [...unavailList, ecoConfirmPreview.profileId]; } const raw = quote.ecoUnavailableProfiles; const prevByDate: Record<string, number[]> = (raw && !Array.isArray(raw) && typeof raw === "object") ? { ...(raw as Record<string, number[]>) } : {}; prevByDate[ecoConfirmPreview.date] = newList; try { await apiRequest("PATCH", `/api/quotes/${quote.id}/eco-confirmed`, { ecoConfirmed: quote.ecoConfirmed, ecoUnavailableProfiles: prevByDate }); queryClient.invalidateQueries({ queryKey: ["/api/quotes"] }); } catch {} }} data-testid="button-eco-unavailable-preview">
+                    <button type="button" className={`px-5 py-3 rounded-xl font-bold text-base transition-all ${isUnavailable ? "bg-red-600 text-white ring-2 ring-red-400" : "bg-white/20 text-white border-2 border-white/50 hover:bg-red-600 hover:border-red-400"}`} onClick={async (e) => { e.stopPropagation(); try { if (isUnavailable) { await apiRequest("DELETE", `/api/admin/eco-date-unavailability`, { profileId: ecoConfirmPreview.profileId, date: ecoConfirmPreview.date }); } else { await apiRequest("POST", `/api/admin/eco-date-unavailability`, { profileId: ecoConfirmPreview.profileId, date: ecoConfirmPreview.date }); } queryClient.invalidateQueries({ queryKey: ["/api/eco-date-unavailability"] }); queryClient.invalidateQueries({ queryKey: ["/api/quotes"] }); } catch {} }} data-testid="button-eco-unavailable-preview">
                       <X className="w-5 h-5 inline mr-2" />
                       {isUnavailable ? (language === "ko" ? "픽불가 해제" : "Remove Unavailable") : (language === "ko" ? "픽불가" : "Unavailable")}
                     </button>
@@ -2041,7 +2049,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                   <Check className="w-5 h-5 inline mr-2" />
                   {isConfirmed ? (language === "ko" ? "확정됨" : "Confirmed") : (language === "ko" ? "확정하기" : "Confirm")}
                 </button>
-                <button type="button" className={`px-5 py-3 rounded-xl font-bold text-base transition-all ${isUnavailable ? "bg-red-600 text-white ring-2 ring-red-400" : "bg-white/20 text-white border-2 border-white/50 hover:bg-red-600 hover:border-red-400"}`} onClick={async (e) => { e.stopPropagation(); let newList: number[]; if (isUnavailable) { newList = unavailList.filter(id => id !== ecoConfirmPreview.profileId); } else { newList = [...unavailList, ecoConfirmPreview.profileId]; } const raw = quote.ecoUnavailableProfiles; const prevByDate: Record<string, number[]> = (raw && !Array.isArray(raw) && typeof raw === "object") ? { ...(raw as Record<string, number[]>) } : {}; prevByDate[ecoConfirmPreview.date] = newList; try { await apiRequest("PATCH", `/api/quotes/${quote.id}/eco-confirmed`, { ecoConfirmed: quote.ecoConfirmed, ecoUnavailableProfiles: prevByDate }); queryClient.invalidateQueries({ queryKey: ["/api/quotes"] }); } catch {} }} data-testid="button-eco-unavailable-standalone">
+                <button type="button" className={`px-5 py-3 rounded-xl font-bold text-base transition-all ${isUnavailable ? "bg-red-600 text-white ring-2 ring-red-400" : "bg-white/20 text-white border-2 border-white/50 hover:bg-red-600 hover:border-red-400"}`} onClick={async (e) => { e.stopPropagation(); try { if (isUnavailable) { await apiRequest("DELETE", `/api/admin/eco-date-unavailability`, { profileId: ecoConfirmPreview.profileId, date: ecoConfirmPreview.date }); } else { await apiRequest("POST", `/api/admin/eco-date-unavailability`, { profileId: ecoConfirmPreview.profileId, date: ecoConfirmPreview.date }); } queryClient.invalidateQueries({ queryKey: ["/api/eco-date-unavailability"] }); queryClient.invalidateQueries({ queryKey: ["/api/quotes"] }); } catch {} }} data-testid="button-eco-unavailable-standalone">
                   <X className="w-5 h-5 inline mr-2" />
                   {isUnavailable ? (language === "ko" ? "픽불가 해제" : "Remove Unavailable") : (language === "ko" ? "픽불가" : "Unavailable")}
                 </button>
@@ -2181,6 +2189,10 @@ export function SavedQuotesList({ onLoad }: SavedQuotesListProps) {
     price22: Number(siteSettingsData?.["eco_price_22"]) || 380,
   }), [siteSettingsData]);
 
+  const { data: globalUnavail = {} } = useQuery<Record<string, number[]>>({
+    queryKey: ["/api/eco-date-unavailability"],
+  });
+
   const languageCurrencyMap: Record<string, { code: string; symbol: string; locale: string }> = {
     ko: { code: "KRW", symbol: "₩", locale: "ko-KR" },
     en: { code: "USD", symbol: "$", locale: "en-US" },
@@ -2280,6 +2292,7 @@ export function SavedQuotesList({ onLoad }: SavedQuotesListProps) {
                         canViewEco={user?.canViewEco || false}
                         canViewNightlife18={user?.canViewNightlife18 || false}
                         ecoPrices={ecoPrices}
+                        globalUnavail={globalUnavail}
                       />
                     ))}
                   </div>
@@ -2311,6 +2324,7 @@ export function SavedQuotesList({ onLoad }: SavedQuotesListProps) {
                         canViewEco={user?.canViewEco || false}
                         canViewNightlife18={user?.canViewNightlife18 || false}
                         ecoPrices={ecoPrices}
+                        globalUnavail={globalUnavail}
                       />
                     ))}
                   </div>
@@ -2342,6 +2356,7 @@ export function SavedQuotesList({ onLoad }: SavedQuotesListProps) {
                         canViewEco={user?.canViewEco || false}
                         canViewNightlife18={user?.canViewNightlife18 || false}
                         ecoPrices={ecoPrices}
+                        globalUnavail={globalUnavail}
                       />
                     ))}
                   </div>
@@ -2393,6 +2408,7 @@ export function SavedQuotesList({ onLoad }: SavedQuotesListProps) {
                         canViewEco={user?.canViewEco || false}
                         canViewNightlife18={user?.canViewNightlife18 || false}
                         ecoPrices={ecoPrices}
+                        globalUnavail={globalUnavail}
                       />
                     ))}
                   </div>

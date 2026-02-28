@@ -5,7 +5,7 @@ import fs from "fs";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { calculateQuoteSchema, visitorCount, expenseGroups, expenses, insertExpenseGroupSchema, insertExpenseSchema, posts, comments, insertPostSchema, insertCommentSchema, instagramSyncedPosts, pushSubscriptions, userLocations, insertUserLocationSchema, users, villas, insertVillaSchema, places, insertPlaceSchema, placeCategories, insertPlaceCategorySchema, siteSettings, adminMessages, insertAdminMessageSchema, coupons, insertCouponSchema, userCoupons, insertUserCouponSchema, announcements, insertAnnouncementSchema, adminNotifications, quoteCategories, insertQuoteCategorySchema, savedTravelPlans, customerChatRooms, customerChatMessages, shopProducts, insertShopProductSchema, ecoProfiles, insertEcoProfileSchema, quotes, vehicleTypes, insertVehicleTypeSchema, realEstateCategories, insertRealEstateCategorySchema, realEstateListings, insertRealEstateListingSchema } from "@shared/schema";
+import { calculateQuoteSchema, visitorCount, expenseGroups, expenses, insertExpenseGroupSchema, insertExpenseSchema, posts, comments, insertPostSchema, insertCommentSchema, instagramSyncedPosts, pushSubscriptions, userLocations, insertUserLocationSchema, users, villas, insertVillaSchema, places, insertPlaceSchema, placeCategories, insertPlaceCategorySchema, siteSettings, adminMessages, insertAdminMessageSchema, coupons, insertCouponSchema, userCoupons, insertUserCouponSchema, announcements, insertAnnouncementSchema, adminNotifications, quoteCategories, insertQuoteCategorySchema, savedTravelPlans, customerChatRooms, customerChatMessages, shopProducts, insertShopProductSchema, ecoProfiles, insertEcoProfileSchema, quotes, vehicleTypes, insertVehicleTypeSchema, realEstateCategories, insertRealEstateCategorySchema, realEstateListings, insertRealEstateListingSchema, ecoDateUnavailability } from "@shared/schema";
 import { addDays, getDay, parseISO, format, addHours } from "date-fns";
 import { db } from "./db";
 import { eq, sql, desc, and } from "drizzle-orm";
@@ -1732,6 +1732,52 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
       if (!quote) return res.status(404).json({ message: "Quote not found" });
       res.json(quote);
     } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/eco-date-unavailability", async (_req, res) => {
+    try {
+      const rows = await db.select().from(ecoDateUnavailability);
+      const result: Record<string, number[]> = {};
+      for (const row of rows) {
+        if (!result[row.date]) result[row.date] = [];
+        if (!result[row.date].includes(row.profileId)) result[row.date].push(row.profileId);
+      }
+      res.json(result);
+    } catch {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/eco-date-unavailability", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const userId = user?.claims?.sub || user?.id || (req.session as any)?.userId;
+      const userEmail = user?.claims?.email || user?.email;
+      if (!isUserAdmin(userId, userEmail)) return res.status(403).json({ message: "Admin only" });
+      const { profileId, date } = req.body;
+      if (!profileId || !date) return res.status(400).json({ message: "profileId and date required" });
+      const existing = await db.select().from(ecoDateUnavailability).where(and(eq(ecoDateUnavailability.profileId, profileId), eq(ecoDateUnavailability.date, date)));
+      if (existing.length > 0) return res.json({ message: "Already exists" });
+      await db.insert(ecoDateUnavailability).values({ profileId, date });
+      res.json({ message: "Added" });
+    } catch {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/admin/eco-date-unavailability", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const userId = user?.claims?.sub || user?.id || (req.session as any)?.userId;
+      const userEmail = user?.claims?.email || user?.email;
+      if (!isUserAdmin(userId, userEmail)) return res.status(403).json({ message: "Admin only" });
+      const { profileId, date } = req.body;
+      if (!profileId || !date) return res.status(400).json({ message: "profileId and date required" });
+      await db.delete(ecoDateUnavailability).where(and(eq(ecoDateUnavailability.profileId, profileId), eq(ecoDateUnavailability.date, date)));
+      res.json({ message: "Removed" });
+    } catch {
       res.status(500).json({ message: "Internal server error" });
     }
   });
