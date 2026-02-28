@@ -322,43 +322,52 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
     setActivePersonIndex(0);
   };
 
-  const handleRemoveEcoSelection = (date: string) => {
-    setEditableEcoSelections(prev => prev.filter(s => s.date !== date));
-    setSelectedEcoPicks(prev => {
-      const updated = { ...prev };
-      delete updated[date];
-      return updated;
-    });
-    if (activePickDate === date) {
-      const remaining = editableEcoSelections.filter(s => s.date !== date);
+  const handleRemoveEcoSelectionByIdx = (idx: number) => {
+    const removing = editableEcoSelections[idx];
+    if (!removing) return;
+    const oldDate = removing.date;
+    setEditableEcoSelections(prev => prev.filter((_, i) => i !== idx));
+    const otherSameDate = editableEcoSelections.some((s, i) => i !== idx && s.date === oldDate);
+    if (!otherSameDate) {
+      setSelectedEcoPicks(prev => {
+        const updated = { ...prev };
+        delete updated[oldDate];
+        return updated;
+      });
+    }
+    if (activePickDate === oldDate && !otherSameDate) {
+      const remaining = editableEcoSelections.filter((_, i) => i !== idx);
       setActivePickDate(remaining[0]?.date || "");
       setActivePersonIndex(0);
     }
   };
 
-  const handleUpdateEcoSelection = (date: string, field: "hours" | "count" | "date", value: string | number) => {
-    setEditableEcoSelections(prev => prev.map(s => {
-      if (s.date !== date) return s;
+  const handleUpdateEcoSelectionByIdx = (idx: number, field: "hours" | "count" | "date", value: string | number) => {
+    setEditableEcoSelections(prev => prev.map((s, i) => {
+      if (i !== idx) return s;
       if (field === "date") {
         const newDate = String(value);
-        if (editableEcoSelections.some(es => es.date === newDate && es.date !== date)) return s;
-        setSelectedEcoPicks(prevPicks => {
-          const updated = { ...prevPicks };
-          if (updated[date]) {
-            updated[newDate] = updated[date];
-            delete updated[date];
-          }
-          return updated;
-        });
-        if (activePickDate === date) setActivePickDate(newDate);
+        const oldDate = s.date;
+        const otherSameOldDate = prev.some((es, j) => j !== idx && es.date === oldDate);
+        if (!otherSameOldDate) {
+          setSelectedEcoPicks(prevPicks => {
+            const updated = { ...prevPicks };
+            if (updated[oldDate]) {
+              updated[newDate] = updated[oldDate];
+              delete updated[oldDate];
+            }
+            return updated;
+          });
+        }
+        if (activePickDate === oldDate) setActivePickDate(newDate);
         return { ...s, date: newDate };
       }
       if (field === "count") {
         const newCount = Math.max(1, Number(value));
         if (newCount < s.count) {
           setSelectedEcoPicks(prevPicks => {
-            const persons = (prevPicks[date] || []).slice(0, newCount);
-            return { ...prevPicks, [date]: persons };
+            const persons = (prevPicks[s.date] || []).slice(0, newCount);
+            return { ...prevPicks, [s.date]: persons };
           });
           if (activePersonIndex >= newCount) setActivePersonIndex(newCount - 1);
         }
@@ -1664,8 +1673,8 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
               <div className={editableEcoSelections.length > 2 ? "max-h-[88px] overflow-y-auto space-y-1.5 pr-1" : "space-y-1.5"}>
                 {editableEcoSelections.map((sel, idx) => (
                   <div key={`${sel.date}-${idx}`} className="flex items-center gap-2 p-2 rounded-lg border border-slate-200 dark:border-slate-700">
-                    <Input type="date" value={sel.date} onChange={(e) => handleUpdateEcoSelection(sel.date, "date", e.target.value)} className="flex-1 text-xs h-8" data-testid={`eco-schedule-date-${idx}`} />
-                    <Select value={sel.hours} onValueChange={(v) => handleUpdateEcoSelection(sel.date, "hours", v)}>
+                    <Input type="date" value={sel.date} onChange={(e) => handleUpdateEcoSelectionByIdx(idx, "date", e.target.value)} className="flex-1 text-xs h-8" data-testid={`eco-schedule-date-${idx}`} />
+                    <Select value={sel.hours} onValueChange={(v) => handleUpdateEcoSelectionByIdx(idx, "hours", v)}>
                       <SelectTrigger className="w-20 h-8 text-xs" data-testid={`eco-schedule-hours-${idx}`}><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="12">12h</SelectItem>
@@ -1673,11 +1682,11 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                       </SelectContent>
                     </Select>
                     <div className="flex items-center gap-1">
-                      <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleUpdateEcoSelection(sel.date, "count", Math.max(1, sel.count - 1))} data-testid={`eco-schedule-count-minus-${idx}`}><Minus className="w-3 h-3" /></Button>
+                      <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleUpdateEcoSelectionByIdx(idx, "count", Math.max(1, sel.count - 1))} data-testid={`eco-schedule-count-minus-${idx}`}><Minus className="w-3 h-3" /></Button>
                       <span className="text-xs w-4 text-center">{sel.count}</span>
-                      <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleUpdateEcoSelection(sel.date, "count", sel.count + 1)} data-testid={`eco-schedule-count-plus-${idx}`}><Plus className="w-3 h-3" /></Button>
+                      <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleUpdateEcoSelectionByIdx(idx, "count", sel.count + 1)} data-testid={`eco-schedule-count-plus-${idx}`}><Plus className="w-3 h-3" /></Button>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-red-400" onClick={() => handleRemoveEcoSelection(sel.date)} data-testid={`eco-schedule-remove-${idx}`}><Trash2 className="w-3 h-3" /></Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-red-400" onClick={() => handleRemoveEcoSelectionByIdx(idx)} data-testid={`eco-schedule-remove-${idx}`}><Trash2 className="w-3 h-3" /></Button>
                   </div>
                 ))}
               </div>
