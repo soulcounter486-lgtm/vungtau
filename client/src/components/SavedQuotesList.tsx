@@ -299,23 +299,19 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
   }, [editableEcoSelections, ecoPrices]);
 
   const handleAddEcoSelection = () => {
-    const checkIn = quote.checkInDate || "";
-    const checkOut = quote.checkOutDate || "";
+    const existingDates = new Set(editableEcoSelections.map(s => s.date));
+    const lastEntry = editableEcoSelections[editableEcoSelections.length - 1];
+    const baseDate = lastEntry?.date || quote.checkInDate || new Date().toISOString().split("T")[0];
     let newDate = "";
-    if (checkIn) {
-      const existingDates = editableEcoSelections.map(s => s.date);
-      const start = new Date(checkIn);
-      const end = checkOut ? new Date(checkOut) : new Date(start.getTime() + 7 * 86400000);
-      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        const ds = d.toISOString().split("T")[0];
-        if (!existingDates.includes(ds)) { newDate = ds; break; }
-      }
-      if (!newDate) newDate = new Date(end.getTime() + 86400000).toISOString().split("T")[0];
-    } else {
-      newDate = new Date().toISOString().split("T")[0];
+    const base = new Date(baseDate);
+    for (let i = 1; i <= 365; i++) {
+      const next = new Date(base.getTime() + i * 86400000);
+      const ds = next.toISOString().split("T")[0];
+      if (!existingDates.has(ds)) { newDate = ds; break; }
     }
-    const lastCount = editableEcoSelections.length > 0 ? editableEcoSelections[editableEcoSelections.length - 1].count : 1;
-    const lastHours = editableEcoSelections.length > 0 ? editableEcoSelections[editableEcoSelections.length - 1].hours : "12";
+    if (!newDate) newDate = new Date(base.getTime() + 86400000).toISOString().split("T")[0];
+    const lastCount = lastEntry?.count || 1;
+    const lastHours = lastEntry?.hours || "12";
     const newSel: EcoSelection = { date: newDate, hours: lastHours, count: lastCount };
     setEditableEcoSelections(prev => [...prev, newSel]);
     setActivePickDate(newDate);
