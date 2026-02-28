@@ -1357,7 +1357,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                       return (
                         <div className="mt-2 pt-2 border-t border-pink-200/30">
                           <div className="flex gap-3 overflow-x-auto pb-1" style={{ WebkitOverflowScrolling: "touch" }}>
-                            {ecoSelections.map(sel => {
+                            {(() => { const seenDates = new Set<string>(); return ecoSelections.filter(sel => { if (seenDates.has(sel.date)) return false; seenDates.add(sel.date); return true; }); })().map(sel => {
                               const persons = selectedEcoPicks[sel.date];
                               if (!Array.isArray(persons)) return null;
                               const hasAny = persons.some(p => p.first || p.second || p.third);
@@ -1692,32 +1692,44 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
             <div className="flex flex-col flex-1 min-h-0 border-t mt-2">
               <div className="flex-shrink-0 px-4 pt-3 pb-2 space-y-2">
                 <div className="flex gap-1 flex-wrap">
-                  {ecoSelections.map(sel => {
-                    const persons = ensurePersonSlots(selectedEcoPicks, sel.date, sel.count);
-                    const totalPicked = persons.reduce((sum, p) => sum + (p.first ? 1 : 0) + (p.second ? 1 : 0) + (p.third ? 1 : 0), 0);
-                    const isActive = activePickDate === sel.date;
-                    return (
-                      <Button key={sel.date} variant={isActive ? "default" : "outline"} size="sm" onClick={() => { setActivePickDate(sel.date); setActivePersonIndex(0); }} data-testid={`eco-pick-tab-${sel.date}`}>
-                        <span>{sel.date.slice(5)}</span>
-                        {totalPicked > 0 && <span className="ml-1 text-[10px] opacity-70">({totalPicked})</span>}
-                      </Button>
-                    );
-                  })}
+                  {(() => {
+                    const seen = new Set<string>();
+                    return ecoSelections.filter(sel => {
+                      if (seen.has(sel.date)) return false;
+                      seen.add(sel.date);
+                      return true;
+                    }).map(sel => {
+                      const sameDateEntries = ecoSelections.filter(s => s.date === sel.date);
+                      const totalCount = sameDateEntries.reduce((sum, s) => sum + s.count, 0);
+                      const persons = ensurePersonSlots(selectedEcoPicks, sel.date, totalCount);
+                      const totalPicked = persons.reduce((sum, p) => sum + (p.first ? 1 : 0) + (p.second ? 1 : 0) + (p.third ? 1 : 0), 0);
+                      const isActive = activePickDate === sel.date;
+                      return (
+                        <Button key={sel.date} variant={isActive ? "default" : "outline"} size="sm" onClick={() => { setActivePickDate(sel.date); setActivePersonIndex(0); }} data-testid={`eco-pick-tab-${sel.date}`}>
+                          <span>{sel.date.slice(5)}</span>
+                          {totalPicked > 0 && <span className="ml-1 text-[10px] opacity-70">({totalPicked})</span>}
+                        </Button>
+                      );
+                    });
+                  })()}
                 </div>
                 {(() => {
                   const activeSel = ecoSelections.find(s => s.date === activePickDate);
                   if (!activeSel) return null;
-                  const persons = ensurePersonSlots(selectedEcoPicks, activePickDate, activeSel.count);
+                  const sameDateEntries = ecoSelections.filter(s => s.date === activePickDate);
+                  const mergedCount = sameDateEntries.reduce((sum, s) => sum + s.count, 0);
+                  const mergedHours = sameDateEntries.map(s => s.hours).join("+");
+                  const persons = ensurePersonSlots(selectedEcoPicks, activePickDate, mergedCount);
                   const currentPerson = persons[activePersonIndex] || { first: null, second: null, third: null };
                   return (
                     <>
                       <div className="text-xs text-muted-foreground">
-                        {activeSel.date} | {activeSel.hours}{language === "ko" ? "시간" : "h"} | {activeSel.count}{language === "ko" ? "명" : " people"}
+                        {activeSel.date} | {mergedHours}{language === "ko" ? "시간" : "h"} | {mergedCount}{language === "ko" ? "명" : " people"}
                       </div>
-                      {activeSel.count > 1 && (
+                      {mergedCount > 1 && (
                         <div>
                           <div className="flex gap-1 flex-wrap items-center">
-                            {Array.from({ length: activeSel.count }, (_, i) => {
+                            {Array.from({ length: mergedCount }, (_, i) => {
                               const p = persons[i] || { first: null, second: null, third: null };
                               const pickCount = (p.first ? 1 : 0) + (p.second ? 1 : 0) + (p.third ? 1 : 0);
                               const isActivePerson = activePersonIndex === i;
@@ -1771,7 +1783,9 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                 {(() => {
                   const activeSel = ecoSelections.find(s => s.date === activePickDate);
                   if (!activeSel) return null;
-                  const persons = ensurePersonSlots(selectedEcoPicks, activePickDate, activeSel.count);
+                  const sameDateEntries = ecoSelections.filter(s => s.date === activePickDate);
+                  const mergedCount = sameDateEntries.reduce((sum, s) => sum + s.count, 0);
+                  const persons = ensurePersonSlots(selectedEcoPicks, activePickDate, mergedCount);
                   const currentPerson = persons[activePersonIndex] || { first: null, second: null, third: null };
                   return (
                     <>
@@ -1832,7 +1846,8 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
             const unavail: number[] = (quote.ecoUnavailableProfiles as number[] | null) || [];
             const isUnavail = currentProfile ? unavail.includes(currentProfile.id) : false;
             const activeSel = ecoSelections.find(s => s.date === activePickDate);
-            const persons = activeSel ? ensurePersonSlots(selectedEcoPicks, activePickDate, activeSel.count) : [];
+            const sameDateMergedCount = ecoSelections.filter(s => s.date === activePickDate).reduce((sum, s) => sum + s.count, 0);
+            const persons = activeSel ? ensurePersonSlots(selectedEcoPicks, activePickDate, sameDateMergedCount) : [];
             const currentPerson = persons[activePersonIndex] || { first: null, second: null, third: null };
             return (
               <div
