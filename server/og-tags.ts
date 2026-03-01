@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { eq } from "drizzle-orm";
-import { posts, siteSettings, places, realEstateListings } from "@shared/schema";
+import { posts, siteSettings, places, realEstateListings, villas } from "@shared/schema";
 import { execSync } from "child_process";
 import path from "path";
 import fs from "fs";
@@ -286,7 +286,50 @@ async function getRealEstateOgDataById(listingId: number): Promise<OgData | null
   }
 }
 
+async function getVillaOgDataById(villaId: number): Promise<OgData | null> {
+  try {
+    const [villa] = await db.select().from(villas).where(eq(villas.id, villaId)).limit(1);
+    if (!villa) return null;
+    let image: string | null = null;
+    if (villa.mainImage && isAccessibleImagePath(villa.mainImage)) {
+      image = villa.mainImage;
+    } else if (villa.images && villa.images.length > 0) {
+      const found = villa.images.find(img => isAccessibleImagePath(img));
+      if (found) image = found;
+    }
+    if (image && !image.startsWith("http")) {
+      image = `https://vungtau.blog${image}`;
+    }
+    if (!image) image = DEFAULT_OG_IMAGE;
+    const parts: string[] = [];
+    if (villa.bedrooms) parts.push(`${villa.bedrooms}개 침실`);
+    if (villa.maxGuests) parts.push(`최대 ${villa.maxGuests}명`);
+    if (villa.weekdayPrice) parts.push(`평일 $${villa.weekdayPrice}`);
+    const desc = parts.length > 0 ? parts.join(" | ") : "베트남 붕따우 풀빌라";
+    return {
+      title: `${villa.name} - 붕따우 풀빌라`,
+      description: desc,
+      image,
+      imageWidth: image === DEFAULT_OG_IMAGE ? DEFAULT_OG_IMAGE_WIDTH : undefined,
+      imageHeight: image === DEFAULT_OG_IMAGE ? DEFAULT_OG_IMAGE_HEIGHT : undefined,
+      url: `https://vungtau.blog/?villa=${villaId}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function getOgDataForPath(urlPath: string): Promise<OgData | null> {
+  const villaMatch = urlPath.match(/^\/?(\?|$)/);
+  if (villaMatch) {
+    try {
+      const url = new URL(urlPath, "https://vungtau.blog");
+      const villaId = url.searchParams.get("villa");
+      if (villaId) {
+        return getVillaOgDataById(parseInt(villaId, 10));
+      }
+    } catch {}
+  }
   const boardMatch = urlPath.match(/^\/board\/(\d+)/);
   if (boardMatch) {
     const postId = parseInt(boardMatch[1], 10);

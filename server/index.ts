@@ -76,9 +76,7 @@ const initPromise = (async () => {
 
   app.get("/", async (req, res, next) => {
     try {
-      const seoSettings = await getSeoSettings();
-      const hasSeo = seoSettings["seo_title"] || seoSettings["seo_description"] || seoSettings["seo_keywords"];
-      if (!hasSeo) return next();
+      const villaId = req.query.villa as string | undefined;
 
       let htmlPath: string;
       if (process.env.NODE_ENV === "production") {
@@ -88,6 +86,21 @@ const initPromise = (async () => {
       }
 
       let html = await fs.promises.readFile(htmlPath, "utf-8");
+
+      if (villaId) {
+        const fullUrl = `/?villa=${villaId}`;
+        const ogData = await getOgDataForPath(fullUrl);
+        if (ogData) {
+          html = injectOgTags(html, ogData);
+          res.status(200).set({ "Content-Type": "text/html" }).end(html);
+          return;
+        }
+      }
+
+      const seoSettings = await getSeoSettings();
+      const hasSeo = seoSettings["seo_title"] || seoSettings["seo_description"] || seoSettings["seo_keywords"];
+      if (!hasSeo) return next();
+
       html = injectSeoMeta(html, seoSettings);
       res.status(200).set({ "Content-Type": "text/html" }).end(html);
     } catch {

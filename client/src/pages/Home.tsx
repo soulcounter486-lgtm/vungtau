@@ -109,7 +109,7 @@ import {
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
-import { LogIn, LogOut, ChevronRight, ChevronLeft, Settings, X, List, Pencil, ChevronDown, RefreshCw, Mail, Ticket, ArrowUpDown } from "lucide-react";
+import { LogIn, LogOut, ChevronRight, ChevronLeft, Settings, X, List, Pencil, ChevronDown, RefreshCw, Mail, Ticket, ArrowUpDown, Share2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import type { Villa, VillaAmenity, EcoProfile, VehicleType } from "@shared/schema";
 import { villaAmenities, villaAmenityLabels } from "@shared/schema";
@@ -364,7 +364,11 @@ export default function Home() {
   };
   const ecoDescriptionText = siteSettingsData["eco_description"] || "";
   const ecoImageUrl = siteSettingsData["eco_image_url"] || "";
-  const [selectedVillaId, setSelectedVillaId] = useState<number | null>(null);
+  const [selectedVillaId, setSelectedVillaId] = useState<number | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const villaParam = params.get("villa");
+    return villaParam ? parseInt(villaParam, 10) : null;
+  });
   const [ecoActivePerson, setEcoActivePerson] = useState<Record<number, string>>({});
   const [ecoPhotoModal, setEcoPhotoModal] = useState<{ dayIndex: number; person: string; profile: any } | null>(null);
   const [amenityFilters, setAmenityFilters] = useState<VillaAmenity[]>([]);
@@ -1951,15 +1955,36 @@ export default function Home() {
                                 📍 {selectedVilla.address}
                               </p>
                             )}
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="mt-2 text-xs text-muted-foreground"
-                              onClick={() => setSelectedVillaId(null)}
-                              data-testid="button-deselect-villa"
-                            >
-                              ✕ 선택 해제
-                            </Button>
+                            <div className="flex items-center gap-2 mt-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-xs text-muted-foreground"
+                                onClick={() => setSelectedVillaId(null)}
+                                data-testid="button-deselect-villa"
+                              >
+                                ✕ 선택 해제
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs"
+                                onClick={() => {
+                                  const shareUrl = `${window.location.origin}/?villa=${selectedVilla.id}`;
+                                  if (navigator.share) {
+                                    navigator.share({ title: `${selectedVilla.name} - 붕따우 풀빌라`, text: `${selectedVilla.name} | ${selectedVilla.bedrooms}개 침실 | 최대 ${selectedVilla.maxGuests}명`, url: shareUrl }).catch(() => {});
+                                  } else {
+                                    navigator.clipboard.writeText(shareUrl).then(() => {
+                                      toast({ title: "링크가 복사되었습니다" });
+                                    }).catch(() => {});
+                                  }
+                                }}
+                                data-testid="button-share-villa"
+                              >
+                                <Share2 className="w-3.5 h-3.5 mr-1" />
+                                공유
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       )}
