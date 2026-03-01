@@ -1984,6 +1984,21 @@ export default function Home() {
                                 <Share2 className="w-3.5 h-3.5 mr-1" />
                                 공유
                               </Button>
+                              {(selectedVilla.mapUrl || (selectedVilla.latitude && selectedVilla.longitude)) && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-xs"
+                                  onClick={() => {
+                                    const url = selectedVilla.mapUrl || `https://www.google.com/maps?q=${selectedVilla.latitude},${selectedVilla.longitude}`;
+                                    window.open(url, "_blank");
+                                  }}
+                                  data-testid="button-map-villa"
+                                >
+                                  <MapPin className="w-3.5 h-3.5 mr-1" />
+                                  지도 보기
+                                </Button>
+                              )}
                             </div>
                           </div>
                         </div>
