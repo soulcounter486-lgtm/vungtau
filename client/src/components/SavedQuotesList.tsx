@@ -276,6 +276,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
     return {};
   };
   const [selectedEcoPicks, setSelectedEcoPicks] = useState<EcoPicksMap>(initEcoPicks);
+  const savedEcoPicks = useMemo(() => initEcoPicks(), [quote.ecoPicks]);
   const [activePickDate, setActivePickDate] = useState<string>(ecoSelections[0]?.date || "");
   const [activePersonIndex, setActivePersonIndex] = useState<number>(0);
 
@@ -1372,7 +1373,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                       </div>
                     )}
                     {!isCapturing && (() => {
-                      const hasAnyPick = Object.values(selectedEcoPicks).some(persons =>
+                      const hasAnyPick = Object.values(savedEcoPicks).some(persons =>
                         Array.isArray(persons) && persons.some(p => p.first || p.second || p.third)
                       );
                       if (!hasAnyPick) return null;
@@ -1381,8 +1382,8 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                       return (
                         <div className="mt-2 pt-2 border-t border-pink-200/30">
                           <div className="flex gap-3 overflow-x-auto pb-1" style={{ WebkitOverflowScrolling: "touch" }}>
-                            {(() => { const seenDates = new Set<string>(); return ecoSelections.filter(sel => { if (seenDates.has(sel.date)) return false; seenDates.add(sel.date); return true; }); })().map(sel => {
-                              const persons = selectedEcoPicks[sel.date];
+                            {(() => { const seenDates = new Set<string>(); return origEcoSelections.filter(sel => { if (seenDates.has(sel.date)) return false; seenDates.add(sel.date); return true; }); })().map(sel => {
+                              const persons = savedEcoPicks[sel.date];
                               if (!Array.isArray(persons)) return null;
                               const hasAny = persons.some(p => p.first || p.second || p.third);
                               if (!hasAny) return null;
