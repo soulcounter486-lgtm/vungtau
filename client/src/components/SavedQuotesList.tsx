@@ -423,8 +423,17 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
   const handleSaveEcoPicks = async () => {
     setIsSavingEcoPicks(true);
     try {
+      const mergedSelections: { date: string; hours: number; count: number }[] = [];
+      for (const s of editableEcoSelections) {
+        const existing = mergedSelections.find(m => m.date === s.date);
+        if (existing) {
+          existing.count += s.count;
+        } else {
+          mergedSelections.push({ date: s.date, hours: s.hours, count: s.count });
+        }
+      }
       await apiRequest("PATCH", `/api/quotes/${quote.id}/eco-schedule`, {
-        ecoSelections: editableEcoSelections.map(s => ({ date: s.date, hours: s.hours, count: s.count })),
+        ecoSelections: mergedSelections,
         ecoPicks: selectedEcoPicks,
         personNames: personNames,
       });
@@ -1651,7 +1660,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
         </DialogContent>
       </Dialog>
 
-      <Dialog open={ecoPickOpen} onOpenChange={(open) => { if (!open && (previewImage || ecoConfirmPreview)) return; setEcoPickOpen(open); if (open) { if (!ecoRepickMode) { setEditableEcoSelections([...origEcoSelections]); setSelectedEcoPicks(initEcoPicks()); if (origEcoSelections.length > 0) { setActivePickDate(origEcoSelections[0].date); } setActivePersonIndex(0); } setEditingPersonIdx(null); const savedNames = (quote.ecoPicks as any)?.personNames; setPersonNames(Array.isArray(savedNames) ? savedNames : [...defaultPersonLabels]); } else { setEcoRepickMode(false); } }}>
+      <Dialog open={ecoPickOpen} onOpenChange={(open) => { if (!open && (previewImage || ecoConfirmPreview)) return; setEcoPickOpen(open); if (open) { if (!ecoRepickMode) { setEditableEcoSelections([...origEcoSelections]); setSelectedEcoPicks(initEcoPicks()); if (origEcoSelections.length > 0) { setActivePickDate(origEcoSelections[0].date); } setActivePersonIndex(0); } else { setEditableEcoSelections([...origEcoSelections]); setSelectedEcoPicks(initEcoPicks()); } setEditingPersonIdx(null); const savedNames = (quote.ecoPicks as any)?.personNames; setPersonNames(Array.isArray(savedNames) ? savedNames : [...defaultPersonLabels]); } else { setEcoRepickMode(false); } }}>
         <DialogContent className="max-w-md max-h-[90vh] flex flex-col overflow-hidden p-0">
           <div className="flex-shrink-0 px-4 pt-3 pb-0">
             <DialogHeader>
