@@ -1662,7 +1662,7 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
       if (!targetQuote) {
         return res.status(404).json({ message: "Quote not found" });
       }
-      if (targetQuote.userId !== userId && !isUserAdmin(userId, userEmail)) {
+      if (String(targetQuote.userId) !== String(userId) && !isUserAdmin(userId, userEmail)) {
         return res.status(403).json({ message: "Not authorized" });
       }
       const { ecoPicks } = req.body;
@@ -1793,7 +1793,7 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
       if (!targetQuote) {
         return res.status(404).json({ message: "Quote not found" });
       }
-      if (targetQuote.userId !== userId && !isUserAdmin(userId, userEmail)) {
+      if (String(targetQuote.userId) !== String(userId) && !isUserAdmin(userId, userEmail)) {
         return res.status(403).json({ message: "Not authorized" });
       }
       if (targetQuote.ecoConfirmed && !isUserAdmin(userId, userEmail)) {
@@ -1925,7 +1925,7 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
       const { userMemo } = req.body;
       const [quote] = await db.select().from(quotes).where(eq(quotes.id, id)).limit(1);
       if (!quote) return res.status(404).json({ message: "Quote not found" });
-      if (quote.userId !== userId) return res.status(403).json({ message: "권한이 없습니다" });
+      if (String(quote.userId) !== String(userId)) return res.status(403).json({ message: "권한이 없습니다" });
       const [updated] = await db.update(quotes).set({ userMemo: userMemo || "" }).where(eq(quotes.id, id)).returning();
       res.json(updated);
     } catch (err) {
