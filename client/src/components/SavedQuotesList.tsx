@@ -1768,10 +1768,15 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                               const pickCount = (p.first ? 1 : 0) + (p.second ? 1 : 0) + (p.third ? 1 : 0);
                               const isActivePerson = activePersonIndex === i;
                               return (
-                                <Button key={i} variant={isActivePerson ? "default" : "outline"} size="sm" onClick={() => setActivePersonIndex(i)} onDoubleClick={() => { setEditingPersonIdx(i); setEditingPersonName(personNames[i] || defaultPersonLabels[i]); }} data-testid={`eco-pick-person-${i}`}>
-                                  {personNames[i] || defaultPersonLabels[i]}
-                                  {pickCount > 0 && <span className="ml-1 text-[10px] opacity-70">({pickCount}/3)</span>}
-                                </Button>
+                                <div key={i} className="flex items-center gap-0.5">
+                                  <Button variant={isActivePerson ? "default" : "outline"} size="sm" onClick={() => setActivePersonIndex(i)} onDoubleClick={() => { setEditingPersonIdx(i); setEditingPersonName(personNames[i] || defaultPersonLabels[i]); }} data-testid={`eco-pick-person-${i}`}>
+                                    {personNames[i] || defaultPersonLabels[i]}
+                                    {pickCount > 0 && <span className="ml-1 text-[10px] opacity-70">({pickCount}/3)</span>}
+                                  </Button>
+                                  {mergedCount > 1 && (
+                                    <button className="w-4 h-4 rounded-full bg-red-500/80 hover:bg-red-600 text-white text-[8px] flex items-center justify-center flex-shrink-0" onClick={(e) => { e.stopPropagation(); if (!confirm(language === "ko" ? `${personNames[i] || defaultPersonLabels[i]}의 에코픽을 삭제하고 인원을 줄이시겠습니까?` : `Remove ${personNames[i] || defaultPersonLabels[i]} and reduce count?`)) return; setSelectedEcoPicks(prev => { const currentPersons = [...(prev[activePickDate] || [])]; currentPersons.splice(i, 1); return { ...prev, [activePickDate]: currentPersons }; }); setPersonNames(prev => { const n = [...prev]; n.splice(i, 1); return n; }); setEditableEcoSelections(prev => { const sameDateIdxs = prev.map((s, idx) => ({ s, idx })).filter(x => x.s.date === activePickDate); if (sameDateIdxs.length === 0) return prev; const totalCount = sameDateIdxs.reduce((sum, x) => sum + x.s.count, 0); const newTotal = Math.max(1, totalCount - 1); const firstIdx = sameDateIdxs[0].idx; return prev.map((s, idx) => idx === firstIdx ? { ...s, count: newTotal } : (sameDateIdxs.length > 1 && idx === sameDateIdxs[sameDateIdxs.length - 1].idx && newTotal <= prev[firstIdx].count) ? { ...s, count: 0 } : s).filter(s => s.count > 0); }); if (activePersonIndex >= mergedCount - 1) setActivePersonIndex(Math.max(0, mergedCount - 2)); }} data-testid={`eco-pick-remove-person-${i}`}>×</button>
+                                  )}
+                                </div>
                               );
                             })}
                           </div>
