@@ -1662,7 +1662,10 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
       if (!targetQuote) {
         return res.status(404).json({ message: "Quote not found" });
       }
-      if (String(targetQuote.userId) !== String(userId) && !isUserAdmin(userId, userEmail)) {
+      const allUserIds = [userId, user?.claims?.sub, user?.id, (req.session as any)?.userId].filter(Boolean).map(String);
+      const quoteOwner = String(targetQuote.userId);
+      const isOwner = allUserIds.includes(quoteOwner);
+      if (!isOwner && !isUserAdmin(userId, userEmail)) {
         return res.status(403).json({ message: "Not authorized" });
       }
       const { ecoPicks } = req.body;
@@ -1793,7 +1796,11 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
       if (!targetQuote) {
         return res.status(404).json({ message: "Quote not found" });
       }
-      if (String(targetQuote.userId) !== String(userId) && !isUserAdmin(userId, userEmail)) {
+      const allUserIds = [userId, user?.claims?.sub, user?.id, (req.session as any)?.userId].filter(Boolean).map(String);
+      const quoteOwner = String(targetQuote.userId);
+      const isOwner = allUserIds.includes(quoteOwner);
+      if (!isOwner && !isUserAdmin(userId, userEmail)) {
+        console.log("[eco-schedule] NOT AUTHORIZED - allUserIds:", allUserIds, "quoteOwner:", quoteOwner);
         return res.status(403).json({ message: "Not authorized" });
       }
       if (targetQuote.ecoConfirmed && !isUserAdmin(userId, userEmail)) {
@@ -1925,7 +1932,8 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
       const { userMemo } = req.body;
       const [quote] = await db.select().from(quotes).where(eq(quotes.id, id)).limit(1);
       if (!quote) return res.status(404).json({ message: "Quote not found" });
-      if (String(quote.userId) !== String(userId)) return res.status(403).json({ message: "권한이 없습니다" });
+      const allUserIds = [userId, user?.claims?.sub, user?.id, (req.session as any)?.userId].filter(Boolean).map(String);
+      if (!allUserIds.includes(String(quote.userId))) return res.status(403).json({ message: "권한이 없습니다" });
       const [updated] = await db.update(quotes).set({ userMemo: userMemo || "" }).where(eq(quotes.id, id)).returning();
       res.json(updated);
     } catch (err) {
