@@ -1664,7 +1664,8 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
       }
       const allUserIds = [userId, user?.claims?.sub, user?.id, (req.session as any)?.userId].filter(Boolean).map(String);
       const quoteOwner = String(targetQuote.userId);
-      const isOwner = allUserIds.includes(quoteOwner);
+      const assignedUsers: string[] = Array.isArray((targetQuote as any).assignedUsers) ? (targetQuote as any).assignedUsers.map(String) : [];
+      const isOwner = allUserIds.includes(quoteOwner) || allUserIds.some(uid => assignedUsers.includes(uid));
       if (!isOwner && !isUserAdmin(userId, userEmail)) {
         return res.status(403).json({ message: "Not authorized" });
       }
@@ -1798,9 +1799,9 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
       }
       const allUserIds = [userId, user?.claims?.sub, user?.id, (req.session as any)?.userId].filter(Boolean).map(String);
       const quoteOwner = String(targetQuote.userId);
-      const isOwner = allUserIds.includes(quoteOwner);
+      const assignedUsers: string[] = Array.isArray((targetQuote as any).assignedUsers) ? (targetQuote as any).assignedUsers.map(String) : [];
+      const isOwner = allUserIds.includes(quoteOwner) || allUserIds.some(uid => assignedUsers.includes(uid));
       if (!isOwner && !isUserAdmin(userId, userEmail)) {
-        console.log("[eco-schedule] NOT AUTHORIZED - allUserIds:", allUserIds, "quoteOwner:", quoteOwner);
         return res.status(403).json({ message: "Not authorized" });
       }
       if (targetQuote.ecoConfirmed && !isUserAdmin(userId, userEmail)) {
@@ -1933,7 +1934,9 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
       const [quote] = await db.select().from(quotes).where(eq(quotes.id, id)).limit(1);
       if (!quote) return res.status(404).json({ message: "Quote not found" });
       const allUserIds = [userId, user?.claims?.sub, user?.id, (req.session as any)?.userId].filter(Boolean).map(String);
-      if (!allUserIds.includes(String(quote.userId))) return res.status(403).json({ message: "권한이 없습니다" });
+      const assignedUsers: string[] = Array.isArray((quote as any).assignedUsers) ? (quote as any).assignedUsers.map(String) : [];
+      const isOwner = allUserIds.includes(String(quote.userId)) || allUserIds.some(uid => assignedUsers.includes(uid));
+      if (!isOwner) return res.status(403).json({ message: "권한이 없습니다" });
       const [updated] = await db.update(quotes).set({ userMemo: userMemo || "" }).where(eq(quotes.id, id)).returning();
       res.json(updated);
     } catch (err) {
