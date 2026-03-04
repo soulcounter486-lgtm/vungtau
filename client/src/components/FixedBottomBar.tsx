@@ -66,12 +66,12 @@ export function FixedBottomBar() {
       .catch(() => {});
   }, []);
 
-  const contactLabel = language === "ko" ? "예약/환전/부동산 문의" : 
+  const contactLabel = language === "ko" ? "예약/환전/매물 문의" : 
     language === "en" ? "Reservation / Exchange / Real Estate" :
     language === "zh" ? "预约/换汇/房产" :
     language === "vi" ? "Đặt chỗ / Đổi tiền / Bất động sản" :
     language === "ru" ? "Бронь / Обмен / Недвижимость" :
-    language === "ja" ? "予約/両替/不動産" : "예약/환전/부동산 문의";
+    language === "ja" ? "予約/両替/不動産" : "예약/환전/매물 문의";
 
   const addFriendLabel = language === "ko" ? "카톡친추" : 
     language === "en" ? "Add Friend" :

@@ -25,7 +25,7 @@ const navLabels: Record<string, Record<string, string>> = {
   planner: { ko: "AI플래너", en: "Planner", zh: "规划", vi: "Kế hoạch", ru: "Планер", ja: "プランナー" },
   chat: { ko: "채팅", en: "Chat", zh: "聊天", vi: "Trò chuyện", ru: "Чат", ja: "チャット" },
   expenses: { ko: "가계부", en: "Expenses", zh: "账本", vi: "Chi tiêu", ru: "Расходы", ja: "家計簿" },
-  realestate: { ko: "부동산", en: "Real Estate", zh: "房产", vi: "Bất động sản", ru: "Недвижимость", ja: "不動産" },
+  realestate: { ko: "매물", en: "Real Estate", zh: "房产", vi: "Bất động sản", ru: "Недвижимость", ja: "不動産" },
 };
 
 const iconMap: Record<string, any> = {
