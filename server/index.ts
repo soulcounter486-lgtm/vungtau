@@ -99,17 +99,20 @@ const initPromise = (async () => {
         const ogData = await getOgDataForPath(fullUrl);
         if (ogData) {
           html = injectOgTags(html, ogData);
-          res.status(200).set({ "Content-Type": "text/html" }).end(html);
+          res.status(200).set({ "Content-Type": "text/html", "Cache-Control": "public, max-age=60" }).end(html);
           return;
         }
       }
 
       const seoSettings = await getSeoSettings();
       const hasSeo = seoSettings["seo_title"] || seoSettings["seo_description"] || seoSettings["seo_keywords"];
-      if (!hasSeo) return next();
+      if (!hasSeo) {
+        res.status(200).set({ "Content-Type": "text/html", "Cache-Control": "public, max-age=60" }).end(html);
+        return;
+      }
 
       html = injectSeoMeta(html, seoSettings);
-      res.status(200).set({ "Content-Type": "text/html" }).end(html);
+      res.status(200).set({ "Content-Type": "text/html", "Cache-Control": "public, max-age=60" }).end(html);
     } catch {
       next();
     }
@@ -132,7 +135,7 @@ const initPromise = (async () => {
 
       let html = await fs.promises.readFile(htmlPath, "utf-8");
       html = injectOgTags(html, ogData);
-      res.status(200).set({ "Content-Type": "text/html" }).end(html);
+      res.status(200).set({ "Content-Type": "text/html", "Cache-Control": "public, max-age=60" }).end(html);
     } catch {
       next();
     }
@@ -159,7 +162,7 @@ const initPromise = (async () => {
 
       let html = await fs.promises.readFile(htmlPath, "utf-8");
       html = injectOgTags(html, ogData);
-      res.status(200).set({ "Content-Type": "text/html" }).end(html);
+      res.status(200).set({ "Content-Type": "text/html", "Cache-Control": "public, max-age=60" }).end(html);
     } catch {
       next();
     }
@@ -183,7 +186,7 @@ const initPromise = (async () => {
 
       let html = await fs.promises.readFile(htmlPath, "utf-8");
       html = injectOgTags(html, ogData);
-      res.status(200).set({ "Content-Type": "text/html" }).end(html);
+      res.status(200).set({ "Content-Type": "text/html", "Cache-Control": "public, max-age=60" }).end(html);
     } catch {
       next();
     }

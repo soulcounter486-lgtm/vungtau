@@ -7,8 +7,8 @@ import fs from "fs";
 import os from "os";
 
 const DEFAULT_OG_IMAGE = "https://vungtau.blog/og-image-wide.jpg";
-const DEFAULT_OG_IMAGE_WIDTH = 1280;
-const DEFAULT_OG_IMAGE_HEIGHT = 814;
+const DEFAULT_OG_IMAGE_WIDTH = 991;
+const DEFAULT_OG_IMAGE_HEIGHT = 630;
 
 interface OgData {
   title: string;
