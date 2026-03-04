@@ -1391,15 +1391,6 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                       if (!hasAnyPick) return null;
                       const savedNames = (quote.ecoPicks as any)?.personNames;
                       const pNames: string[] = Array.isArray(savedNames) ? savedNames : defaultPersonLabels;
-                      const savedProfileIds = new Set<number>();
-                      Object.values(savedEcoPicks).forEach(persons => {
-                        if (Array.isArray(persons)) persons.forEach(p => {
-                          if (p.first) savedProfileIds.add(p.first);
-                          if (p.second) savedProfileIds.add(p.second);
-                          if (p.third) savedProfileIds.add(p.third);
-                        });
-                      });
-                      const savedProfileList = ecoProfiles.filter(p => savedProfileIds.has(p.id));
                       return (
                         <div className="mt-2 pt-2 border-t border-pink-200/30">
                           <div className="flex gap-3 overflow-x-auto pb-1" style={{ WebkitOverflowScrolling: "touch" }}>
@@ -1423,7 +1414,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                                             const profile = ecoProfiles.find(p => p.id === profileId);
                                             if (!profile) return null;
                                             return (
-                                              <div key={pk} className={`relative w-9 h-9 rounded-md overflow-hidden flex-shrink-0 cursor-pointer ${(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[sel.date] || {}; const unavail = getUnavailForDate(sel.date); if (unavail.includes(profileId)) return "border-2 border-red-500 ring-1 ring-red-400 opacity-50"; return dc[String(pi)] === profileId ? "border-2 border-green-500 ring-1 ring-green-400" : "border border-pink-300/50"; })()}`} onClick={(e) => { e.stopPropagation(); e.preventDefault(); if (isAdmin) { setEcoConfirmPreview({ imageUrl: profile.imageUrl, profileName: profile.name, profileId: profileId, date: sel.date, personIndex: pi, priorityLabel: priorityLabels[pri] }); } else { const idx = savedProfileList.findIndex(p => p.id === profileId); openPreview(profile.imageUrl, idx >= 0 ? idx : null, savedProfileList); } }}>
+                                              <div key={pk} className={`relative w-9 h-9 rounded-md overflow-hidden flex-shrink-0 cursor-pointer ${(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[sel.date] || {}; const unavail = getUnavailForDate(sel.date); if (unavail.includes(profileId)) return "border-2 border-red-500 ring-1 ring-red-400 opacity-50"; return dc[String(pi)] === profileId ? "border-2 border-green-500 ring-1 ring-green-400" : "border border-pink-300/50"; })()}`} onClick={(e) => { e.stopPropagation(); e.preventDefault(); if (isAdmin) { setEcoConfirmPreview({ imageUrl: profile.imageUrl, profileName: profile.name, profileId: profileId, date: sel.date, personIndex: pi, priorityLabel: priorityLabels[pri] }); } else { const personProfileIds = [person.first, person.second, person.third].filter((v): v is number => !!v); const personProfiles = personProfileIds.map(id => ecoProfiles.find(p => p.id === id)).filter((p): p is typeof ecoProfiles[number] => !!p); const idx = personProfiles.findIndex(p => p.id === profileId); openPreview(profile.imageUrl, idx >= 0 ? idx : null, personProfiles); } }}>
                                                 <img src={profile.imageUrl} alt={profile.name} className="w-full h-full object-cover" />
                                                 {(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[sel.date] || {}; const unavail = getUnavailForDate(sel.date); if (unavail.includes(profileId)) return (<div className="absolute top-0 left-0 right-0 bg-red-600 text-[5px] text-white text-center font-bold py-px z-10">픽불가</div>); if (dc[String(pi)] === profileId) return (<div className="absolute top-0 left-0 right-0 bg-green-600 text-[5px] text-white text-center font-bold py-px z-10">확정</div>); return (<div className={`absolute top-0 left-0 w-3 h-3 ${priorityColors[pri]} rounded-br-sm flex items-center justify-center`}><span className="text-[6px] font-bold text-white">{pri + 1}</span></div>); })()}
                                                 <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-[5px] text-white text-center leading-tight py-px truncate">{profile.name}</div>
