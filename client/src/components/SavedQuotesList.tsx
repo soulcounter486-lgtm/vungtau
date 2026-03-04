@@ -2061,10 +2061,11 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
       {!ecoPickOpen && ecoConfirmPreview && (
         <div
           data-testid="eco-confirm-preview-standalone"
-          style={{ position: "fixed", inset: 0, zIndex: 2147483647, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}
+          style={{ position: "fixed", inset: 0, zIndex: 2147483647, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, touchAction: "none", overscrollBehavior: "contain" }}
           onClick={(e) => { e.stopPropagation(); e.preventDefault(); setEcoConfirmPreview(null); }}
           onPointerDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
+          onTouchStart={(e) => { e.stopPropagation(); e.preventDefault(); }}
+          onTouchMove={(e) => { e.stopPropagation(); e.preventDefault(); }}
         >
           <img src={ecoConfirmPreview.imageUrl} alt={ecoConfirmPreview.profileName} style={{ maxWidth: "92vw", maxHeight: "60vh", objectFit: "contain", borderRadius: 8, pointerEvents: "none", userSelect: "none" }} draggable={false} />
           <div className="text-white text-center space-y-1">
