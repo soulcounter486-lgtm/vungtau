@@ -71,7 +71,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
   const [previewProfileList, setPreviewProfileList] = useState<typeof ecoProfiles | null>(null);
   const [previewContext, setPreviewContext] = useState<{ date: string; personIndex: number } | null>(null);
   const touchStartXRef = useRef(0);
-  const [ecoConfirmPreview, setEcoConfirmPreview] = useState<{ imageUrl: string; profileName: string; profileId: number; date: string; personIndex: number; priorityLabel: string } | null>(null);
+  const [ecoConfirmPreview, setEcoConfirmPreview] = useState<{ imageUrl: string; profileName: string; profileId: number; date: string; personIndex: number; priorityLabel: string; profileList?: typeof ecoProfiles; currentIdx?: number } | null>(null);
   const [villaPhotoOpen, setVillaPhotoOpen] = useState(false);
   const [villaLinkOpen, setVillaLinkOpen] = useState(false);
   const [villaPhotoIndex, setVillaPhotoIndex] = useState(0);
@@ -1417,7 +1417,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                                             const profile = ecoProfiles.find(p => p.id === profileId);
                                             if (!profile) return null;
                                             return (
-                                              <div key={pk} className={`relative w-9 h-9 rounded-md overflow-hidden flex-shrink-0 cursor-pointer ${(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[sel.date] || {}; const unavail = getUnavailForDate(sel.date); if (unavail.includes(profileId)) return "border-2 border-red-500 ring-1 ring-red-400 opacity-50"; return dc[String(pi)] === profileId ? "border-2 border-green-500 ring-1 ring-green-400" : "border border-pink-300/50"; })()}`} onClick={(e) => { e.stopPropagation(); e.preventDefault(); if (isAdmin) { setEcoConfirmPreview({ imageUrl: profile.imageUrl, profileName: profile.name, profileId: profileId, date: sel.date, personIndex: pi, priorityLabel: priorityLabels[pri] }); } else { const personProfileIds = [person.first, person.second, person.third].filter((v): v is number => !!v); const personProfiles = personProfileIds.map(id => ecoProfiles.find(p => p.id === id)).filter((p): p is typeof ecoProfiles[number] => !!p); const idx = personProfiles.findIndex(p => p.id === profileId); openPreview(profile.imageUrl, idx >= 0 ? idx : null, personProfiles, { date: sel.date, personIndex: pi }); } }}>
+                                              <div key={pk} className={`relative w-9 h-9 rounded-md overflow-hidden flex-shrink-0 cursor-pointer ${(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[sel.date] || {}; const unavail = getUnavailForDate(sel.date); if (unavail.includes(profileId)) return "border-2 border-red-500 ring-1 ring-red-400 opacity-50"; return dc[String(pi)] === profileId ? "border-2 border-green-500 ring-1 ring-green-400" : "border border-pink-300/50"; })()}`} onClick={(e) => { e.stopPropagation(); e.preventDefault(); if (isAdmin) { const personProfileIds = [person.first, person.second, person.third].filter((v): v is number => !!v); const personProfiles = personProfileIds.map(id => ecoProfiles.find(p => p.id === id)).filter((p): p is typeof ecoProfiles[number] => !!p); const pIdx = personProfiles.findIndex(p => p.id === profileId); setEcoConfirmPreview({ imageUrl: profile.imageUrl, profileName: profile.name, profileId: profileId, date: sel.date, personIndex: pi, priorityLabel: priorityLabels[pri], profileList: personProfiles, currentIdx: pIdx >= 0 ? pIdx : 0 }); } else { const personProfileIds = [person.first, person.second, person.third].filter((v): v is number => !!v); const personProfiles = personProfileIds.map(id => ecoProfiles.find(p => p.id === id)).filter((p): p is typeof ecoProfiles[number] => !!p); const idx = personProfiles.findIndex(p => p.id === profileId); openPreview(profile.imageUrl, idx >= 0 ? idx : null, personProfiles, { date: sel.date, personIndex: pi }); } }}>
                                                 <img src={profile.imageUrl} alt={profile.name} className="w-full h-full object-cover" />
                                                 {(() => { const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {}; const dc = cp[sel.date] || {}; const unavail = getUnavailForDate(sel.date); if (unavail.includes(profileId)) return (<div className="absolute top-0 left-0 right-0 bg-red-600 text-[5px] text-white text-center font-bold py-px z-10">픽불가</div>); if (dc[String(pi)] === profileId) return (<div className="absolute top-0 left-0 right-0 bg-green-600 text-[5px] text-white text-center font-bold py-px z-10">확정</div>); return (<div className={`absolute top-0 left-0 w-3 h-3 ${priorityColors[pri]} rounded-br-sm flex items-center justify-center`}><span className="text-[6px] font-bold text-white">{pri + 1}</span></div>); })()}
                                                 <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-[5px] text-white text-center leading-tight py-px truncate">{profile.name}</div>
@@ -2064,13 +2064,30 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
           style={{ position: "fixed", inset: 0, zIndex: 2147483647, background: "rgba(0,0,0,0.95)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, touchAction: "none", overscrollBehavior: "contain" }}
           onClick={(e) => { e.stopPropagation(); e.preventDefault(); setEcoConfirmPreview(null); }}
           onPointerDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => { e.stopPropagation(); e.preventDefault(); }}
+          onTouchStart={(e) => { e.stopPropagation(); e.preventDefault(); touchStartXRef.current = e.touches[0].clientX; }}
           onTouchMove={(e) => { e.stopPropagation(); e.preventDefault(); }}
+          onTouchEnd={(e) => {
+            const touchEndX = e.changedTouches[0].clientX;
+            const diff = touchStartXRef.current - touchEndX;
+            const pl = ecoConfirmPreview.profileList || [];
+            const ci = ecoConfirmPreview.currentIdx ?? 0;
+            if (Math.abs(diff) > 50 && pl.length > 1) {
+              const nextIdx = diff > 0 ? Math.min(ci + 1, pl.length - 1) : Math.max(ci - 1, 0);
+              if (nextIdx !== ci) {
+                const np = pl[nextIdx];
+                setEcoConfirmPreview({ ...ecoConfirmPreview, imageUrl: np.imageUrl, profileName: np.name, profileId: np.id, priorityLabel: priorityLabels[nextIdx] || `${nextIdx + 1}지망`, currentIdx: nextIdx });
+              }
+            }
+          }}
         >
-          <img src={ecoConfirmPreview.imageUrl} alt={ecoConfirmPreview.profileName} style={{ maxWidth: "92vw", maxHeight: "60vh", objectFit: "contain", borderRadius: 8, pointerEvents: "none", userSelect: "none" }} draggable={false} />
+          {(() => { const pl = ecoConfirmPreview.profileList || []; const ci = ecoConfirmPreview.currentIdx ?? 0; return (<>
+            {ci > 0 && (<button type="button" style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", color: "white", background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, cursor: "pointer", zIndex: 10 }} onClick={(e) => { e.stopPropagation(); const np = pl[ci - 1]; setEcoConfirmPreview({ ...ecoConfirmPreview, imageUrl: np.imageUrl, profileName: np.name, profileId: np.id, priorityLabel: priorityLabels[ci - 1] || `${ci}지망`, currentIdx: ci - 1 }); }}>‹</button>)}
+            {ci < pl.length - 1 && (<button type="button" style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", color: "white", background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, cursor: "pointer", zIndex: 10 }} onClick={(e) => { e.stopPropagation(); const np = pl[ci + 1]; setEcoConfirmPreview({ ...ecoConfirmPreview, imageUrl: np.imageUrl, profileName: np.name, profileId: np.id, priorityLabel: priorityLabels[ci + 1] || `${ci + 2}지망`, currentIdx: ci + 1 }); }}>›</button>)}
+          </>); })()}
+          <img src={ecoConfirmPreview.imageUrl} alt={ecoConfirmPreview.profileName} style={{ maxWidth: "92vw", maxHeight: "55vh", objectFit: "contain", borderRadius: 8, pointerEvents: "none", userSelect: "none" }} draggable={false} />
           <div className="text-white text-center space-y-1">
             <p className="text-lg font-bold">{ecoConfirmPreview.profileName}</p>
-            <p className="text-sm text-white/70">{ecoConfirmPreview.date} · {ecoConfirmPreview.priorityLabel}</p>
+            <p className="text-sm text-white/70">{ecoConfirmPreview.date} · {ecoConfirmPreview.priorityLabel} {ecoConfirmPreview.profileList && ecoConfirmPreview.profileList.length > 1 ? `(${(ecoConfirmPreview.currentIdx ?? 0) + 1}/${ecoConfirmPreview.profileList.length})` : ""}</p>
           </div>
           {(() => {
             const cp = (quote.ecoConfirmedPicks as Record<string, Record<string, number>> | null) || {};
