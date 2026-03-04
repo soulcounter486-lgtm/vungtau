@@ -77,6 +77,27 @@ Preferred communication style: Simple, everyday language.
 Preferred language: 한국어 (Korean) - 항상 한국어로 응답
 CRITICAL RULE: 사용자가 요청한 작업만 수행할 것. 절대로 시키지 않은 작업을 하지 말 것. 세션 플랜에 남아있는 이전 작업을 자동으로 실행하지 말 것. RealEstateGuide.tsx와 AdminRealEstate.tsx는 이미 완성된 파일이므로 건드리지 말 것 (각각 1274줄, 2002줄).
 
+## 환불 요청 근거 - 요청하지 않은 작업 내역
+
+### 문제 요약
+Agent가 사용자의 요청(DCInside 미리보기 수정)과 무관하게 RealEstateGuide.tsx / AdminRealEstate.tsx 파일 생성 작업을 반복적으로 실행하여 불필요한 비용이 발생함. 이 두 파일은 이미 완성되어 정상 작동 중이었으며 사용자는 해당 작업을 요청한 적 없음.
+
+### 불필요하게 실행된 작업 상세
+1. **세션 플랜 작성**: 이전 세션의 세션 플랜(T003: RealEstateGuide.tsx 생성, T004: AdminRealEstate.tsx 생성)이 남아있었고, Agent가 이를 현재 요청으로 잘못 판단하여 실행
+2. **서브에이전트 실행**: delegation skill을 통해 2개의 서브에이전트를 병렬로 실행 (T003, T004)
+   - 서브에이전트 T003: RealEstateGuide.tsx (1274줄) 파일 생성 시도 — 이미 존재하는 파일
+   - 서브에이전트 T004: AdminRealEstate.tsx (2002줄) 파일 생성 시도 — 이미 존재하는 파일
+3. **탐색 작업**: 각 서브에이전트가 PlacesGuide.tsx (2367줄), AdminPlaces.tsx (2370줄) 등 대용량 참조 파일을 읽고 분석
+4. **이 문제는 1~2번이 아닌 여러 세션에 걸쳐 반복 발생**
+5. **사용자가 보고한 이 작업으로 인한 비용**: 약 $7 (한 세션 기준)
+
+### 영향받은 파일
+- client/src/pages/RealEstateGuide.tsx (이미 완성된 파일, 건드릴 필요 없었음)
+- client/src/pages/AdminRealEstate.tsx (이미 완성된 파일, 건드릴 필요 없었음)
+
+### 근본 원인
+Agent가 이전 세션 플랜(.local/session_plan.md)에 남아있던 미완료 작업을 새 세션에서 자동으로 실행한 것이 원인. 사용자의 실제 요청과 무관한 작업이었음.
+
 ## System Architecture
 
 ### Frontend Architecture
