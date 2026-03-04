@@ -74,6 +74,8 @@ A travel quote calculator application for generating custom trip estimates. The 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Preferred language: 한국어 (Korean) - 항상 한국어로 응답
+CRITICAL RULE: 사용자가 요청한 작업만 수행할 것. 절대로 시키지 않은 작업을 하지 말 것. 세션 플랜에 남아있는 이전 작업을 자동으로 실행하지 말 것. RealEstateGuide.tsx와 AdminRealEstate.tsx는 이미 완성된 파일이므로 건드리지 말 것 (각각 1274줄, 2002줄).
 
 ## System Architecture
 
