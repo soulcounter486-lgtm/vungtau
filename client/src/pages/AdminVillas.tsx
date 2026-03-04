@@ -513,10 +513,9 @@ function VillaForm({ villa, onSubmit, isLoading, onCancel }: VillaFormProps) {
 
   const { uploadFile, isUploading } = useUpload({
     onSuccess: (response) => {
-      const imageUrl = `https://storage.googleapis.com/${response.objectPath}`;
       setFormData(prev => ({
         ...prev,
-        images: [...prev.images, imageUrl],
+        images: [...prev.images, response.objectPath],
       }));
     },
     onError: (error) => {
