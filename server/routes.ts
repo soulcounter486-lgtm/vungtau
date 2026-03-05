@@ -1368,6 +1368,20 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
           let basePrice = 0;
           let routeDesc = "";
           const routeDescMap: Record<string, string> = { city: "시내투어", oneway: "편도(붕따우)", hocham_oneway: "편도(호짬)", phanthiet_oneway: "편도(판티엣)", roundtrip: "왕복", city_pickup_drop: "픽드랍+시내" };
+          if (dbVt) {
+            const customLabels: Record<string, string> = {};
+            if (dbVt.cityLabel) routeDescMap["city"] = dbVt.cityLabel;
+            if (dbVt.onewayLabel) routeDescMap["oneway"] = dbVt.onewayLabel;
+            if (dbVt.hochamOnewayLabel) routeDescMap["hocham_oneway"] = dbVt.hochamOnewayLabel;
+            if (dbVt.phanthietOnewayLabel) routeDescMap["phanthiet_oneway"] = dbVt.phanthietOnewayLabel;
+            if (dbVt.roundtripLabel) routeDescMap["roundtrip"] = dbVt.roundtripLabel;
+            if (dbVt.cityPickupDropLabel) routeDescMap["city_pickup_drop"] = dbVt.cityPickupDropLabel;
+            const customRoutes = (dbVt.customRoutes as any[]) || [];
+            for (const cr of customRoutes) {
+              customLabels[`custom_${cr.key}`] = cr.label;
+            }
+            Object.assign(routeDescMap, customLabels);
+          }
           routeDesc = routeDescMap[selection.route] || selection.route;
           if (dbVt) {
             switch (selection.route) {
@@ -1377,6 +1391,12 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
               case "phanthiet_oneway": basePrice = dbVt.phanthietOnewayPrice; break;
               case "roundtrip": basePrice = dbVt.roundtripPrice; break;
               case "city_pickup_drop": basePrice = dbVt.cityPickupDropPrice; break;
+              default: {
+                const customRoutes = (dbVt.customRoutes as any[]) || [];
+                const customRoute = customRoutes.find((cr: any) => `custom_${cr.key}` === selection.route);
+                if (customRoute) basePrice = customRoute.price;
+                break;
+              }
             }
           } else if (fallback) {
             switch (selection.route) {

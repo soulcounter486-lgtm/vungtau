@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Plus, Trash2, Save, Loader2, Car, GripVertical } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Loader2, Car, GripVertical, X } from "lucide-react";
 import { Link } from "wouter";
 import type { VehicleType } from "@shared/schema";
 
@@ -28,6 +28,7 @@ export default function AdminVehicleTypes() {
     phanthietOnewayPrice: 0, phanthietOnewayLabel: "편도(판티엣)",
     roundtripPrice: 0, roundtripLabel: "왕복",
     cityPickupDropPrice: 0, cityPickupDropLabel: "픽드랍+시내",
+    customRoutes: [] as { key: string; label: string; price: number }[],
     sortOrder: 0, isActive: true,
   });
 
@@ -37,7 +38,7 @@ export default function AdminVehicleTypes() {
   });
 
   const resetForm = () => {
-    setFormData({ key: "", nameKo: "", nameEn: "", descriptionKo: "", descriptionEn: "", cityPrice: 0, cityLabel: "시내투어", onewayPrice: 0, onewayLabel: "편도(붕따우)", hochamOnewayPrice: 0, hochamOnewayLabel: "편도(호짬)", phanthietOnewayPrice: 0, phanthietOnewayLabel: "편도(판티엣)", roundtripPrice: 0, roundtripLabel: "왕복", cityPickupDropPrice: 0, cityPickupDropLabel: "픽드랍+시내", sortOrder: 0, isActive: true });
+    setFormData({ key: "", nameKo: "", nameEn: "", descriptionKo: "", descriptionEn: "", cityPrice: 0, cityLabel: "시내투어", onewayPrice: 0, onewayLabel: "편도(붕따우)", hochamOnewayPrice: 0, hochamOnewayLabel: "편도(호짬)", phanthietOnewayPrice: 0, phanthietOnewayLabel: "편도(판티엣)", roundtripPrice: 0, roundtripLabel: "왕복", cityPickupDropPrice: 0, cityPickupDropLabel: "픽드랍+시내", customRoutes: [], sortOrder: 0, isActive: true });
     setEditingId(null);
     setShowForm(false);
   };
@@ -52,6 +53,7 @@ export default function AdminVehicleTypes() {
       phanthietOnewayPrice: vt.phanthietOnewayPrice, phanthietOnewayLabel: vt.phanthietOnewayLabel || "편도(판티엣)",
       roundtripPrice: vt.roundtripPrice, roundtripLabel: vt.roundtripLabel || "왕복",
       cityPickupDropPrice: vt.cityPickupDropPrice, cityPickupDropLabel: vt.cityPickupDropLabel || "픽드랍+시내",
+      customRoutes: vt.customRoutes || [],
       sortOrder: vt.sortOrder ?? 0, isActive: vt.isActive ?? true,
     });
     setEditingId(vt.id);
@@ -175,6 +177,20 @@ export default function AdminVehicleTypes() {
                   <Input type="number" min="0" value={formData.cityPickupDropPrice} onChange={(e) => setFormData({ ...formData, cityPickupDropPrice: parseInt(e.target.value) || 0 })} data-testid="input-vt-pickup-drop" />
                 </div>
               </div>
+              {formData.customRoutes.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3 pt-3 border-t border-dashed">
+                  {formData.customRoutes.map((cr, ci) => (
+                    <div key={ci} className="space-y-1 relative">
+                      <Input value={cr.label} onChange={(e) => { const updated = [...formData.customRoutes]; updated[ci] = { ...cr, label: e.target.value, key: e.target.value.replace(/[^a-zA-Z0-9가-힣]/g, '_').toLowerCase() || `custom_${ci}` }; setFormData({ ...formData, customRoutes: updated }); }} className="text-xs h-7 px-2 border-dashed" placeholder="경로 이름" data-testid={`input-vt-custom-route-label-${ci}`} />
+                      <Input type="number" min="0" value={cr.price} onChange={(e) => { const updated = [...formData.customRoutes]; updated[ci] = { ...cr, price: parseInt(e.target.value) || 0 }; setFormData({ ...formData, customRoutes: updated }); }} data-testid={`input-vt-custom-route-price-${ci}`} />
+                      <Button variant="ghost" size="icon" className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-100 hover:bg-red-200 text-red-500" onClick={() => { const updated = formData.customRoutes.filter((_, i) => i !== ci); setFormData({ ...formData, customRoutes: updated }); }} data-testid={`button-remove-custom-route-${ci}`}><X className="w-3 h-3" /></Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Button type="button" variant="outline" size="sm" className="mt-3 w-full border-dashed" onClick={() => setFormData({ ...formData, customRoutes: [...formData.customRoutes, { key: `custom_${formData.customRoutes.length}`, label: "", price: 0 }] })} data-testid="button-add-custom-route">
+                <Plus className="w-3.5 h-3.5 mr-1" /> 경로 추가
+              </Button>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -235,6 +251,12 @@ export default function AdminVehicleTypes() {
                         <div className="text-muted-foreground truncate">{vt.cityPickupDropLabel || "픽드랍"}</div>
                         <div className="font-bold">${vt.cityPickupDropPrice}</div>
                       </div>
+                      {vt.customRoutes?.map((cr, ci) => (
+                        <div key={`custom-${ci}`} className="bg-amber-50 dark:bg-amber-900/20 rounded p-2 text-center">
+                          <div className="text-muted-foreground truncate">{cr.label}</div>
+                          <div className="font-bold">${cr.price}</div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   <div className="flex flex-col gap-1 shrink-0">
