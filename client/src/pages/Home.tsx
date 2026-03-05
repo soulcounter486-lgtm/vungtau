@@ -2379,8 +2379,8 @@ export default function Home() {
                                     const descText = vtDesc ? (language === "ko" ? vtDesc.descriptionKo : vtDesc.descriptionEn) : t(`vehicle.desc.${field.value}`);
                                     return (
                                       <div className="space-y-0.5">
-                                        {descText.split(/[|\n]/).filter(Boolean).map((line: string, i: number) => (
-                                          <p key={i} className={i === 0 ? "font-bold text-slate-700" : ""}>{line}</p>
+                                        {descText.split(/[|\n]/).map((line: string, i: number) => (
+                                          line.trim() ? <p key={i} className={i === 0 ? "font-bold text-slate-700" : ""}>{line}</p> : <div key={i} className="h-2" />
                                         ))}
                                       </div>
                                     );
