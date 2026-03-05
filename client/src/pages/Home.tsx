@@ -694,10 +694,10 @@ export default function Home() {
   const [couponError, setCouponError] = useState<{villa?: string; vehicle?: string}>({});
   const [couponLoading, setCouponLoading] = useState<{villa?: boolean; vehicle?: boolean}>({});
 
-  type MyCoupon = { id: number; couponId: number; isUsed: boolean; name: string; category: string | null; discountType: string; discountValue: number; validUntil: string | null };
+  type MyCoupon = { id: number; couponId: number; isUsed: boolean; name: string; category: string | null; discountType: string; discountValue: number; validUntil: string | null; placeId: number | null };
   const { data: myCoupons = [] } = useQuery<MyCoupon[]>({ queryKey: ["/api/my-coupons"], enabled: isAuthenticated });
-  const availableVillaCoupons = myCoupons.filter(c => !c.isUsed && (c.category === "villa" || c.category === "all" || !c.category) && c.discountType !== "service" && (!c.validUntil || new Date(c.validUntil) > new Date()));
-  const availableVehicleCoupons = myCoupons.filter(c => !c.isUsed && (c.category === "vehicle" || c.category === "all" || !c.category) && c.discountType !== "service" && (!c.validUntil || new Date(c.validUntil) > new Date()));
+  const availableVillaCoupons = myCoupons.filter(c => !c.isUsed && (c.category === "villa" || c.category === "all") && c.discountType !== "service" && !c.placeId && (!c.validUntil || new Date(c.validUntil) > new Date()));
+  const availableVehicleCoupons = myCoupons.filter(c => !c.isUsed && (c.category === "vehicle" || c.category === "all") && c.discountType !== "service" && !c.placeId && (!c.validUntil || new Date(c.validUntil) > new Date()));
 
   const applyMyCoupon = (category: "villa" | "vehicle", coupon: MyCoupon) => {
     const data = { id: coupon.couponId, name: coupon.name, discountType: coupon.discountType, discountValue: coupon.discountValue };
