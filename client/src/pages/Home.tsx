@@ -3382,7 +3382,7 @@ export default function Home() {
           
           {/* 썸네일 리스트 */}
           {selectedVilla.images.length > 1 && (
-            <div className="flex gap-2 p-3 overflow-x-auto justify-center bg-black/90 flex-shrink-0">
+            <div className="flex gap-2 p-3 overflow-x-auto bg-black/90 flex-shrink-0" style={{ WebkitOverflowScrolling: 'touch' }}>
               {selectedVilla.images.map((img, idx) => (
                 <div
                   key={idx}
@@ -3483,7 +3483,7 @@ export default function Home() {
             )}
           </div>
           {catGalleryImages.length > 1 && (
-            <div className="flex gap-2 p-3 overflow-x-auto justify-center bg-black/90 flex-shrink-0">
+            <div className="flex gap-2 p-3 overflow-x-auto bg-black/90 flex-shrink-0" style={{ WebkitOverflowScrolling: 'touch' }}>
               {catGalleryImages.map((img, idx) => (
                 <div
                   key={idx}
