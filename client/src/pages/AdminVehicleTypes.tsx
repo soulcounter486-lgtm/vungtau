@@ -152,29 +152,35 @@ export default function AdminVehicleTypes() {
             <div className="border-t pt-4">
               <Label className="text-sm font-bold mb-3 block">경로별 가격 (USD) — 라벨 클릭하여 수정 가능</Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                <div className="space-y-1">
+                <div className="space-y-1 relative">
                   <Input value={formData.cityLabel} onChange={(e) => setFormData({ ...formData, cityLabel: e.target.value })} className="text-xs h-7 px-2 border-dashed" data-testid="input-vt-city-label" />
                   <Input type="number" min="0" value={formData.cityPrice} onChange={(e) => setFormData({ ...formData, cityPrice: parseInt(e.target.value) || 0 })} data-testid="input-vt-city" />
+                  {(formData.cityLabel || formData.cityPrice > 0) && <Button variant="ghost" size="icon" className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-100 hover:bg-red-200 text-red-500" onClick={() => setFormData({ ...formData, cityLabel: "", cityPrice: 0 })} data-testid="button-clear-city"><X className="w-3 h-3" /></Button>}
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1 relative">
                   <Input value={formData.onewayLabel} onChange={(e) => setFormData({ ...formData, onewayLabel: e.target.value })} className="text-xs h-7 px-2 border-dashed" data-testid="input-vt-oneway-label" />
                   <Input type="number" min="0" value={formData.onewayPrice} onChange={(e) => setFormData({ ...formData, onewayPrice: parseInt(e.target.value) || 0 })} data-testid="input-vt-oneway" />
+                  {(formData.onewayLabel || formData.onewayPrice > 0) && <Button variant="ghost" size="icon" className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-100 hover:bg-red-200 text-red-500" onClick={() => setFormData({ ...formData, onewayLabel: "", onewayPrice: 0 })} data-testid="button-clear-oneway"><X className="w-3 h-3" /></Button>}
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1 relative">
                   <Input value={formData.hochamOnewayLabel} onChange={(e) => setFormData({ ...formData, hochamOnewayLabel: e.target.value })} className="text-xs h-7 px-2 border-dashed" data-testid="input-vt-hocham-label" />
                   <Input type="number" min="0" value={formData.hochamOnewayPrice} onChange={(e) => setFormData({ ...formData, hochamOnewayPrice: parseInt(e.target.value) || 0 })} data-testid="input-vt-hocham" />
+                  {(formData.hochamOnewayLabel || formData.hochamOnewayPrice > 0) && <Button variant="ghost" size="icon" className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-100 hover:bg-red-200 text-red-500" onClick={() => setFormData({ ...formData, hochamOnewayLabel: "", hochamOnewayPrice: 0 })} data-testid="button-clear-hocham"><X className="w-3 h-3" /></Button>}
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1 relative">
                   <Input value={formData.phanthietOnewayLabel} onChange={(e) => setFormData({ ...formData, phanthietOnewayLabel: e.target.value })} className="text-xs h-7 px-2 border-dashed" data-testid="input-vt-phanthiet-label" />
                   <Input type="number" min="0" value={formData.phanthietOnewayPrice} onChange={(e) => setFormData({ ...formData, phanthietOnewayPrice: parseInt(e.target.value) || 0 })} data-testid="input-vt-phanthiet" />
+                  {(formData.phanthietOnewayLabel || formData.phanthietOnewayPrice > 0) && <Button variant="ghost" size="icon" className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-100 hover:bg-red-200 text-red-500" onClick={() => setFormData({ ...formData, phanthietOnewayLabel: "", phanthietOnewayPrice: 0 })} data-testid="button-clear-phanthiet"><X className="w-3 h-3" /></Button>}
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1 relative">
                   <Input value={formData.roundtripLabel} onChange={(e) => setFormData({ ...formData, roundtripLabel: e.target.value })} className="text-xs h-7 px-2 border-dashed" data-testid="input-vt-roundtrip-label" />
                   <Input type="number" min="0" value={formData.roundtripPrice} onChange={(e) => setFormData({ ...formData, roundtripPrice: parseInt(e.target.value) || 0 })} data-testid="input-vt-roundtrip" />
+                  {(formData.roundtripLabel || formData.roundtripPrice > 0) && <Button variant="ghost" size="icon" className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-100 hover:bg-red-200 text-red-500" onClick={() => setFormData({ ...formData, roundtripLabel: "", roundtripPrice: 0 })} data-testid="button-clear-roundtrip"><X className="w-3 h-3" /></Button>}
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1 relative">
                   <Input value={formData.cityPickupDropLabel} onChange={(e) => setFormData({ ...formData, cityPickupDropLabel: e.target.value })} className="text-xs h-7 px-2 border-dashed" data-testid="input-vt-pickup-drop-label" />
                   <Input type="number" min="0" value={formData.cityPickupDropPrice} onChange={(e) => setFormData({ ...formData, cityPickupDropPrice: parseInt(e.target.value) || 0 })} data-testid="input-vt-pickup-drop" />
+                  {(formData.cityPickupDropLabel || formData.cityPickupDropPrice > 0) && <Button variant="ghost" size="icon" className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-100 hover:bg-red-200 text-red-500" onClick={() => setFormData({ ...formData, cityPickupDropLabel: "", cityPickupDropPrice: 0 })} data-testid="button-clear-pickup-drop"><X className="w-3 h-3" /></Button>}
                 </div>
               </div>
               {formData.customRoutes.length > 0 && (
@@ -227,30 +233,30 @@ export default function AdminVehicleTypes() {
                     </div>
                     <div className="text-xs text-muted-foreground mb-2">key: {vt.key}</div>
                     <div className="grid grid-cols-3 md:grid-cols-6 gap-2 text-xs">
-                      <div className="bg-slate-100 dark:bg-slate-800 rounded p-2 text-center">
-                        <div className="text-muted-foreground truncate">{vt.cityLabel || "시내투어"}</div>
+                      {vt.cityLabel && <div className="bg-slate-100 dark:bg-slate-800 rounded p-2 text-center">
+                        <div className="text-muted-foreground truncate">{vt.cityLabel}</div>
                         <div className="font-bold">${vt.cityPrice}</div>
-                      </div>
-                      <div className="bg-slate-100 dark:bg-slate-800 rounded p-2 text-center">
-                        <div className="text-muted-foreground truncate">{vt.onewayLabel || "편도"}</div>
+                      </div>}
+                      {vt.onewayLabel && <div className="bg-slate-100 dark:bg-slate-800 rounded p-2 text-center">
+                        <div className="text-muted-foreground truncate">{vt.onewayLabel}</div>
                         <div className="font-bold">${vt.onewayPrice}</div>
-                      </div>
-                      <div className="bg-slate-100 dark:bg-slate-800 rounded p-2 text-center">
-                        <div className="text-muted-foreground truncate">{vt.hochamOnewayLabel || "호짬"}</div>
+                      </div>}
+                      {vt.hochamOnewayLabel && <div className="bg-slate-100 dark:bg-slate-800 rounded p-2 text-center">
+                        <div className="text-muted-foreground truncate">{vt.hochamOnewayLabel}</div>
                         <div className="font-bold">${vt.hochamOnewayPrice}</div>
-                      </div>
-                      <div className="bg-slate-100 dark:bg-slate-800 rounded p-2 text-center">
-                        <div className="text-muted-foreground truncate">{vt.phanthietOnewayLabel || "판티엣"}</div>
+                      </div>}
+                      {vt.phanthietOnewayLabel && <div className="bg-slate-100 dark:bg-slate-800 rounded p-2 text-center">
+                        <div className="text-muted-foreground truncate">{vt.phanthietOnewayLabel}</div>
                         <div className="font-bold">${vt.phanthietOnewayPrice}</div>
-                      </div>
-                      <div className="bg-slate-100 dark:bg-slate-800 rounded p-2 text-center">
-                        <div className="text-muted-foreground truncate">{vt.roundtripLabel || "왕복"}</div>
+                      </div>}
+                      {vt.roundtripLabel && <div className="bg-slate-100 dark:bg-slate-800 rounded p-2 text-center">
+                        <div className="text-muted-foreground truncate">{vt.roundtripLabel}</div>
                         <div className="font-bold">${vt.roundtripPrice}</div>
-                      </div>
-                      <div className="bg-slate-100 dark:bg-slate-800 rounded p-2 text-center">
-                        <div className="text-muted-foreground truncate">{vt.cityPickupDropLabel || "픽드랍"}</div>
+                      </div>}
+                      {vt.cityPickupDropLabel && <div className="bg-slate-100 dark:bg-slate-800 rounded p-2 text-center">
+                        <div className="text-muted-foreground truncate">{vt.cityPickupDropLabel}</div>
                         <div className="font-bold">${vt.cityPickupDropPrice}</div>
-                      </div>
+                      </div>}
                       {vt.customRoutes?.map((cr, ci) => (
                         <div key={`custom-${ci}`} className="bg-amber-50 dark:bg-amber-900/20 rounded p-2 text-center">
                           <div className="text-muted-foreground truncate">{cr.label}</div>
