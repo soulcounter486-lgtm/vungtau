@@ -72,7 +72,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "villa.viewMore": "실제 빌라 사진 더보기",
     
     // Vehicle Section
-    "vehicle.title": "프라이빗 차량 (일자별 선택)",
+    "vehicle.title": "프라이빗 차량렌트 및 투어",
     "vehicle.viewMore": "실제 차량 사진 더보기",
     "vehicle.info": "차량 서비스 안내",
     "vehicle.included": "[포함 사항]",
