@@ -859,6 +859,7 @@ export default function Home() {
   };
 
   const handleRemoveVehicleDay = (index: number) => {
+    if (!confirm("이 차량 이용일을 삭제하시겠습니까?")) return;
     const currentSelections = form.getValues("vehicle.selections") || [];
     form.setValue("vehicle.selections", currentSelections.filter((_, i) => i !== index));
   };
@@ -2392,7 +2393,7 @@ export default function Home() {
                             const selVt = vehicleTypesData.find(v => v.key === selection.type);
                             return (<Select onValueChange={(value) => { field.onChange(value); if (document.activeElement instanceof HTMLElement) { document.activeElement.blur(); } }} defaultValue={field.value}><SelectTrigger className="h-10 rounded-lg text-sm bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 dark:text-slate-100"><SelectValue placeholder={t("vehicle.select")} /></SelectTrigger><SelectContent className="z-[9999] bg-white dark:bg-slate-800 border shadow-lg opacity-100 dark:border-slate-600"><SelectItem value="city">{selVt?.cityLabel || t("route.city")}</SelectItem><SelectItem value="oneway">{selVt?.onewayLabel || t("route.oneway")}</SelectItem><SelectItem value="hocham_oneway">{selVt?.hochamOnewayLabel || t("route.hocham_oneway")}</SelectItem><SelectItem value="phanthiet_oneway">{selVt?.phanthietOnewayLabel || t("route.phanthiet_oneway")}</SelectItem><SelectItem value="roundtrip">{selVt?.roundtripLabel || t("route.roundtrip")}</SelectItem><SelectItem value="city_pickup_drop">{selVt?.cityPickupDropLabel || t("route.city_pickup_drop")}</SelectItem>{selVt?.customRoutes?.map((cr) => (<SelectItem key={cr.key} value={`custom_${cr.key}`}>{cr.label}</SelectItem>))}</SelectContent></Select>);
                           }} /></div>
-                          <div className="md:col-span-1 flex justify-end"><Button variant="ghost" size="icon" className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 h-10 w-10 rounded-lg" onClick={() => handleRemoveVehicleDay(index)} type="button"><div className="w-4 h-0.5 bg-current rounded-full" /></Button></div>
+                          <div className="md:col-span-1 flex justify-end"><Button variant="ghost" size="sm" className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs" onClick={() => handleRemoveVehicleDay(index)} type="button" data-testid={`button-remove-vehicle-day-${index}`}><Trash2 className="w-3.5 h-3.5 mr-1" />삭제</Button></div>
                         </div>
                       ))}
                       <Button type="button" variant="outline" className="w-full h-12 rounded-xl border-dashed border-2 hover:border-primary hover:text-primary transition-all bg-white" onClick={handleAddVehicleDay}><Plus className="mr-2 h-4 w-4" /> {t("vehicle.addDay")}</Button>
