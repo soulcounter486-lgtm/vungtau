@@ -22,12 +22,12 @@ export default function AdminVehicleTypes() {
 
   const [formData, setFormData] = useState({
     key: "", nameKo: "", nameEn: "", descriptionKo: "", descriptionEn: "",
-    cityPrice: 0, cityLabel: "시내투어",
-    onewayPrice: 0, onewayLabel: "편도(붕따우)",
-    hochamOnewayPrice: 0, hochamOnewayLabel: "편도(호짬)",
-    phanthietOnewayPrice: 0, phanthietOnewayLabel: "편도(판티엣)",
-    roundtripPrice: 0, roundtripLabel: "왕복",
-    cityPickupDropPrice: 0, cityPickupDropLabel: "픽드랍+시내",
+    cityPrice: 0, cityLabel: "붕따우 시내",
+    onewayPrice: 0, onewayLabel: "호치민 ↔ 붕따우 (편도)",
+    hochamOnewayPrice: 0, hochamOnewayLabel: "호치민 ↔ 호짬 (편도)",
+    phanthietOnewayPrice: 0, phanthietOnewayLabel: "호치민 ↔ 판티엣 (편도)",
+    roundtripPrice: 0, roundtripLabel: "호치민 ↔ 붕따우 (왕복)",
+    cityPickupDropPrice: 0, cityPickupDropLabel: "호치민 ↔ 붕따우(픽드랍+시내)",
     customRoutes: [] as { key: string; label: string; price: number }[],
     sortOrder: 0, isActive: true,
   });
@@ -38,7 +38,7 @@ export default function AdminVehicleTypes() {
   });
 
   const resetForm = () => {
-    setFormData({ key: "", nameKo: "", nameEn: "", descriptionKo: "", descriptionEn: "", cityPrice: 0, cityLabel: "시내투어", onewayPrice: 0, onewayLabel: "편도(붕따우)", hochamOnewayPrice: 0, hochamOnewayLabel: "편도(호짬)", phanthietOnewayPrice: 0, phanthietOnewayLabel: "편도(판티엣)", roundtripPrice: 0, roundtripLabel: "왕복", cityPickupDropPrice: 0, cityPickupDropLabel: "픽드랍+시내", customRoutes: [], sortOrder: 0, isActive: true });
+    setFormData({ key: "", nameKo: "", nameEn: "", descriptionKo: "", descriptionEn: "", cityPrice: 0, cityLabel: "붕따우 시내", onewayPrice: 0, onewayLabel: "호치민 ↔ 붕따우 (편도)", hochamOnewayPrice: 0, hochamOnewayLabel: "호치민 ↔ 호짬 (편도)", phanthietOnewayPrice: 0, phanthietOnewayLabel: "호치민 ↔ 판티엣 (편도)", roundtripPrice: 0, roundtripLabel: "호치민 ↔ 붕따우 (왕복)", cityPickupDropPrice: 0, cityPickupDropLabel: "호치민 ↔ 붕따우(픽드랍+시내)", customRoutes: [], sortOrder: 0, isActive: true });
     setEditingId(null);
     setShowForm(false);
   };
@@ -47,12 +47,12 @@ export default function AdminVehicleTypes() {
     setFormData({
       key: vt.key, nameKo: vt.nameKo, nameEn: vt.nameEn,
       descriptionKo: vt.descriptionKo, descriptionEn: vt.descriptionEn,
-      cityPrice: vt.cityPrice, cityLabel: vt.cityLabel || "시내투어",
-      onewayPrice: vt.onewayPrice, onewayLabel: vt.onewayLabel || "편도(붕따우)",
-      hochamOnewayPrice: vt.hochamOnewayPrice, hochamOnewayLabel: vt.hochamOnewayLabel || "편도(호짬)",
-      phanthietOnewayPrice: vt.phanthietOnewayPrice, phanthietOnewayLabel: vt.phanthietOnewayLabel || "편도(판티엣)",
-      roundtripPrice: vt.roundtripPrice, roundtripLabel: vt.roundtripLabel || "왕복",
-      cityPickupDropPrice: vt.cityPickupDropPrice, cityPickupDropLabel: vt.cityPickupDropLabel || "픽드랍+시내",
+      cityPrice: vt.cityPrice, cityLabel: vt.cityLabel || "붕따우 시내",
+      onewayPrice: vt.onewayPrice, onewayLabel: vt.onewayLabel || "호치민 ↔ 붕따우 (편도)",
+      hochamOnewayPrice: vt.hochamOnewayPrice, hochamOnewayLabel: vt.hochamOnewayLabel || "호치민 ↔ 호짬 (편도)",
+      phanthietOnewayPrice: vt.phanthietOnewayPrice, phanthietOnewayLabel: vt.phanthietOnewayLabel || "호치민 ↔ 판티엣 (편도)",
+      roundtripPrice: vt.roundtripPrice, roundtripLabel: vt.roundtripLabel || "호치민 ↔ 붕따우 (왕복)",
+      cityPickupDropPrice: vt.cityPickupDropPrice, cityPickupDropLabel: vt.cityPickupDropLabel || "호치민 ↔ 붕따우(픽드랍+시내)",
       customRoutes: vt.customRoutes || [],
       sortOrder: vt.sortOrder ?? 0, isActive: vt.isActive ?? true,
     });
