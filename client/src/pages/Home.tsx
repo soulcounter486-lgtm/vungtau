@@ -2388,7 +2388,10 @@ export default function Home() {
                               )}
                             </div>
                           )} /></div>
-                          <div className="md:col-span-2 space-y-1.5"><Label className="text-xs font-semibold text-slate-500">{t("vehicle.route")}</Label><Controller control={form.control} name={`vehicle.selections.${index}.route`} render={({ field }) => (<Select onValueChange={(value) => { field.onChange(value); if (document.activeElement instanceof HTMLElement) { document.activeElement.blur(); } }} defaultValue={field.value}><SelectTrigger className="h-10 rounded-lg text-sm bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 dark:text-slate-100"><SelectValue placeholder={t("vehicle.select")} /></SelectTrigger><SelectContent className="z-[9999] bg-white dark:bg-slate-800 border shadow-lg opacity-100 dark:border-slate-600"><SelectItem value="city">{t("route.city")}</SelectItem><SelectItem value="oneway">{t("route.oneway")}</SelectItem><SelectItem value="hocham_oneway">{t("route.hocham_oneway")}</SelectItem><SelectItem value="phanthiet_oneway">{t("route.phanthiet_oneway")}</SelectItem><SelectItem value="roundtrip">{t("route.roundtrip")}</SelectItem><SelectItem value="city_pickup_drop">{t("route.city_pickup_drop")}</SelectItem></SelectContent></Select>)} /></div>
+                          <div className="md:col-span-2 space-y-1.5"><Label className="text-xs font-semibold text-slate-500">{t("vehicle.route")}</Label><Controller control={form.control} name={`vehicle.selections.${index}.route`} render={({ field }) => {
+                            const selVt = vehicleTypesData.find(v => v.key === selection.type);
+                            return (<Select onValueChange={(value) => { field.onChange(value); if (document.activeElement instanceof HTMLElement) { document.activeElement.blur(); } }} defaultValue={field.value}><SelectTrigger className="h-10 rounded-lg text-sm bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 dark:text-slate-100"><SelectValue placeholder={t("vehicle.select")} /></SelectTrigger><SelectContent className="z-[9999] bg-white dark:bg-slate-800 border shadow-lg opacity-100 dark:border-slate-600"><SelectItem value="city">{selVt?.cityLabel || t("route.city")}</SelectItem><SelectItem value="oneway">{selVt?.onewayLabel || t("route.oneway")}</SelectItem><SelectItem value="hocham_oneway">{selVt?.hochamOnewayLabel || t("route.hocham_oneway")}</SelectItem><SelectItem value="phanthiet_oneway">{selVt?.phanthietOnewayLabel || t("route.phanthiet_oneway")}</SelectItem><SelectItem value="roundtrip">{selVt?.roundtripLabel || t("route.roundtrip")}</SelectItem><SelectItem value="city_pickup_drop">{selVt?.cityPickupDropLabel || t("route.city_pickup_drop")}</SelectItem></SelectContent></Select>);
+                          }} /></div>
                           <div className="md:col-span-1 flex justify-end"><Button variant="ghost" size="icon" className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 h-10 w-10 rounded-lg" onClick={() => handleRemoveVehicleDay(index)} type="button"><div className="w-4 h-0.5 bg-current rounded-full" /></Button></div>
                         </div>
                       ))}
@@ -2453,11 +2456,13 @@ export default function Home() {
                             if (!sel?.type || !sel?.route) return null;
                             const vt = vehicleTypesData.find(v => v.key === sel.type);
                             const m: Record<string, number> = vt ? { city: vt.cityPrice, oneway: vt.onewayPrice, hocham_oneway: vt.hochamOnewayPrice, phanthiet_oneway: vt.phanthietOnewayPrice, roundtrip: vt.roundtripPrice, city_pickup_drop: vt.cityPickupDropPrice } : {};
+                            const routeLabels: Record<string, string> = vt ? { city: vt.cityLabel || t("route.city"), oneway: vt.onewayLabel || t("route.oneway"), hocham_oneway: vt.hochamOnewayLabel || t("route.hocham_oneway"), phanthiet_oneway: vt.phanthietOnewayLabel || t("route.phanthiet_oneway"), roundtrip: vt.roundtripLabel || t("route.roundtrip"), city_pickup_drop: vt.cityPickupDropLabel || t("route.city_pickup_drop") } : {};
                             const price = m[sel.route] || 0;
                             const vtName = vt ? (language === "ko" ? vt.nameKo : vt.nameEn) : sel.type;
+                            const routeName = routeLabels[sel.route] || sel.route;
                             return (
                               <div key={i} className="flex justify-between items-center">
-                                <span>{sel.date} {vtName}</span>
+                                <span>{sel.date} {vtName} ({routeName})</span>
                                 <span>${price}</span>
                               </div>
                             );

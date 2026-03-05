@@ -22,8 +22,13 @@ export default function AdminVehicleTypes() {
 
   const [formData, setFormData] = useState({
     key: "", nameKo: "", nameEn: "", descriptionKo: "", descriptionEn: "",
-    cityPrice: 0, onewayPrice: 0, hochamOnewayPrice: 0, phanthietOnewayPrice: 0,
-    roundtripPrice: 0, cityPickupDropPrice: 0, sortOrder: 0, isActive: true,
+    cityPrice: 0, cityLabel: "시내투어",
+    onewayPrice: 0, onewayLabel: "편도(붕따우)",
+    hochamOnewayPrice: 0, hochamOnewayLabel: "편도(호짬)",
+    phanthietOnewayPrice: 0, phanthietOnewayLabel: "편도(판티엣)",
+    roundtripPrice: 0, roundtripLabel: "왕복",
+    cityPickupDropPrice: 0, cityPickupDropLabel: "픽드랍+시내",
+    sortOrder: 0, isActive: true,
   });
 
   const { data: vehicleTypesList = [], isLoading } = useQuery<VehicleType[]>({
@@ -32,7 +37,7 @@ export default function AdminVehicleTypes() {
   });
 
   const resetForm = () => {
-    setFormData({ key: "", nameKo: "", nameEn: "", descriptionKo: "", descriptionEn: "", cityPrice: 0, onewayPrice: 0, hochamOnewayPrice: 0, phanthietOnewayPrice: 0, roundtripPrice: 0, cityPickupDropPrice: 0, sortOrder: 0, isActive: true });
+    setFormData({ key: "", nameKo: "", nameEn: "", descriptionKo: "", descriptionEn: "", cityPrice: 0, cityLabel: "시내투어", onewayPrice: 0, onewayLabel: "편도(붕따우)", hochamOnewayPrice: 0, hochamOnewayLabel: "편도(호짬)", phanthietOnewayPrice: 0, phanthietOnewayLabel: "편도(판티엣)", roundtripPrice: 0, roundtripLabel: "왕복", cityPickupDropPrice: 0, cityPickupDropLabel: "픽드랍+시내", sortOrder: 0, isActive: true });
     setEditingId(null);
     setShowForm(false);
   };
@@ -41,9 +46,12 @@ export default function AdminVehicleTypes() {
     setFormData({
       key: vt.key, nameKo: vt.nameKo, nameEn: vt.nameEn,
       descriptionKo: vt.descriptionKo, descriptionEn: vt.descriptionEn,
-      cityPrice: vt.cityPrice, onewayPrice: vt.onewayPrice,
-      hochamOnewayPrice: vt.hochamOnewayPrice, phanthietOnewayPrice: vt.phanthietOnewayPrice,
-      roundtripPrice: vt.roundtripPrice, cityPickupDropPrice: vt.cityPickupDropPrice,
+      cityPrice: vt.cityPrice, cityLabel: vt.cityLabel || "시내투어",
+      onewayPrice: vt.onewayPrice, onewayLabel: vt.onewayLabel || "편도(붕따우)",
+      hochamOnewayPrice: vt.hochamOnewayPrice, hochamOnewayLabel: vt.hochamOnewayLabel || "편도(호짬)",
+      phanthietOnewayPrice: vt.phanthietOnewayPrice, phanthietOnewayLabel: vt.phanthietOnewayLabel || "편도(판티엣)",
+      roundtripPrice: vt.roundtripPrice, roundtripLabel: vt.roundtripLabel || "왕복",
+      cityPickupDropPrice: vt.cityPickupDropPrice, cityPickupDropLabel: vt.cityPickupDropLabel || "픽드랍+시내",
       sortOrder: vt.sortOrder ?? 0, isActive: vt.isActive ?? true,
     });
     setEditingId(vt.id);
@@ -140,30 +148,30 @@ export default function AdminVehicleTypes() {
               <Textarea value={formData.descriptionEn} onChange={(e) => setFormData({ ...formData, descriptionEn: e.target.value })} placeholder="- 7-Seater SUV|• Max 4 passengers" rows={3} data-testid="input-vt-desc-en" />
             </div>
             <div className="border-t pt-4">
-              <Label className="text-sm font-bold mb-3 block">경로별 가격 (USD)</Label>
+              <Label className="text-sm font-bold mb-3 block">경로별 가격 (USD) — 라벨 클릭하여 수정 가능</Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">시내투어</Label>
+                  <Input value={formData.cityLabel} onChange={(e) => setFormData({ ...formData, cityLabel: e.target.value })} className="text-xs h-7 px-2 border-dashed" data-testid="input-vt-city-label" />
                   <Input type="number" min="0" value={formData.cityPrice} onChange={(e) => setFormData({ ...formData, cityPrice: parseInt(e.target.value) || 0 })} data-testid="input-vt-city" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">편도(붕따우)</Label>
+                  <Input value={formData.onewayLabel} onChange={(e) => setFormData({ ...formData, onewayLabel: e.target.value })} className="text-xs h-7 px-2 border-dashed" data-testid="input-vt-oneway-label" />
                   <Input type="number" min="0" value={formData.onewayPrice} onChange={(e) => setFormData({ ...formData, onewayPrice: parseInt(e.target.value) || 0 })} data-testid="input-vt-oneway" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">편도(호짬)</Label>
+                  <Input value={formData.hochamOnewayLabel} onChange={(e) => setFormData({ ...formData, hochamOnewayLabel: e.target.value })} className="text-xs h-7 px-2 border-dashed" data-testid="input-vt-hocham-label" />
                   <Input type="number" min="0" value={formData.hochamOnewayPrice} onChange={(e) => setFormData({ ...formData, hochamOnewayPrice: parseInt(e.target.value) || 0 })} data-testid="input-vt-hocham" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">편도(판티엣)</Label>
+                  <Input value={formData.phanthietOnewayLabel} onChange={(e) => setFormData({ ...formData, phanthietOnewayLabel: e.target.value })} className="text-xs h-7 px-2 border-dashed" data-testid="input-vt-phanthiet-label" />
                   <Input type="number" min="0" value={formData.phanthietOnewayPrice} onChange={(e) => setFormData({ ...formData, phanthietOnewayPrice: parseInt(e.target.value) || 0 })} data-testid="input-vt-phanthiet" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">왕복</Label>
+                  <Input value={formData.roundtripLabel} onChange={(e) => setFormData({ ...formData, roundtripLabel: e.target.value })} className="text-xs h-7 px-2 border-dashed" data-testid="input-vt-roundtrip-label" />
                   <Input type="number" min="0" value={formData.roundtripPrice} onChange={(e) => setFormData({ ...formData, roundtripPrice: parseInt(e.target.value) || 0 })} data-testid="input-vt-roundtrip" />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">픽드랍+시내</Label>
+                  <Input value={formData.cityPickupDropLabel} onChange={(e) => setFormData({ ...formData, cityPickupDropLabel: e.target.value })} className="text-xs h-7 px-2 border-dashed" data-testid="input-vt-pickup-drop-label" />
                   <Input type="number" min="0" value={formData.cityPickupDropPrice} onChange={(e) => setFormData({ ...formData, cityPickupDropPrice: parseInt(e.target.value) || 0 })} data-testid="input-vt-pickup-drop" />
                 </div>
               </div>
@@ -204,27 +212,27 @@ export default function AdminVehicleTypes() {
                     <div className="text-xs text-muted-foreground mb-2">key: {vt.key}</div>
                     <div className="grid grid-cols-3 md:grid-cols-6 gap-2 text-xs">
                       <div className="bg-slate-100 dark:bg-slate-800 rounded p-2 text-center">
-                        <div className="text-muted-foreground">시내</div>
+                        <div className="text-muted-foreground truncate">{vt.cityLabel || "시내투어"}</div>
                         <div className="font-bold">${vt.cityPrice}</div>
                       </div>
                       <div className="bg-slate-100 dark:bg-slate-800 rounded p-2 text-center">
-                        <div className="text-muted-foreground">편도</div>
+                        <div className="text-muted-foreground truncate">{vt.onewayLabel || "편도"}</div>
                         <div className="font-bold">${vt.onewayPrice}</div>
                       </div>
                       <div className="bg-slate-100 dark:bg-slate-800 rounded p-2 text-center">
-                        <div className="text-muted-foreground">호짬</div>
+                        <div className="text-muted-foreground truncate">{vt.hochamOnewayLabel || "호짬"}</div>
                         <div className="font-bold">${vt.hochamOnewayPrice}</div>
                       </div>
                       <div className="bg-slate-100 dark:bg-slate-800 rounded p-2 text-center">
-                        <div className="text-muted-foreground">판티엣</div>
+                        <div className="text-muted-foreground truncate">{vt.phanthietOnewayLabel || "판티엣"}</div>
                         <div className="font-bold">${vt.phanthietOnewayPrice}</div>
                       </div>
                       <div className="bg-slate-100 dark:bg-slate-800 rounded p-2 text-center">
-                        <div className="text-muted-foreground">왕복</div>
+                        <div className="text-muted-foreground truncate">{vt.roundtripLabel || "왕복"}</div>
                         <div className="font-bold">${vt.roundtripPrice}</div>
                       </div>
                       <div className="bg-slate-100 dark:bg-slate-800 rounded p-2 text-center">
-                        <div className="text-muted-foreground">픽드랍</div>
+                        <div className="text-muted-foreground truncate">{vt.cityPickupDropLabel || "픽드랍"}</div>
                         <div className="font-bold">${vt.cityPickupDropPrice}</div>
                       </div>
                     </div>
