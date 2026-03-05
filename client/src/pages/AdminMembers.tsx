@@ -193,8 +193,10 @@ export default function AdminMembers() {
 
   const [newCouponOpen, setNewCouponOpen] = useState(false);
   const [couponForm, setCouponForm] = useState({
+    code: "",
     name: "",
     description: "",
+    category: "all",
     discountType: "percent",
     discountValue: 10,
     serviceDescription: "",
@@ -207,8 +209,10 @@ export default function AdminMembers() {
   const [editCouponOpen, setEditCouponOpen] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [editCouponForm, setEditCouponForm] = useState({
+    code: "",
     name: "",
     description: "",
+    category: "all",
     discountType: "percent",
     discountValue: 10,
     serviceDescription: "",
@@ -519,8 +523,10 @@ export default function AdminMembers() {
   const handleEditCoupon = (coupon: Coupon) => {
     setEditingCoupon(coupon);
     setEditCouponForm({
+      code: (coupon as any).code || "",
       name: coupon.name,
       description: coupon.description || "",
+      category: (coupon as any).category || "all",
       discountType: coupon.discountType,
       discountValue: coupon.discountValue,
       serviceDescription: coupon.serviceDescription || "",
@@ -1027,6 +1033,29 @@ export default function AdminMembers() {
                       <DialogTitle className="text-base">새 쿠폰 생성</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">쿠폰 코드</Label>
+                          <Input
+                            className="h-8 text-sm uppercase"
+                            value={couponForm.code}
+                            onChange={(e) => setCouponForm({ ...couponForm, code: e.target.value.toUpperCase() })}
+                            placeholder="예: WELCOME10"
+                            data-testid="input-coupon-code"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">적용 카테고리</Label>
+                          <Select value={couponForm.category} onValueChange={(v) => setCouponForm({ ...couponForm, category: v })}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">전체</SelectItem>
+                              <SelectItem value="villa">풀빌라 숙박</SelectItem>
+                              <SelectItem value="vehicle">차량렌트</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
                       <div>
                         <Label className="text-xs">쿠폰 이름</Label>
                         <Input
@@ -1057,7 +1086,7 @@ export default function AdminMembers() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="percent">% 할인</SelectItem>
-                              <SelectItem value="fixed">금액 할인 (VND)</SelectItem>
+                              <SelectItem value="fixed">금액 할인 (USD)</SelectItem>
                               <SelectItem value="service">서비스항목</SelectItem>
                             </SelectContent>
                           </Select>
@@ -1176,10 +1205,12 @@ export default function AdminMembers() {
                       <div key={coupon.id} className="flex items-center justify-between p-2 bg-muted/30 rounded-lg text-xs">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1 flex-wrap">
+                            {(coupon as any).code && <Badge variant="outline" className="text-[10px] h-4 px-1 font-mono">{(coupon as any).code}</Badge>}
                             <span className="font-medium">{coupon.name}</span>
                             <Badge variant="secondary" className="text-[10px] h-4 px-1">
-                              {coupon.discountType === "percent" ? `${coupon.discountValue}%` : coupon.discountType === "service" ? (coupon.serviceDescription || "서비스") : `${coupon.discountValue.toLocaleString()}원`}
+                              {coupon.discountType === "percent" ? `${coupon.discountValue}%` : coupon.discountType === "service" ? (coupon.serviceDescription || "서비스") : `$${coupon.discountValue}`}
                             </Badge>
+                            {(coupon as any).category && (coupon as any).category !== "all" && <Badge variant="outline" className="text-[10px] h-4 px-1">{(coupon as any).category === "villa" ? "빌라" : "차량"}</Badge>}
                             {coupon.isWelcomeCoupon && (
                               <Badge variant="default" className="text-[10px] h-4 px-1 bg-green-600">
                                 첫 로그인
@@ -1225,6 +1256,23 @@ export default function AdminMembers() {
                   <DialogTitle className="text-base">쿠폰 수정</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">쿠폰 코드</Label>
+                      <Input className="h-8 text-sm uppercase" value={editCouponForm.code} onChange={(e) => setEditCouponForm({ ...editCouponForm, code: e.target.value.toUpperCase() })} placeholder="예: WELCOME10" data-testid="input-edit-coupon-code" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">적용 카테고리</Label>
+                      <Select value={editCouponForm.category} onValueChange={(v) => setEditCouponForm({ ...editCouponForm, category: v })}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">전체</SelectItem>
+                          <SelectItem value="villa">풀빌라 숙박</SelectItem>
+                          <SelectItem value="vehicle">차량렌트</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   <div>
                     <Label className="text-xs">쿠폰명</Label>
                     <Input
@@ -1255,7 +1303,7 @@ export default function AdminMembers() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="percent">% 할인</SelectItem>
-                          <SelectItem value="fixed">금액 할인 (VND)</SelectItem>
+                          <SelectItem value="fixed">금액 할인 (USD)</SelectItem>
                           <SelectItem value="service">서비스항목</SelectItem>
                         </SelectContent>
                       </Select>

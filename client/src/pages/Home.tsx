@@ -686,6 +686,35 @@ export default function Home() {
 
   const currencyInfo = languageCurrencyMap[language] || languageCurrencyMap.ko;
   const exchangeRate = exchangeRatesData?.rates?.[currencyInfo.code] || 1;
+
+  const [villaCouponCode, setVillaCouponCode] = useState("");
+  const [vehicleCouponCode, setVehicleCouponCode] = useState("");
+  const [villaCoupon, setVillaCoupon] = useState<{id: number; name: string; discountType: string; discountValue: number} | null>(null);
+  const [vehicleCoupon, setVehicleCoupon] = useState<{id: number; name: string; discountType: string; discountValue: number} | null>(null);
+  const [couponError, setCouponError] = useState<{villa?: string; vehicle?: string}>({});
+  const [couponLoading, setCouponLoading] = useState<{villa?: boolean; vehicle?: boolean}>({});
+
+  const applyCoupon = async (category: "villa" | "vehicle") => {
+    const code = category === "villa" ? villaCouponCode : vehicleCouponCode;
+    if (!code.trim()) return;
+    setCouponError(prev => ({ ...prev, [category]: undefined }));
+    setCouponLoading(prev => ({ ...prev, [category]: true }));
+    try {
+      const res = await fetch("/api/validate-coupon", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: code.trim(), category }) });
+      const data = await res.json();
+      if (!res.ok) { setCouponError(prev => ({ ...prev, [category]: data.error })); return; }
+      if (category === "villa") setVillaCoupon(data);
+      else setVehicleCoupon(data);
+    } catch { setCouponError(prev => ({ ...prev, [category]: "쿠폰 확인 실패" })); }
+    finally { setCouponLoading(prev => ({ ...prev, [category]: false })); }
+  };
+
+  const calcDiscount = (total: number, coupon: {discountType: string; discountValue: number} | null) => {
+    if (!coupon) return 0;
+    if (coupon.discountType === "percent") return Math.round(total * coupon.discountValue / 100);
+    if (coupon.discountType === "fixed") return coupon.discountValue;
+    return 0;
+  };
   
   const formatLocalCurrency = (usd: number) => {
     if (currencyInfo.code === "USD") return `$${usd.toLocaleString()}`;
@@ -2271,6 +2300,25 @@ export default function Home() {
                           <span className="text-blue-200">{t("common.exchangeRate")}: {currencyInfo.symbol}{exchangeRate.toLocaleString()}/USD</span>
                         )}
                       </div>
+                      {villaCoupon && (() => {
+                        const villaTotal = loadedQuoteId && breakdown?.villa?.price ? breakdown.villa.price : villaEstimate.price;
+                        const disc = calcDiscount(villaTotal, villaCoupon);
+                        return disc > 0 ? (
+                          <div className="mt-2 pt-2 border-t border-blue-400/30 space-y-1">
+                            <div className="flex justify-between text-xs text-green-200"><span>🎟 {villaCoupon.name} ({villaCoupon.discountType === "percent" ? `${villaCoupon.discountValue}%` : `$${villaCoupon.discountValue}`})</span><span>-${disc}</span></div>
+                            <div className="flex justify-between font-bold text-sm"><span>할인 적용 금액</span><span>${villaTotal - disc}</span></div>
+                          </div>
+                        ) : null;
+                      })()}
+                      <div className="mt-3 pt-2 border-t border-blue-400/30">
+                        <div className="flex gap-2">
+                          <input className="flex-1 h-7 px-2 rounded text-xs text-slate-900 bg-white/90 placeholder:text-slate-400 uppercase" placeholder="쿠폰 코드 입력" value={villaCouponCode} onChange={(e) => setVillaCouponCode(e.target.value.toUpperCase())} data-testid="input-villa-coupon-code" />
+                          <button className="h-7 px-3 rounded bg-white/20 hover:bg-white/30 text-xs font-medium text-white disabled:opacity-50" onClick={() => applyCoupon("villa")} disabled={couponLoading.villa || !villaCouponCode.trim()} data-testid="button-apply-villa-coupon">{couponLoading.villa ? "..." : "적용"}</button>
+                          {villaCoupon && <button className="h-7 px-2 rounded bg-red-500/30 hover:bg-red-500/50 text-xs text-white" onClick={() => { setVillaCoupon(null); setVillaCouponCode(""); }} data-testid="button-remove-villa-coupon">취소</button>}
+                        </div>
+                        {couponError.villa && <p className="text-xs text-red-200 mt-1">{couponError.villa}</p>}
+                        {villaCoupon && <p className="text-xs text-green-200 mt-1">✓ {villaCoupon.name} 적용됨</p>}
+                      </div>
                     </div>
                   )}
                 </SectionCard>
@@ -2469,6 +2517,25 @@ export default function Home() {
                             );
                           })
                         )}
+                      </div>
+                      {vehicleCoupon && (() => {
+                        const vTotal = loadedQuoteId && breakdown?.vehicle?.price ? breakdown.vehicle.price : (values.vehicle?.selections?.reduce((sum, sel) => { if (!sel?.type || !sel?.route) return sum; const vt = vehicleTypesData.find(v => v.key === sel.type); if (!vt) return sum; const m: Record<string, number> = { city: vt.cityPrice, oneway: vt.onewayPrice, hocham_oneway: vt.hochamOnewayPrice, phanthiet_oneway: vt.phanthietOnewayPrice, roundtrip: vt.roundtripPrice, city_pickup_drop: vt.cityPickupDropPrice, ...(vt.customRoutes || []).reduce((acc, cr) => ({ ...acc, [`custom_${cr.key}`]: cr.price }), {} as Record<string, number>) }; return sum + (m[sel.route] || 0); }, 0) || 0);
+                        const disc = calcDiscount(vTotal, vehicleCoupon);
+                        return disc > 0 ? (
+                          <div className="mt-2 pt-2 border-t border-indigo-400/30 space-y-1">
+                            <div className="flex justify-between text-xs text-green-200"><span>🎟 {vehicleCoupon.name} ({vehicleCoupon.discountType === "percent" ? `${vehicleCoupon.discountValue}%` : `$${vehicleCoupon.discountValue}`})</span><span>-${disc}</span></div>
+                            <div className="flex justify-between font-bold text-sm"><span>할인 적용 금액</span><span>${vTotal - disc}</span></div>
+                          </div>
+                        ) : null;
+                      })()}
+                      <div className="mt-3 pt-2 border-t border-indigo-400/30">
+                        <div className="flex gap-2">
+                          <input className="flex-1 h-7 px-2 rounded text-xs text-slate-900 bg-white/90 placeholder:text-slate-400 uppercase" placeholder="쿠폰 코드 입력" value={vehicleCouponCode} onChange={(e) => setVehicleCouponCode(e.target.value.toUpperCase())} data-testid="input-vehicle-coupon-code" />
+                          <button className="h-7 px-3 rounded bg-white/20 hover:bg-white/30 text-xs font-medium text-white disabled:opacity-50" onClick={() => applyCoupon("vehicle")} disabled={couponLoading.vehicle || !vehicleCouponCode.trim()} data-testid="button-apply-vehicle-coupon">{couponLoading.vehicle ? "..." : "적용"}</button>
+                          {vehicleCoupon && <button className="h-7 px-2 rounded bg-red-500/30 hover:bg-red-500/50 text-xs text-white" onClick={() => { setVehicleCoupon(null); setVehicleCouponCode(""); }} data-testid="button-remove-vehicle-coupon">취소</button>}
+                        </div>
+                        {couponError.vehicle && <p className="text-xs text-red-200 mt-1">{couponError.vehicle}</p>}
+                        {vehicleCoupon && <p className="text-xs text-green-200 mt-1">✓ {vehicleCoupon.name} 적용됨</p>}
                       </div>
                     </div>
                   ) : null}

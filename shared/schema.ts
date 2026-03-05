@@ -465,14 +465,18 @@ export type InsertAdminMessage = z.infer<typeof insertAdminMessageSchema>;
 // 쿠폰 테이블 (관리자가 생성하는 쿠폰 템플릿)
 export const coupons = pgTable("coupons", {
   id: serial("id").primaryKey(),
+  code: text("code"), // 쿠폰 코드 (사용자가 입력)
   name: text("name").notNull(), // 쿠폰 이름
   description: text("description"), // 쿠폰 설명
+  category: text("category").default("all"), // villa, vehicle, all
   discountType: text("discount_type").notNull().default("percent"), // percent(%), fixed(고정금액), service(서비스항목)
   discountValue: integer("discount_value").notNull().default(0), // 할인 값
   serviceDescription: text("service_description"), // 서비스항목 설명 (discountType이 service일 때)
   validFrom: timestamp("valid_from"), // 유효 시작일
   validUntil: timestamp("valid_until"), // 유효 종료일
   placeId: integer("place_id"), // 연결된 관광명소/장소 ID
+  maxUses: integer("max_uses"), // 최대 사용 횟수 (null=무제한)
+  currentUses: integer("current_uses").default(0), // 현재 사용 횟수
   isActive: boolean("is_active").default(true), // 활성화 여부
   isWelcomeCoupon: boolean("is_welcome_coupon").default(false), // 첫 로그인 쿠폰 여부
   createdAt: timestamp("created_at").defaultNow(),

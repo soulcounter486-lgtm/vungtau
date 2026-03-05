@@ -6625,6 +6625,29 @@ ${adultContext}`;
 
   // === 쿠폰 API ===
   // 쿠폰 생성 (관리자)
+  app.post("/api/validate-coupon", async (req, res) => {
+    try {
+      const { code, category } = req.body;
+      if (!code) return res.status(400).json({ error: "쿠폰 코드를 입력해주세요" });
+      const now = new Date();
+      const [coupon] = await db.select().from(coupons).where(
+        and(
+          eq(coupons.code, code.trim().toUpperCase()),
+          eq(coupons.isActive, true)
+        )
+      );
+      if (!coupon) return res.status(404).json({ error: "유효하지 않은 쿠폰 코드입니다" });
+      if (coupon.validFrom && now < new Date(coupon.validFrom)) return res.status(400).json({ error: "아직 사용할 수 없는 쿠폰입니다" });
+      if (coupon.validUntil && now > new Date(coupon.validUntil)) return res.status(400).json({ error: "만료된 쿠폰입니다" });
+      if (coupon.maxUses && coupon.currentUses !== null && coupon.currentUses >= coupon.maxUses) return res.status(400).json({ error: "사용 횟수가 초과된 쿠폰입니다" });
+      if (coupon.category && coupon.category !== "all" && coupon.category !== category) return res.status(400).json({ error: `이 쿠폰은 ${coupon.category === "villa" ? "풀빌라 숙박" : "차량렌트"}에만 적용 가능합니다` });
+      res.json({ id: coupon.id, name: coupon.name, description: coupon.description, discountType: coupon.discountType, discountValue: coupon.discountValue, category: coupon.category });
+    } catch (err) {
+      console.error("쿠폰 검증 오류:", err);
+      res.status(500).json({ error: "쿠폰 검증 실패" });
+    }
+  });
+
   app.post("/api/admin/coupons", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
