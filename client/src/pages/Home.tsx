@@ -1950,9 +1950,9 @@ export default function Home() {
                                 📝 {selectedVilla.notes}
                               </p>
                             )}
-                            {selectedVilla.address && (
-                              <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                                📍 {selectedVilla.address}
+                            {isAdmin && selectedVilla.address && (
+                              <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+                                📍 <span className="font-medium">실제 주소:</span> {selectedVilla.address}
                               </p>
                             )}
                             <div className="flex items-center gap-2 mt-2">
