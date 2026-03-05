@@ -400,6 +400,13 @@ export default function Home() {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [zoomScale, setZoomScale] = useState(1);
+  const [zoomOrigin, setZoomOrigin] = useState({ x: 50, y: 50 });
+  const [initialPinchDist, setInitialPinchDist] = useState<number | null>(null);
+  const [initialZoom, setInitialZoom] = useState(1);
+  const [panStart, setPanStart] = useState<{ x: number; y: number } | null>(null);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [initialPanOffset, setInitialPanOffset] = useState({ x: 0, y: 0 });
   
   // 빌라 뷰 모드 (list/map)
   const [villaViewMode, setVillaViewMode] = useState<"list" | "map">("list");
@@ -3302,7 +3309,7 @@ export default function Home() {
               variant="ghost"
               size="icon"
               className="text-white hover:bg-white/20"
-              onClick={() => setGalleryOpen(false)}
+              onClick={() => { setGalleryOpen(false); setZoomScale(1); setPanOffset({ x: 0, y: 0 }); }}
               data-testid="button-close-gallery"
             >
               <X className="w-6 h-6" />
@@ -3312,32 +3319,68 @@ export default function Home() {
           {/* 메인 이미지 영역 */}
           <div 
             className="flex-1 relative flex items-center justify-center overflow-hidden"
-            style={{ minHeight: 0 }}
+            style={{ minHeight: 0, touchAction: 'none' }}
             onTouchStart={(e) => {
-              setTouchEnd(null);
-              setTouchStart(e.targetTouches[0].clientX);
+              if (e.touches.length === 2) {
+                const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                setInitialPinchDist(dist);
+                setInitialZoom(zoomScale);
+                const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                const rect = e.currentTarget.getBoundingClientRect();
+                setZoomOrigin({ x: ((cx - rect.left) / rect.width) * 100, y: ((cy - rect.top) / rect.height) * 100 });
+              } else if (e.touches.length === 1) {
+                if (zoomScale > 1) {
+                  setPanStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+                  setInitialPanOffset({ ...panOffset });
+                } else {
+                  setTouchEnd(null);
+                  setTouchStart(e.touches[0].clientX);
+                }
+              }
             }}
             onTouchMove={(e) => {
-              setTouchEnd(e.targetTouches[0].clientX);
+              if (e.touches.length === 2 && initialPinchDist) {
+                const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                const newScale = Math.min(Math.max(initialZoom * (dist / initialPinchDist), 1), 5);
+                setZoomScale(newScale);
+                if (newScale <= 1) { setPanOffset({ x: 0, y: 0 }); }
+              } else if (e.touches.length === 1 && zoomScale > 1 && panStart) {
+                const dx = e.touches[0].clientX - panStart.x;
+                const dy = e.touches[0].clientY - panStart.y;
+                setPanOffset({ x: initialPanOffset.x + dx, y: initialPanOffset.y + dy });
+              } else if (e.touches.length === 1 && zoomScale <= 1) {
+                setTouchEnd(e.touches[0].clientX);
+              }
             }}
-            onTouchEnd={() => {
+            onTouchEnd={(e) => {
+              if (initialPinchDist) {
+                setInitialPinchDist(null);
+                if (zoomScale <= 1.05) { setZoomScale(1); setPanOffset({ x: 0, y: 0 }); }
+                return;
+              }
+              if (zoomScale > 1) { setPanStart(null); return; }
               if (!touchStart || !touchEnd || isAnimating) return;
               const distance = touchStart - touchEnd;
               const minSwipeDistance = 50;
               if (Math.abs(distance) > minSwipeDistance) {
                 if (distance > 0) {
-                  // 왼쪽으로 스와이프 → 다음 이미지
-                  setGalleryIndex(prev => prev < selectedVilla.images!.length - 1 ? prev + 1 : 0);
+                  setGalleryIndex(prev => { const next = prev < selectedVilla.images!.length - 1 ? prev + 1 : 0; setZoomScale(1); setPanOffset({ x: 0, y: 0 }); return next; });
                 } else {
-                  // 오른쪽으로 스와이프 → 이전 이미지
-                  setGalleryIndex(prev => prev > 0 ? prev - 1 : selectedVilla.images!.length - 1);
+                  setGalleryIndex(prev => { const next = prev > 0 ? prev - 1 : selectedVilla.images!.length - 1; setZoomScale(1); setPanOffset({ x: 0, y: 0 }); return next; });
                 }
               }
               setTouchStart(null);
               setTouchEnd(null);
             }}
+            onDoubleClick={(e) => {
+              if (zoomScale > 1) { setZoomScale(1); setPanOffset({ x: 0, y: 0 }); } else {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setZoomOrigin({ x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 });
+                setZoomScale(2.5);
+              }
+            }}
           >
-            {/* 모든 이미지를 미리 렌더링하고 현재 이미지만 보이게 */}
             {selectedVilla.images.map((img, idx) => (
               <img
                 key={idx}
@@ -3348,7 +3391,9 @@ export default function Home() {
                   maxHeight: '100%', 
                   maxWidth: '100%',
                   opacity: idx === galleryIndex ? 1 : 0,
-                  pointerEvents: idx === galleryIndex ? 'auto' : 'none'
+                  pointerEvents: idx === galleryIndex ? 'auto' : 'none',
+                  transform: idx === galleryIndex ? `scale(${zoomScale}) translate(${panOffset.x / zoomScale}px, ${panOffset.y / zoomScale}px)` : undefined,
+                  transformOrigin: idx === galleryIndex ? `${zoomOrigin.x}% ${zoomOrigin.y}%` : undefined,
                 }}
                 draggable={false}
                 data-testid={idx === galleryIndex ? `gallery-image-${idx}` : undefined}
@@ -3362,7 +3407,7 @@ export default function Home() {
                   variant="ghost"
                   size="icon"
                   className="absolute left-2 top-1/2 -translate-y-1/2 text-white bg-black/50 hover:bg-black/70 h-12 w-12 rounded-full"
-                  onClick={() => setGalleryIndex(prev => prev > 0 ? prev - 1 : selectedVilla.images!.length - 1)}
+                  onClick={() => { setGalleryIndex(prev => prev > 0 ? prev - 1 : selectedVilla.images!.length - 1); setZoomScale(1); setPanOffset({ x: 0, y: 0 }); }}
                   data-testid="button-gallery-prev"
                 >
                   <ChevronLeft className="w-8 h-8" />
@@ -3371,7 +3416,7 @@ export default function Home() {
                   variant="ghost"
                   size="icon"
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-white bg-black/50 hover:bg-black/70 h-12 w-12 rounded-full"
-                  onClick={() => setGalleryIndex(prev => prev < selectedVilla.images!.length - 1 ? prev + 1 : 0)}
+                  onClick={() => { setGalleryIndex(prev => prev < selectedVilla.images!.length - 1 ? prev + 1 : 0); setZoomScale(1); setPanOffset({ x: 0, y: 0 }); }}
                   data-testid="button-gallery-next"
                 >
                   <ChevronRight className="w-8 h-8" />
@@ -3386,7 +3431,7 @@ export default function Home() {
               {selectedVilla.images.map((img, idx) => (
                 <div
                   key={idx}
-                  onClick={() => setGalleryIndex(idx)}
+                  onClick={() => { setGalleryIndex(idx); setZoomScale(1); setPanOffset({ x: 0, y: 0 }); }}
                   className={cn(
                     "flex-shrink-0 w-14 h-14 rounded-md overflow-hidden cursor-pointer border-2 transition-all",
                     idx === galleryIndex ? "border-primary ring-2 ring-primary/50" : "border-transparent opacity-60 hover:opacity-100"
