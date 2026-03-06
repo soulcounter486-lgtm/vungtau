@@ -4950,6 +4950,28 @@ ${adultContext}`;
     }
   });
 
+  app.post("/api/admin/eco-profiles/reorder", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const userId = user?.claims?.sub || user?.id || (req.session as any)?.userId;
+      const userEmail = user?.claims?.email || user?.email;
+      if (!userId || !isUserAdmin(userId, userEmail)) {
+        return res.status(403).json({ error: "관리자 권한이 필요합니다" });
+      }
+      const { orderedIds } = req.body;
+      if (!Array.isArray(orderedIds)) {
+        return res.status(400).json({ error: "orderedIds 배열이 필요합니다" });
+      }
+      for (let i = 0; i < orderedIds.length; i++) {
+        await db.update(ecoProfiles).set({ sortOrder: i }).where(eq(ecoProfiles.id, orderedIds[i]));
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Reorder eco profiles error:", error);
+      res.status(500).json({ error: "Failed to reorder eco profiles" });
+    }
+  });
+
   // Vehicle Types API
   app.get("/api/vehicle-types", async (req, res) => {
     try {
