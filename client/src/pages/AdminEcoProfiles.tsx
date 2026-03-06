@@ -5,14 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Loader2, Users, Upload, Plus, Trash2, CheckSquare, Square, XSquare, GripVertical } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ArrowLeft, Loader2, Users, Upload, Plus, Trash2, CheckSquare, Square, XSquare, GripVertical, X } from "lucide-react";
 import { Link } from "wouter";
 import type { EcoProfile } from "@shared/schema";
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-function SortableProfileCard({ profile, selectedIds, toggleSelect, profileUploading, handleProfileImageUpload, handleUpdateProfile, handleDeleteProfile }: {
+function SortableProfileCard({ profile, selectedIds, toggleSelect, profileUploading, handleProfileImageUpload, handleUpdateProfile, handleDeleteProfile, onImageClick }: {
   profile: EcoProfile;
   selectedIds: Set<number>;
   toggleSelect: (id: number) => void;
@@ -20,6 +22,7 @@ function SortableProfileCard({ profile, selectedIds, toggleSelect, profileUpload
   handleProfileImageUpload: (id: number, e: React.ChangeEvent<HTMLInputElement>) => void;
   handleUpdateProfile: (id: number, updates: Partial<EcoProfile>) => void;
   handleDeleteProfile: (id: number) => void;
+  onImageClick: (url: string, name: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: profile.id });
   const style = {
@@ -60,9 +63,15 @@ function SortableProfileCard({ profile, selectedIds, toggleSelect, profileUpload
       </div>
       {profile.imageUrl ? (
         <div className="relative aspect-square rounded-md overflow-hidden">
-          <img src={profile.imageUrl} alt={profile.name || "에코"} className="w-full h-full object-cover" data-testid={`img-eco-profile-${profile.id}`} />
-          <label className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity cursor-pointer" data-testid={`label-change-profile-${profile.id}`}>
-            <span className="text-white text-xs font-medium">변경</span>
+          <img
+            src={profile.imageUrl}
+            alt={profile.name || "에코"}
+            className="w-full h-full object-cover cursor-pointer"
+            onClick={() => onImageClick(profile.imageUrl, profile.name || "에코")}
+            data-testid={`img-eco-profile-${profile.id}`}
+          />
+          <label className="absolute bottom-0 right-0 flex items-center justify-center bg-black/50 rounded-tl-md px-2 py-1 cursor-pointer hover:bg-black/70 transition-colors" data-testid={`label-change-profile-${profile.id}`}>
+            <span className="text-white text-[10px] font-medium">변경</span>
             <input type="file" accept="image/*" className="hidden" onChange={(e) => handleProfileImageUpload(profile.id, e)} />
           </label>
         </div>
@@ -83,15 +92,30 @@ function SortableProfileCard({ profile, selectedIds, toggleSelect, profileUpload
         className="text-xs h-8"
         data-testid={`input-profile-name-${profile.id}`}
       />
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute top-1 right-1 text-muted-foreground"
-        onClick={() => handleDeleteProfile(profile.id)}
-        data-testid={`button-delete-profile-${profile.id}`}
-      >
-        <Trash2 className="w-3.5 h-3.5" />
-      </Button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-1 right-1 text-muted-foreground hover:text-red-500"
+            data-testid={`button-delete-profile-${profile.id}`}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>프로필 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              {profile.name ? `"${profile.name}" 프로필을` : "이 프로필을"} 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleDeleteProfile(profile.id)} className="bg-red-600 hover:bg-red-700">삭제</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -105,6 +129,7 @@ export default function AdminEcoProfiles() {
   const [bulkUploading, setBulkUploading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [viewImage, setViewImage] = useState<{ url: string; name: string } | null>(null);
   const bulkInputRef = useRef<HTMLInputElement>(null);
 
   const { data: ecoProfilesList = [], isLoading } = useQuery<EcoProfile[]>({
@@ -369,10 +394,26 @@ export default function AdminEcoProfiles() {
                   <XSquare className="w-4 h-4 mr-2" />
                   선택해제
                 </Button>
-                <Button variant="destructive" onClick={handleBulkDelete} disabled={deleting} data-testid="button-bulk-delete">
-                  {deleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
-                  {selectedIds.size}개 삭제
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" disabled={deleting} data-testid="button-bulk-delete">
+                      {deleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                      {selectedIds.size}개 삭제
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>일괄 삭제</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        선택한 {selectedIds.size}개 프로필을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>취소</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleBulkDelete} className="bg-red-600 hover:bg-red-700">삭제</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </>
             )}
           </div>
@@ -389,6 +430,7 @@ export default function AdminEcoProfiles() {
                     handleProfileImageUpload={handleProfileImageUpload}
                     handleUpdateProfile={handleUpdateProfile}
                     handleDeleteProfile={handleDeleteProfile}
+                    onImageClick={(url, name) => setViewImage({ url, name })}
                   />
                 ))}
               </div>
@@ -407,6 +449,33 @@ export default function AdminEcoProfiles() {
           <p className="text-xs text-muted-foreground">사진을 올리면 사용자가 날짜별로 인원수에 따라 A, B, C...별 1지망~3지망을 선택할 수 있습니다</p>
         </CardContent>
       </Card>
+
+      <Dialog open={!!viewImage} onOpenChange={() => setViewImage(null)}>
+        <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 border-none bg-transparent shadow-none [&>button]:hidden">
+          {viewImage && (
+            <div className="relative flex items-center justify-center">
+              <button
+                onClick={() => setViewImage(null)}
+                className="absolute top-2 right-2 z-50 bg-black/60 hover:bg-black/80 text-white rounded-full p-1.5 transition-colors"
+                data-testid="button-close-image-viewer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <img
+                src={viewImage.url}
+                alt={viewImage.name}
+                className="max-w-full max-h-[85vh] object-contain rounded-lg"
+                data-testid="img-enlarged-profile"
+              />
+              {viewImage.name && (
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white px-3 py-1 rounded-full text-sm">
+                  {viewImage.name}
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
