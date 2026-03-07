@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { eq } from "drizzle-orm";
-import { posts, siteSettings, places, realEstateListings, villas } from "@shared/schema";
+import { posts, siteSettings, places, realEstateListings, villas, shopProducts } from "@shared/schema";
 import { execSync } from "child_process";
 import path from "path";
 import fs from "fs";
@@ -319,6 +319,41 @@ async function getVillaOgDataById(villaId: number): Promise<OgData | null> {
   }
 }
 
+async function getShopProductOgDataById(productId: number): Promise<OgData | null> {
+  try {
+    const [product] = await db.select().from(shopProducts).where(eq(shopProducts.id, productId)).limit(1);
+    if (!product) return null;
+    let image: string | null = null;
+    if (product.image && isAccessibleImagePath(product.image)) {
+      image = product.image;
+    } else if (product.images && product.images.length > 0) {
+      const found = product.images.find(img => img && isAccessibleImagePath(img));
+      if (found) image = found;
+    }
+    if (image && !image.startsWith("http")) {
+      image = `https://vungtau.blog${image}`;
+    }
+    if (!image) image = DEFAULT_OG_IMAGE;
+    const parts: string[] = [];
+    if (product.brand) parts.push(product.brand);
+    if (product.price) parts.push(`${product.price.toLocaleString()}원`);
+    if (product.quantity) parts.push(product.quantity);
+    const benefits = (product.benefits || []) as string[];
+    if (benefits.length > 0) parts.push(benefits.slice(0, 2).join(", "));
+    const desc = parts.length > 0 ? parts.join(" | ") : "베트남 프리미엄 제품";
+    return {
+      title: `${product.name} - 붕따우 쇼핑`,
+      description: desc,
+      image,
+      imageWidth: image === DEFAULT_OG_IMAGE ? DEFAULT_OG_IMAGE_WIDTH : undefined,
+      imageHeight: image === DEFAULT_OG_IMAGE ? DEFAULT_OG_IMAGE_HEIGHT : undefined,
+      url: `https://vungtau.blog/diet?product=${productId}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function getOgDataForPath(urlPath: string): Promise<OgData | null> {
   const villaMatch = urlPath.match(/^\/?(\?|$)/);
   if (villaMatch) {
@@ -342,6 +377,16 @@ export async function getOgDataForPath(urlPath: string): Promise<OgData | null> 
       const listingId = url.searchParams.get("p");
       if (listingId) {
         return getRealEstateOgDataById(parseInt(listingId, 10));
+      }
+    } catch {}
+  }
+  const shopMatch = urlPath.match(/^\/diet/);
+  if (shopMatch) {
+    try {
+      const url = new URL(urlPath, "https://vungtau.blog");
+      const productId = url.searchParams.get("product");
+      if (productId) {
+        return getShopProductOgDataById(parseInt(productId, 10));
       }
     } catch {}
   }

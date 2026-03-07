@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLanguage } from "@/lib/i18n";
+import { useToast } from "@/hooks/use-toast";
 import {
   ShoppingBag,
   Check,
@@ -14,6 +15,7 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  Share2,
 } from "lucide-react";
 import { SiKakaotalk } from "react-icons/si";
 import { AppHeader } from "../components/AppHeader";
@@ -152,13 +154,43 @@ const translations: Record<string, {
 
 export default function DietProducts() {
   const { language } = useLanguage();
+  const { toast } = useToast();
   const labels = translations[language] || translations.ko;
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
   const [expandedId, setExpandedId] = useState<string | number | null>(null);
+  const productRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   const { data: dbProducts = [], isLoading } = useQuery<ShopProduct[]>({
     queryKey: ["/api/shop-products"],
   });
+
+  useEffect(() => {
+    if (isLoading || dbProducts.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const productId = params.get("product");
+    if (productId) {
+      const id = parseInt(productId, 10);
+      setExpandedId(id);
+      setTimeout(() => {
+        const el = productRefs.current[id];
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 300);
+    }
+  }, [isLoading, dbProducts]);
+
+  const handleShare = async (product: { id: number; name: string }) => {
+    const url = `${window.location.origin}/diet?product=${product.id}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `${product.name} - 붕따우 쇼핑`, url });
+      } catch {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        toast({ title: "링크가 복사되었습니다" });
+      } catch {}
+    }
+  };
 
   const allProducts = dbProducts.map(p => ({
     id: p.id,
@@ -232,7 +264,7 @@ export default function DietProducts() {
         ) : viewMode === "list" ? (
           <div className="space-y-2">
             {allProducts.map((product) => (
-              <Card key={product.id} className="overflow-hidden" data-testid={`card-product-${product.id}`}>
+              <Card key={product.id} className="overflow-hidden" data-testid={`card-product-${product.id}`} ref={el => { productRefs.current[product.id] = el; }}>
                 <CardContent className="p-0">
                   <div
                     className="flex items-center gap-3 p-3 cursor-pointer"
@@ -304,6 +336,14 @@ export default function DietProducts() {
                           <SiKakaotalk className="w-4 h-4 mr-1" />
                           {labels.purchaseInquiry}
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => { e.stopPropagation(); handleShare(product); }}
+                          data-testid={`btn-share-${product.id}`}
+                        >
+                          <Share2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -314,7 +354,7 @@ export default function DietProducts() {
         ) : (
           <div className="grid gap-6">
             {allProducts.map((product) => (
-              <Card key={product.id} className="overflow-hidden" data-testid={`card-product-${product.id}`}>
+              <Card key={product.id} className="overflow-hidden" data-testid={`card-product-${product.id}`} ref={el => { productRefs.current[product.id] = el; }}>
                 <div className={`bg-gradient-to-r ${product.gradient} p-4 text-white`}>
                   <div className="flex items-center gap-3">
                     <Coffee className="w-8 h-8" />
@@ -380,6 +420,13 @@ export default function DietProducts() {
                         >
                           <SiKakaotalk className="w-4 h-4 mr-1.5" />
                           {labels.purchaseInquiry}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleShare(product)}
+                          data-testid={`btn-share-card-${product.id}`}
+                        >
+                          <Share2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
