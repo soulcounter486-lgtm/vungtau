@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ChevronUp,
   Share2,
+  X,
 } from "lucide-react";
 import { SiKakaotalk } from "react-icons/si";
 import { AppHeader } from "../components/AppHeader";
@@ -192,19 +193,31 @@ export default function DietProducts() {
     }
   };
 
-  const allProducts = dbProducts.map(p => ({
-    id: p.id,
-    name: p.name,
-    brand: p.brand || "",
-    image: p.image || (p.images && p.images.length > 0 ? (p.images as string[])[0] : ""),
-    price: p.price,
-    quantity: p.quantity || "",
-    benefits: (p.benefits || []) as string[],
-    ingredients: p.ingredients || "",
-    usage: p.usage || "",
-    caution: p.caution || "",
-    gradient: p.gradient || "from-primary to-purple-600",
-  }));
+  const [imageViewerData, setImageViewerData] = useState<{ images: string[]; index: number } | null>(null);
+
+  const allProducts = dbProducts.map(p => {
+    const allImages: string[] = [];
+    if (p.image) allImages.push(p.image);
+    if (p.images && p.images.length > 0) {
+      (p.images as string[]).forEach(img => {
+        if (img && !allImages.includes(img)) allImages.push(img);
+      });
+    }
+    return {
+      id: p.id,
+      name: p.name,
+      brand: p.brand || "",
+      image: allImages[0] || "",
+      images: allImages,
+      price: p.price,
+      quantity: p.quantity || "",
+      benefits: (p.benefits || []) as string[],
+      ingredients: p.ingredients || "",
+      usage: p.usage || "",
+      caution: p.caution || "",
+      gradient: p.gradient || "from-primary to-purple-600",
+    };
+  });
 
   const handleKakaoInquiry = (productName?: string) => {
     const msg = productName ? `${productName} 구매문의` : "";
@@ -290,8 +303,28 @@ export default function DietProducts() {
                   </div>
                   {expandedId === product.id && (
                     <div className="px-3 pb-3 border-t space-y-3 pt-3">
-                      {product.image && (
-                        <img src={product.image} alt={product.name} className="max-w-full max-h-48 rounded-lg object-contain mx-auto" />
+                      {product.images.length > 0 && (
+                        <div className="space-y-2">
+                          <img
+                            src={product.images[0]}
+                            alt={product.name}
+                            className="max-w-full max-h-48 rounded-lg object-contain mx-auto cursor-pointer"
+                            onClick={() => setImageViewerData({ images: product.images, index: 0 })}
+                          />
+                          {product.images.length > 1 && (
+                            <div className="flex gap-1.5 overflow-x-auto pb-1">
+                              {product.images.slice(1).map((img, i) => (
+                                <img
+                                  key={i}
+                                  src={img}
+                                  alt={`${product.name} ${i + 2}`}
+                                  className="w-16 h-16 rounded-md object-cover flex-shrink-0 cursor-pointer border hover:border-primary transition-colors"
+                                  onClick={() => setImageViewerData({ images: product.images, index: i + 1 })}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       )}
                       {product.benefits.length > 0 && (
                         <div>
@@ -317,13 +350,13 @@ export default function DietProducts() {
                       {product.usage && (
                         <div>
                           <h4 className="font-semibold text-sm mb-1">{labels.usage}</h4>
-                          <p className="text-xs">{product.usage}</p>
+                          <p className="text-xs whitespace-pre-line">{product.usage}</p>
                         </div>
                       )}
                       {product.caution && (
                         <div className="bg-amber-50 dark:bg-amber-950/30 p-2 rounded-md">
                           <h4 className="font-semibold text-amber-700 dark:text-amber-400 text-xs mb-0.5">{labels.caution}</h4>
-                          <p className="text-xs text-amber-600 dark:text-amber-300">{product.caution}</p>
+                          <p className="text-xs text-amber-600 dark:text-amber-300 whitespace-pre-line">{product.caution}</p>
                         </div>
                       )}
                       <div className="flex gap-2">
@@ -373,12 +406,30 @@ export default function DietProducts() {
 
                 <CardContent className="p-0">
                   <div className="grid md:grid-cols-2">
-                    {product.image && (
-                      <div className="p-4 border-b md:border-b-0 md:border-r flex items-center justify-center">
-                        <img src={product.image} alt={product.name} className="max-w-full max-h-64 rounded-lg object-contain mx-auto" />
+                    {product.images.length > 0 && (
+                      <div className="p-4 border-b md:border-b-0 md:border-r space-y-2">
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="max-w-full max-h-64 rounded-lg object-contain mx-auto cursor-pointer"
+                          onClick={() => setImageViewerData({ images: product.images, index: 0 })}
+                        />
+                        {product.images.length > 1 && (
+                          <div className="flex gap-1.5 overflow-x-auto pb-1 justify-center">
+                            {product.images.slice(1).map((img, i) => (
+                              <img
+                                key={i}
+                                src={img}
+                                alt={`${product.name} ${i + 2}`}
+                                className="w-16 h-16 rounded-md object-cover flex-shrink-0 cursor-pointer border hover:border-primary transition-colors"
+                                onClick={() => setImageViewerData({ images: product.images, index: i + 1 })}
+                              />
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
-                    <div className={`p-4 space-y-4 ${!product.image ? "md:col-span-2" : ""}`}>
+                    <div className={`p-4 space-y-4 ${product.images.length === 0 ? "md:col-span-2" : ""}`}>
                       {product.benefits.length > 0 && (
                         <div>
                           <h3 className="font-semibold text-green-700 dark:text-green-400 flex items-center gap-2 mb-2">
@@ -403,13 +454,13 @@ export default function DietProducts() {
                       {product.usage && (
                         <div>
                           <h3 className="font-semibold mb-2">{labels.usage}</h3>
-                          <p className="text-sm">{product.usage}</p>
+                          <p className="text-sm whitespace-pre-line">{product.usage}</p>
                         </div>
                       )}
                       {product.caution && (
                         <div className="bg-amber-50 dark:bg-amber-950/30 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
                           <h3 className="font-semibold text-amber-700 dark:text-amber-400 mb-1">{labels.caution}</h3>
-                          <p className="text-xs text-amber-600 dark:text-amber-300">{product.caution}</p>
+                          <p className="text-xs text-amber-600 dark:text-amber-300 whitespace-pre-line">{product.caution}</p>
                         </div>
                       )}
                       <div className="flex gap-2 pt-2">
@@ -455,6 +506,55 @@ export default function DietProducts() {
           사업자등록번호: 붕따우 도깨비 350-70-00679
         </div>
       </main>
+
+      {imageViewerData && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
+          onClick={() => setImageViewerData(null)}
+          data-testid="image-viewer-overlay"
+        >
+          <button
+            onClick={() => setImageViewerData(null)}
+            className="absolute top-4 right-4 z-50 bg-black/60 hover:bg-black/80 text-white rounded-full p-2"
+            data-testid="button-close-image-viewer"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <div className="relative max-w-[90vw] max-h-[80vh]" onClick={e => e.stopPropagation()}>
+            <img
+              src={imageViewerData.images[imageViewerData.index]}
+              alt=""
+              className="max-w-full max-h-[80vh] object-contain rounded-lg"
+              data-testid="img-viewer-main"
+            />
+            {imageViewerData.images.length > 1 && (
+              <>
+                <div className="absolute top-1/2 -translate-y-1/2 left-2">
+                  <button
+                    className="bg-black/60 hover:bg-black/80 text-white rounded-full p-2"
+                    onClick={() => setImageViewerData(prev => prev ? { ...prev, index: (prev.index - 1 + prev.images.length) % prev.images.length } : null)}
+                    data-testid="button-prev-image"
+                  >
+                    <ChevronUp className="w-5 h-5 -rotate-90" />
+                  </button>
+                </div>
+                <div className="absolute top-1/2 -translate-y-1/2 right-2">
+                  <button
+                    className="bg-black/60 hover:bg-black/80 text-white rounded-full p-2"
+                    onClick={() => setImageViewerData(prev => prev ? { ...prev, index: (prev.index + 1) % prev.images.length } : null)}
+                    data-testid="button-next-image"
+                  >
+                    <ChevronDown className="w-5 h-5 -rotate-90" />
+                  </button>
+                </div>
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white px-3 py-1 rounded-full text-sm">
+                  {imageViewerData.index + 1} / {imageViewerData.images.length}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       <FixedBottomBar />
     </div>
