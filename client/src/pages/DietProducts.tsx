@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -152,6 +152,102 @@ const translations: Record<string, {
   },
 };
 
+
+function ImageViewer({ images, initialIndex, onClose }: { images: string[]; initialIndex: number; onClose: () => void }) {
+  const [index, setIndex] = useState(initialIndex);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+  const isDragging = useRef(false);
+
+  const goNext = useCallback(() => setIndex(i => (i + 1) % images.length), [images.length]);
+  const goPrev = useCallback(() => setIndex(i => (i - 1 + images.length) % images.length), [images.length]);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchEndX.current = e.touches[0].clientX;
+    isDragging.current = true;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (isDragging.current) touchEndX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    const diff = touchStartX.current - touchEndX.current;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) goNext();
+      else goPrev();
+    }
+  }, [goNext, goPrev]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") goPrev();
+      else if (e.key === "ArrowRight") goNext();
+      else if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [goNext, goPrev, onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
+      onClick={onClose}
+      data-testid="image-viewer-overlay"
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-50 bg-black/60 hover:bg-black/80 text-white rounded-full p-2"
+        data-testid="button-close-image-viewer"
+      >
+        <X className="w-6 h-6" />
+      </button>
+      <div
+        className="relative max-w-[90vw] max-h-[80vh] select-none"
+        onClick={e => e.stopPropagation()}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <img
+          src={images[index]}
+          alt=""
+          className="max-w-full max-h-[80vh] object-contain rounded-lg pointer-events-none"
+          draggable={false}
+          data-testid="img-viewer-main"
+        />
+        {images.length > 1 && (
+          <>
+            <div className="absolute top-1/2 -translate-y-1/2 left-2">
+              <button
+                className="bg-black/60 hover:bg-black/80 text-white rounded-full p-2"
+                onClick={goPrev}
+                data-testid="button-prev-image"
+              >
+                <ChevronUp className="w-5 h-5 -rotate-90" />
+              </button>
+            </div>
+            <div className="absolute top-1/2 -translate-y-1/2 right-2">
+              <button
+                className="bg-black/60 hover:bg-black/80 text-white rounded-full p-2"
+                onClick={goNext}
+                data-testid="button-next-image"
+              >
+                <ChevronDown className="w-5 h-5 -rotate-90" />
+              </button>
+            </div>
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white px-3 py-1 rounded-full text-sm">
+              {index + 1} / {images.length}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function DietProducts() {
   const { language } = useLanguage();
@@ -508,52 +604,11 @@ export default function DietProducts() {
       </main>
 
       {imageViewerData && (
-        <div
-          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
-          onClick={() => setImageViewerData(null)}
-          data-testid="image-viewer-overlay"
-        >
-          <button
-            onClick={() => setImageViewerData(null)}
-            className="absolute top-4 right-4 z-50 bg-black/60 hover:bg-black/80 text-white rounded-full p-2"
-            data-testid="button-close-image-viewer"
-          >
-            <X className="w-6 h-6" />
-          </button>
-          <div className="relative max-w-[90vw] max-h-[80vh]" onClick={e => e.stopPropagation()}>
-            <img
-              src={imageViewerData.images[imageViewerData.index]}
-              alt=""
-              className="max-w-full max-h-[80vh] object-contain rounded-lg"
-              data-testid="img-viewer-main"
-            />
-            {imageViewerData.images.length > 1 && (
-              <>
-                <div className="absolute top-1/2 -translate-y-1/2 left-2">
-                  <button
-                    className="bg-black/60 hover:bg-black/80 text-white rounded-full p-2"
-                    onClick={() => setImageViewerData(prev => prev ? { ...prev, index: (prev.index - 1 + prev.images.length) % prev.images.length } : null)}
-                    data-testid="button-prev-image"
-                  >
-                    <ChevronUp className="w-5 h-5 -rotate-90" />
-                  </button>
-                </div>
-                <div className="absolute top-1/2 -translate-y-1/2 right-2">
-                  <button
-                    className="bg-black/60 hover:bg-black/80 text-white rounded-full p-2"
-                    onClick={() => setImageViewerData(prev => prev ? { ...prev, index: (prev.index + 1) % prev.images.length } : null)}
-                    data-testid="button-next-image"
-                  >
-                    <ChevronDown className="w-5 h-5 -rotate-90" />
-                  </button>
-                </div>
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white px-3 py-1 rounded-full text-sm">
-                  {imageViewerData.index + 1} / {imageViewerData.images.length}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+        <ImageViewer
+          images={imageViewerData.images}
+          initialIndex={imageViewerData.index}
+          onClose={() => setImageViewerData(null)}
+        />
       )}
 
       <FixedBottomBar />
