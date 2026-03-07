@@ -168,6 +168,30 @@ const initPromise = (async () => {
     }
   });
 
+  app.get("/diet", async (req, res, next) => {
+    try {
+      const productId = req.query.product as string | undefined;
+      if (!productId) return next();
+
+      const fullUrl = `${req.path}?product=${productId}`;
+      const ogData = await getOgDataForPath(fullUrl);
+      if (!ogData) return next();
+
+      let htmlPath: string;
+      if (process.env.NODE_ENV === "production") {
+        htmlPath = path.resolve(__dirname, "public", "index.html");
+      } else {
+        htmlPath = path.resolve(import.meta.dirname, "..", "client", "index.html");
+      }
+
+      let html = await fs.promises.readFile(htmlPath, "utf-8");
+      html = injectOgTags(html, ogData);
+      res.status(200).set({ "Content-Type": "text/html", "Cache-Control": "public, max-age=60" }).end(html);
+    } catch {
+      next();
+    }
+  });
+
   app.get("/realestate", async (req, res, next) => {
     try {
       const listingId = req.query.p as string | undefined;
