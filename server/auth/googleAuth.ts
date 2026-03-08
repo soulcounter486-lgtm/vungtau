@@ -5,6 +5,7 @@ import { authStorage } from "../replit_integrations/auth/storage";
 import { db } from "../db";
 import { users, coupons, userCoupons, adminNotifications } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
+import { sendAdminPushNotifications } from "../pushUtils";
 
 export async function setupGoogleAuth(app: Express) {
   const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -94,6 +95,7 @@ export async function setupGoogleAuth(app: Express) {
                 userNickname: nickname,
                 message: `새 회원 가입: ${nickname} (구글)`,
               });
+              sendAdminPushNotifications("🎉 새 회원 가입", `${nickname}님이 구글로 가입했습니다.`, "/admin").catch(err => console.error("Admin push error:", err));
             } else {
               await db.insert(adminNotifications).values({
                 type: "login",

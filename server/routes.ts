@@ -488,6 +488,7 @@ export async function registerRoutes(
             userNickname: nickname,
             message: `새 회원 가입: ${nickname} (카카오)`,
           });
+          sendAdminPushNotifications("🎉 새 회원 가입", `${nickname}님이 카카오로 가입했습니다.`, "/admin").catch(err => console.error("Admin push error:", err));
         } else {
           await db.insert(adminNotifications).values({
             type: "login",
@@ -693,6 +694,7 @@ export async function registerRoutes(
         userNickname: user.nickname,
         message: `새 회원 가입: ${user.nickname || user.email} (이메일)`,
       });
+      sendAdminPushNotifications("🎉 새 회원 가입", `${user.nickname || user.email}님이 이메일로 가입했습니다.`, "/admin").catch(err => console.error("Admin push error:", err));
       
       // 세션에 사용자 정보 저장 (자동 로그인)
       (req.session as any).userId = user.id;
