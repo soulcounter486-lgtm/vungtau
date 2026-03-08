@@ -31,6 +31,7 @@ import {
 interface CategoryOption {
   name: string;
   price: number;
+  description?: string;
 }
 
 interface CategoryForm {
@@ -329,7 +330,7 @@ export default function AdminQuoteCategories() {
             variant="outline"
             size="sm"
             type="button"
-            onClick={() => setForm(prev => ({ ...prev, options: [...prev.options, { name: "", price: 0 }] }))}
+            onClick={() => setForm(prev => ({ ...prev, options: [...prev.options, { name: "", price: 0, description: "" }] }))}
             data-testid="button-add-option"
           >
             <Plus className="w-3 h-3 mr-1" /> 옵션 추가
@@ -338,44 +339,58 @@ export default function AdminQuoteCategories() {
         {form.options.length > 0 && (
           <div className="space-y-2">
             {form.options.map((opt, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <Input
-                  value={opt.name}
+              <div key={idx} className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={opt.name}
+                    onChange={(e) => {
+                      const newOptions = [...form.options];
+                      newOptions[idx] = { ...newOptions[idx], name: e.target.value };
+                      setForm(prev => ({ ...prev, options: newOptions }));
+                    }}
+                    placeholder="옵션명 (예: 소형 보트)"
+                    className="flex-1"
+                    data-testid={`input-option-name-${idx}`}
+                  />
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    value={String(opt.price)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9.]/g, "");
+                      const newOptions = [...form.options];
+                      newOptions[idx] = { ...newOptions[idx], price: Number(val) || 0 };
+                      setForm(prev => ({ ...prev, options: newOptions }));
+                    }}
+                    placeholder="$"
+                    className="w-20"
+                    data-testid={`input-option-price-${idx}`}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    type="button"
+                    className="text-red-400 flex-shrink-0"
+                    onClick={() => {
+                      setForm(prev => ({ ...prev, options: prev.options.filter((_, i) => i !== idx) }));
+                    }}
+                    data-testid={`button-remove-option-${idx}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+                <textarea
+                  value={opt.description || ""}
                   onChange={(e) => {
                     const newOptions = [...form.options];
-                    newOptions[idx] = { ...newOptions[idx], name: e.target.value };
+                    newOptions[idx] = { ...newOptions[idx], description: e.target.value };
                     setForm(prev => ({ ...prev, options: newOptions }));
                   }}
-                  placeholder="옵션명 (예: 소형 보트)"
-                  className="flex-1"
-                  data-testid={`input-option-name-${idx}`}
+                  placeholder="옵션 설명 (줄바꿈/공백 그대로 반영됩니다)"
+                  rows={2}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  data-testid={`input-option-description-${idx}`}
                 />
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  value={String(opt.price)}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/[^0-9.]/g, "");
-                    const newOptions = [...form.options];
-                    newOptions[idx] = { ...newOptions[idx], price: Number(val) || 0 };
-                    setForm(prev => ({ ...prev, options: newOptions }));
-                  }}
-                  placeholder="$"
-                  className="w-20"
-                  data-testid={`input-option-price-${idx}`}
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  type="button"
-                  className="text-red-400 flex-shrink-0"
-                  onClick={() => {
-                    setForm(prev => ({ ...prev, options: prev.options.filter((_, i) => i !== idx) }));
-                  }}
-                  data-testid={`button-remove-option-${idx}`}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
               </div>
             ))}
             <p className="text-xs text-muted-foreground">옵션을 추가하면 사용자가 드롭다운에서 선택하며, 옵션별 가격이 적용됩니다.</p>

@@ -2896,6 +2896,14 @@ export default function Home() {
                                 ))}
                               </SelectContent>
                             </Select>
+                            {(() => {
+                              const selectedOpt = catOptions.find((o: any) => o.name === sched.selectedOption);
+                              return selectedOpt?.description ? (
+                                <div className="mt-1 p-2 rounded-md bg-blue-500/10 border border-blue-500/20 text-xs text-blue-200" style={{ whiteSpace: "pre-wrap" }} data-testid={`text-option-description-${cat.id}-${schedIdx}`}>
+                                  {selectedOpt.description}
+                                </div>
+                              ) : null;
+                            })()}
                           </div>
                         )}
                         <div className="flex items-end gap-2">
