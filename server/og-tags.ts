@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { eq } from "drizzle-orm";
-import { posts, siteSettings, places, realEstateListings, villas, shopProducts } from "@shared/schema";
+import { posts, siteSettings, places, realEstateListings, villas, shopProducts, quoteCategories } from "@shared/schema";
 import { execSync } from "child_process";
 import path from "path";
 import fs from "fs";
@@ -359,14 +359,56 @@ async function getShopProductOgDataById(productId: number): Promise<OgData | nul
   }
 }
 
+async function getCategoryOgData(catParam: string): Promise<OgData | null> {
+  const fixedCategories: Record<string, { title: string; desc: string }> = {
+    villa: { title: "럭셔리 풀빌라 숙박", desc: "붕따우 프리미엄 풀빌라를 둘러보고 견적을 받아보세요." },
+    vehicle: { title: "프라이빗 차량렌트 및 투어", desc: "공항픽업, 시내투어, 골프장 이동 등 프라이빗 차량 서비스를 확인하세요." },
+    golf: { title: "골프 라운딩", desc: "붕따우 골프장 예약과 가격을 확인하세요." },
+    guide: { title: "한국어 투어 가이드", desc: "한국어 가능 현지 가이드와 함께 편안한 여행을 즐기세요." },
+  };
+  if (fixedCategories[catParam]) {
+    const cat = fixedCategories[catParam];
+    return {
+      title: `${cat.title} - 붕따우 도깨비`,
+      description: cat.desc,
+      image: DEFAULT_OG_IMAGE,
+      imageWidth: DEFAULT_OG_IMAGE_WIDTH,
+      imageHeight: DEFAULT_OG_IMAGE_HEIGHT,
+      url: `https://vungtau.blog/?cat=${catParam}`,
+    };
+  }
+  const customMatch = catParam.match(/^custom-(\d+)$/);
+  if (customMatch) {
+    try {
+      const catId = parseInt(customMatch[1], 10);
+      const [cat] = await db.select().from(quoteCategories).where(eq(quoteCategories.id, catId)).limit(1);
+      if (cat) {
+        const images = cat.images || [];
+        const image = images.length > 0 ? (images[0].startsWith("http") ? images[0] : `https://vungtau.blog${images[0]}`) : DEFAULT_OG_IMAGE;
+        return {
+          title: `${cat.name} - 붕따우 도깨비`,
+          description: cat.description || `${cat.name} 서비스를 확인하고 견적을 받아보세요.`,
+          image,
+          url: `https://vungtau.blog/?cat=${catParam}`,
+        };
+      }
+    } catch {}
+  }
+  return null;
+}
+
 export async function getOgDataForPath(urlPath: string): Promise<OgData | null> {
-  const villaMatch = urlPath.match(/^\/?(\?|$)/);
-  if (villaMatch) {
+  const homeMatch = urlPath.match(/^\/?(\?|$)/);
+  if (homeMatch) {
     try {
       const url = new URL(urlPath, "https://vungtau.blog");
       const villaId = url.searchParams.get("villa");
       if (villaId) {
         return getVillaOgDataById(parseInt(villaId, 10));
+      }
+      const catParam = url.searchParams.get("cat");
+      if (catParam) {
+        return getCategoryOgData(catParam);
       }
     } catch {}
   }

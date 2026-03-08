@@ -104,6 +104,17 @@ const initPromise = (async () => {
         }
       }
 
+      const catId = req.query.cat as string | undefined;
+      if (catId) {
+        const fullUrl = `/?cat=${catId}`;
+        const ogData = await getOgDataForPath(fullUrl);
+        if (ogData) {
+          html = injectOgTags(html, ogData);
+          res.status(200).set({ "Content-Type": "text/html", "Cache-Control": "public, max-age=60" }).end(html);
+          return;
+        }
+      }
+
       const seoSettings = await getSeoSettings();
       const hasSeo = seoSettings["seo_title"] || seoSettings["seo_description"] || seoSettings["seo_keywords"];
       if (!hasSeo) {
