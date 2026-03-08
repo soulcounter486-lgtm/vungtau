@@ -153,6 +153,11 @@ export function injectOgTags(html: string, og: OgData): string {
     /<meta property="og:image" content="[^"]*"\s*\/?>/,
     `<meta property="og:image" content="${escapeHtml(og.image)}" />\n    ${imageMetaExtra.join("\n    ")}`
   );
+  const imgType = og.image.match(/\.png(\?|$)/i) ? "image/png" : og.image.match(/\.gif(\?|$)/i) ? "image/gif" : og.image.match(/\.webp(\?|$)/i) ? "image/webp" : "image/jpeg";
+  html = html.replace(
+    /<meta property="og:image:type" content="[^"]*"\s*\/?>/,
+    `<meta property="og:image:type" content="${imgType}" />`
+  );
   html = html.replace(
     /<meta property="og:url" content="[^"]*"\s*\/?>/,
     `<meta property="og:url" content="${escapeHtml(og.url)}" />`

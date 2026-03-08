@@ -76,6 +76,23 @@ export function registerObjectStorageRoutes(app: Express): void {
       const [metadata] = await objectFile.getMetadata();
       const contentType = metadata.contentType || "application/octet-stream";
       const fileSize = parseInt(String(metadata.size || "0"), 10);
+      const isImage = contentType.startsWith("image/");
+
+      if (isImage) {
+        res.set({
+          "Content-Type": contentType,
+          "Content-Length": String(metadata.size),
+          "Accept-Ranges": "bytes",
+          "Cache-Control": "public, max-age=86400",
+        });
+        const stream = objectFile.createReadStream();
+        stream.on("error", (err) => {
+          console.error("Stream error:", err);
+          if (!res.headersSent) res.status(500).end();
+        });
+        stream.pipe(res);
+        return;
+      }
 
       if (contentType.startsWith("video/") && req.headers.range && fileSize > 0) {
         const range = req.headers.range;
