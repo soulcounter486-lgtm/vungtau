@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { LucideIcon } from "lucide-react";
+import { LucideIcon, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SectionCardProps {
@@ -12,6 +12,8 @@ interface SectionCardProps {
   children: ReactNode;
   className?: string;
   gradient?: string;
+  onShare?: () => void;
+  id?: string;
 }
 
 export function SectionCard({ 
@@ -21,10 +23,12 @@ export function SectionCard({
   onToggle, 
   children, 
   className,
-  gradient = "from-primary/10 to-transparent"
+  gradient = "from-primary/10 to-transparent",
+  onShare,
+  id
 }: SectionCardProps) {
   return (
-    <Card className={cn(
+    <Card id={id} className={cn(
       "border border-border/60 transition-all duration-300",
       isEnabled ? "ring-2 ring-primary/20 shadow-lg shadow-primary/5" : "opacity-80 grayscale-[0.5] hover:opacity-100 hover:grayscale-0",
       className
@@ -43,12 +47,24 @@ export function SectionCard({
           </div>
           <span className="whitespace-nowrap text-base truncate">{title}</span>
         </CardTitle>
-        <Switch 
-          checked={isEnabled} 
-          onCheckedChange={onToggle}
-          onClick={(e) => e.stopPropagation()}
-          className="relative z-10 data-[state=checked]:bg-primary"
-        />
+        <div className="flex items-center gap-2 relative z-10">
+          {onShare && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onShare(); }}
+              className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
+              data-testid="button-share-category"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+          )}
+          <Switch 
+            checked={isEnabled} 
+            onCheckedChange={onToggle}
+            onClick={(e) => e.stopPropagation()}
+            className="data-[state=checked]:bg-primary"
+          />
+        </div>
       </CardHeader>
       <CardContent className="relative z-10">
         <div className={cn(

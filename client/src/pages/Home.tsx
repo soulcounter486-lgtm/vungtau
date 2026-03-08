@@ -139,6 +139,31 @@ export default function Home() {
     birthDate: ""
   });
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const catParam = params.get("cat");
+    if (!catParam) return;
+    const enableMap: Record<string, string> = { villa: "villa.enabled", vehicle: "vehicle.enabled", golf: "golf.enabled", guide: "guide.enabled" };
+    if (enableMap[catParam]) {
+      form.setValue(enableMap[catParam] as any, true);
+    }
+    setTimeout(() => {
+      const el = document.getElementById(`cat-${catParam}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 500);
+  }, []);
+
+  const shareCategory = (categoryId: string, categoryName: string) => {
+    const shareUrl = `${window.location.origin}/?cat=${categoryId}`;
+    if (navigator.share) {
+      navigator.share({ title: `${categoryName} - 붕따우 도깨비`, url: shareUrl }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        toast({ title: "링크가 복사되었습니다", description: shareUrl });
+      }).catch(() => {});
+    }
+  };
+
   // 알림 데이터 조회 (쪽지함/쿠폰함)
   const { data: notifications } = useQuery<{unreadMessagesCount: number; unusedCouponsCount: number}>({
     queryKey: ["/api/my-notifications"],
@@ -1592,7 +1617,7 @@ export default function Home() {
               control={form.control}
               name="villa.enabled"
               render={({ field }) => (
-                <SectionCard title={t("villa.title")} icon={Plane} isEnabled={field.value ?? false} onToggle={field.onChange} gradient="from-blue-500/10">
+                <SectionCard id="cat-villa" title={t("villa.title")} icon={Plane} isEnabled={field.value ?? false} onToggle={field.onChange} gradient="from-blue-500/10" onShare={() => shareCategory("villa", String(t("villa.title")))}>
                   {/* 빌라 선택 갤러리 */}
                   {villas.length > 0 ? (
                     <div className="mb-4">
@@ -2352,11 +2377,13 @@ export default function Home() {
               name="vehicle.enabled"
               render={({ field }) => (
                 <SectionCard
+                  id="cat-vehicle"
                   title={t("vehicle.title")}
                   icon={Car}
                   isEnabled={field.value ?? false}
                   onToggle={field.onChange}
                   gradient="from-indigo-500/10"
+                  onShare={() => shareCategory("vehicle", String(t("vehicle.title")))}
                 >
                   <div className="space-y-4 max-h-[500px] overflow-y-auto p-1 pr-2 custom-scrollbar">
                     <a 
@@ -2580,7 +2607,7 @@ export default function Home() {
               control={form.control}
               name="golf.enabled"
               render={({ field }) => (
-                <SectionCard title={t("golf.title")} icon={Flag} isEnabled={field.value ?? false} onToggle={field.onChange} gradient="from-emerald-600/10">
+                <SectionCard id="cat-golf" title={t("golf.title")} icon={Flag} isEnabled={field.value ?? false} onToggle={field.onChange} gradient="from-emerald-600/10" onShare={() => shareCategory("golf", String(t("golf.title")))}>
                   <div className="max-h-[600px] overflow-y-auto p-1 pr-2 custom-scrollbar flex flex-col gap-4">
                     <div className="p-4 bg-emerald-50 rounded-xl text-xs text-emerald-800 space-y-1 border border-emerald-100 shadow-sm">
                       <p><strong>{t("golf.info.included")}</strong></p>
@@ -2640,7 +2667,7 @@ export default function Home() {
               )}
             />
 
-            <Controller control={form.control} name="guide.enabled" render={({ field }) => (<SectionCard title={t("guide.title")} icon={Users} isEnabled={field.value ?? false} onToggle={field.onChange} gradient="from-emerald-500/10"><div className="grid md:grid-cols-2 gap-6"><div className="space-y-2"><Label>{t("guide.days")}</Label><Controller control={form.control} name="guide.days" render={({ field }) => (<Input type="number" min="0" {...field} value={field.value ?? ""} onChange={(e) => { const val = e.target.value; field.onChange(val === "" ? "" : parseInt(val)); }} className="h-12 rounded-xl" />)} /></div><div className="space-y-2"><Label>{t("guide.groupSize")}</Label><Controller control={form.control} name="guide.groupSize" render={({ field }) => (<Input type="number" min="1" {...field} value={field.value ?? ""} onChange={(e) => { const val = e.target.value; field.onChange(val === "" ? "" : parseInt(val)); }} className="h-12 rounded-xl" />)} /></div></div><div className="mt-2 text-sm text-emerald-600 font-medium">{t("guide.infoText")}</div>
+            <Controller control={form.control} name="guide.enabled" render={({ field }) => (<SectionCard id="cat-guide" title={t("guide.title")} icon={Users} isEnabled={field.value ?? false} onToggle={field.onChange} gradient="from-emerald-500/10" onShare={() => shareCategory("guide", String(t("guide.title")))}><div className="grid md:grid-cols-2 gap-6"><div className="space-y-2"><Label>{t("guide.days")}</Label><Controller control={form.control} name="guide.days" render={({ field }) => (<Input type="number" min="0" {...field} value={field.value ?? ""} onChange={(e) => { const val = e.target.value; field.onChange(val === "" ? "" : parseInt(val)); }} className="h-12 rounded-xl" />)} /></div><div className="space-y-2"><Label>{t("guide.groupSize")}</Label><Controller control={form.control} name="guide.groupSize" render={({ field }) => (<Input type="number" min="1" {...field} value={field.value ?? ""} onChange={(e) => { const val = e.target.value; field.onChange(val === "" ? "" : parseInt(val)); }} className="h-12 rounded-xl" />)} /></div></div><div className="mt-2 text-sm text-emerald-600 font-medium">{t("guide.infoText")}</div>
                   {guideEstimate.price > 0 && (
                     <div className="mt-4 bg-gradient-to-r from-teal-600 to-teal-500 text-white p-4 rounded-xl shadow-lg">
                       <div className="flex items-center justify-between mb-2">
@@ -2825,6 +2852,7 @@ export default function Home() {
               return (
                 <SectionCard
                   key={`custom-cat-${cat.id}`}
+                  id={`cat-custom-${cat.id}`}
                   title={cat.name}
                   icon={Ship}
                   isEnabled={isEnabled}
@@ -2834,6 +2862,7 @@ export default function Home() {
                     updateCustomCategory(cat.id, { enabled: checked, schedules: schedules.length > 0 ? schedules : [defaultSched] });
                   }}
                   gradient="from-indigo-500/10"
+                  onShare={() => shareCategory(`custom-${cat.id}`, cat.name)}
                 >
                   {cat.description && (
                     <p className="text-sm text-muted-foreground mb-3">{cat.description}</p>
