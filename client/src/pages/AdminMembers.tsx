@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Users, MessageSquare, Ticket, Bell, Send, Trash2, Plus, Gift, Megaphone, GripVertical, Edit2, Shield, ShieldCheck, Settings, Moon, Sparkles, Check, Leaf } from "lucide-react";
+import { ArrowLeft, Users, MessageSquare, Ticket, Bell, Send, Trash2, Plus, Gift, Megaphone, GripVertical, Edit2, Shield, ShieldCheck, Settings, Moon, Sparkles, Check, Leaf, Search } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import {
@@ -188,6 +188,7 @@ export default function AdminMembers() {
   const [broadcastCouponOpen, setBroadcastCouponOpen] = useState(false);
   const [editAnnouncementOpen, setEditAnnouncementOpen] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [memberSearch, setMemberSearch] = useState("");
   const [memberDetailOpen, setMemberDetailOpen] = useState(false);
   const [detailMember, setDetailMember] = useState<User | null>(null);
 
@@ -719,11 +720,25 @@ export default function AdminMembers() {
                 </div>
               </CardHeader>
               <CardContent className="p-2 pt-0">
+                <div className="relative mb-2">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="이름, 이메일, 전화번호 검색"
+                    value={memberSearch}
+                    onChange={(e) => setMemberSearch(e.target.value)}
+                    className="h-8 pl-8 text-xs"
+                    data-testid="input-member-search"
+                  />
+                </div>
                 {membersLoading ? (
                   <p className="text-muted-foreground text-sm p-2">로딩 중...</p>
                 ) : (
                   <div className="space-y-1 max-h-[60vh] overflow-y-auto">
-                    {[...members].sort((a, b) => (b.isAdmin ? 1 : 0) - (a.isAdmin ? 1 : 0)).map((member) => (
+                    {[...members].filter((m) => {
+                      if (!memberSearch.trim()) return true;
+                      const q = memberSearch.trim().toLowerCase();
+                      return (m.name || "").toLowerCase().includes(q) || (m.email || "").toLowerCase().includes(q) || (m.phone || "").toLowerCase().includes(q) || (m.kakaoNickname || "").toLowerCase().includes(q);
+                    }).sort((a, b) => (b.isAdmin ? 1 : 0) - (a.isAdmin ? 1 : 0)).map((member) => (
                       <div key={member.id} className="bg-muted/30 rounded-lg text-xs">
                         <button
                           type="button"
