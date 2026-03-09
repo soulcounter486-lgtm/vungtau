@@ -52,8 +52,8 @@ export default function AdminSettings() {
   const defaultTabOrder = ["calculator", "planner", "guide", "board", "shop", "chat", "expenses", "realestate"];
   const tabLabels: Record<string, string> = { calculator: "견적", planner: "AI플래너", guide: "관광", board: "소식", shop: "쇼핑", chat: "채팅", expenses: "가계부", realestate: "매물" };
   const [tabOrder, setTabOrder] = useState<string[]>(defaultTabOrder);
-  const defaultCatOrder = ["villa", "vehicle", "golf", "guide", "eco"];
-  const catLabels: Record<string, string> = { villa: "럭셔리 풀빌라 숙박", vehicle: "프라이빗 차량렌트 및 투어", golf: "골프 라운딩", guide: "한국어 투어 가이드", eco: "에코" };
+  const defaultCatOrder = ["villa", "vehicle", "golf", "guide", "fasttrack", "eco"];
+  const catLabels: Record<string, string> = { villa: "럭셔리 풀빌라 숙박", vehicle: "프라이빗 차량렌트 및 투어", golf: "골프 라운딩", guide: "한국어 투어 가이드", fasttrack: "패스트트랙", eco: "에코" };
   const [catOrder, setCatOrder] = useState<string[]>(defaultCatOrder);
   const { data: customQuoteCats } = useQuery<any[]>({ queryKey: ["/api/quote-categories"] });
 

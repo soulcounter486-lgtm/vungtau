@@ -367,7 +367,7 @@ export default function Home() {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed as string[];
       }
     } catch {}
-    return ["villa", "vehicle", "golf", "guide", "eco"];
+    return ["villa", "vehicle", "golf", "guide", "fasttrack", "eco"];
   }, [siteSettingsData]);
   const getCatOrder = (key: string) => {
     const idx = categoryOrder.indexOf(key);
@@ -2729,7 +2729,9 @@ export default function Home() {
                     </div>
                   )}
                 </SectionCard>)} />
+            </div>
 
+            <div style={{ order: getCatOrder("fasttrack") }}>
             <Controller control={form.control} name="fastTrack.enabled" render={({ field }) => (
               <SectionCard 
                 title={language === "ko" ? "패스트트랙" : language === "en" ? "Fast Track" : language === "zh" ? "快速通道" : language === "vi" ? "Fast Track" : language === "ru" ? "Фаст-трек" : language === "ja" ? "ファストトラック" : "패스트트랙"} 
