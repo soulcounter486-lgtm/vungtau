@@ -2204,18 +2204,16 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
       const result = await db.select().from(visitorCount).where(eq(visitorCount.id, 1));
       
       if (result.length === 0) {
-        const baseCount = getRandomBaseCount();
+        const baseCount = await getRandomBaseCount();
         await db.insert(visitorCount).values({ id: 1, count: baseCount, totalCount: 15000, realCount: 0, realTotalCount: 0, lastResetDate: today });
         res.json({ count: baseCount, totalCount: 15000, realCount: 0, realTotalCount: 0 });
       } else {
-        // Check if we need to reset for a new day
         if (result[0].lastResetDate !== today) {
-          // 새 날: 어제 방문자 수를 누적에 더하고, 오늘 방문자 초기화
           const previousDayCount = result[0].count;
           const previousRealCount = result[0].realCount || 0;
           const newTotalCount = (result[0].totalCount || 15000) + previousDayCount;
           const newRealTotalCount = (result[0].realTotalCount || 0) + previousRealCount;
-          const baseCount = getRandomBaseCount();
+          const baseCount = await getRandomBaseCount();
           await db.update(visitorCount).set({ 
             count: baseCount, 
             totalCount: newTotalCount, 
@@ -2245,7 +2243,7 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
       const result = await db.select().from(visitorCount).where(eq(visitorCount.id, 1));
       
       if (result.length === 0) {
-        const baseCount = getRandomBaseCount();
+        const baseCount = await getRandomBaseCount();
         await db.insert(visitorCount).values({ 
           id: 1, 
           count: baseCount, 
@@ -2256,14 +2254,12 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
         });
         res.json({ count: baseCount, totalCount: 15000, realCount: 1, realTotalCount: 1 });
       } else {
-        // Check if we need to reset for a new day
         if (result[0].lastResetDate !== today) {
-          // 새 날: 어제 방문자 수를 누적에 더하고, 오늘 방문자 초기화
           const previousDayCount = result[0].count;
           const previousRealCount = result[0].realCount || 0;
           const newTotalCount = (result[0].totalCount || 15000) + previousDayCount;
           const newRealTotalCount = (result[0].realTotalCount || 0) + previousRealCount;
-          const baseCount = getRandomBaseCount();
+          const baseCount = await getRandomBaseCount();
           await db.update(visitorCount).set({ 
             count: baseCount, 
             totalCount: newTotalCount, 
@@ -2294,6 +2290,24 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
     } catch (err) {
       console.error("Visitor count increment error:", err);
       res.json({ count: 0, totalCount: 15000, realCount: 0, realTotalCount: 0 });
+    }
+  });
+
+  app.post("/api/admin/reset-visitor-count", isAuthenticated, async (req: any, res) => {
+    try {
+      const today = getTodayDateString();
+      const baseCount = await getRandomBaseCount();
+      const result = await db.select().from(visitorCount).where(eq(visitorCount.id, 1));
+      if (result.length === 0) {
+        await db.insert(visitorCount).values({ id: 1, count: baseCount, totalCount: 15000, realCount: 0, realTotalCount: 0, lastResetDate: today });
+      } else {
+        await db.update(visitorCount).set({ count: baseCount, lastResetDate: today }).where(eq(visitorCount.id, 1));
+      }
+      const fakeMemberCount = await getFakeMemberCount();
+      res.json({ visitorCount: baseCount, fakeMemberCount });
+    } catch (err) {
+      console.error("Reset visitor count error:", err);
+      res.status(500).json({ message: "Failed to reset" });
     }
   });
 

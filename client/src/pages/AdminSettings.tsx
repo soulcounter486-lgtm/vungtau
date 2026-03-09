@@ -709,6 +709,27 @@ export default function AdminSettings() {
               </div>
               <p className="text-xs text-muted-foreground mt-1">기준값부터 시작하여 매일 이 범위만큼 증가합니다</p>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              data-testid="button-reset-counter"
+              onClick={async () => {
+                try {
+                  await saveSetting("fake_visitor_range", JSON.stringify({ min: Number(fakeVisitorMin) || 50, max: Number(fakeVisitorMax) || 300 }));
+                  await saveSetting("fake_member_range", JSON.stringify({ min: Number(fakeMemberMin) || 5, max: Number(fakeMemberMax) || 20, base: Number(fakeMemberBase) || 563 }));
+                  const res = await fetch("/api/admin/reset-visitor-count", { method: "POST", credentials: "include" });
+                  if (res.ok) {
+                    const data = await res.json();
+                    toast({ title: `카운터 적용 완료 (방문자: ${data.visitorCount}명, 회원: ${data.fakeMemberCount}명)` });
+                  }
+                } catch {
+                  toast({ title: "적용 실패", variant: "destructive" });
+                }
+              }}
+            >
+              지금 바로 적용 (오늘 방문자 수 리셋)
+            </Button>
           </CardContent>
         </Card>
 
