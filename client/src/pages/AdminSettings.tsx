@@ -178,8 +178,6 @@ export default function AdminSettings() {
         ["biz_email", bizEmail],
         ["tab_order", JSON.stringify(tabOrder)],
         ["category_order", JSON.stringify(catOrder)],
-        ["fake_visitor_range", JSON.stringify({ min: Number(fakeVisitorMin) || 50, max: Number(fakeVisitorMax) || 300 })],
-        ["fake_member_range", JSON.stringify({ min: Number(fakeMemberMin) || 5, max: Number(fakeMemberMax) || 20, base: Number(fakeMemberBase) || 563 })],
       ];
       for (const [key, value] of entries) {
         await saveSetting(key, String(value).trim());
