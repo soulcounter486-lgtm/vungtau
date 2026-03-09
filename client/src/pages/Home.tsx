@@ -1628,7 +1628,7 @@ export default function Home() {
 
       <div className="container mx-auto px-4 py-10">
         <div className="grid lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-8 pb-20 flex flex-col gap-6">
+          <div className="lg:col-span-8 pb-20 flex flex-col gap-3">
             <div style={{ order: getCatOrder("villa") }}>
             <Controller
               control={form.control}
