@@ -2143,26 +2143,52 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
   };
 
   // Helper function to get random count between 600 and 1000
-  const getRandomBaseCount = () => Math.floor(Math.random() * 401) + 600;
+  async function getFakeVisitorRange(): Promise<{min: number; max: number}> {
+    try {
+      const result = await db.select().from(siteSettings).where(eq(siteSettings.key, "fake_visitor_range"));
+      if (result.length > 0 && result[0].value) {
+        const parsed = JSON.parse(result[0].value);
+        return { min: parsed.min || 50, max: parsed.max || 300 };
+      }
+    } catch {}
+    return { min: 50, max: 300 };
+  }
 
-  function getFakeMemberCount(): number {
+  async function getFakeMemberRange(): Promise<{min: number; max: number; base: number}> {
+    try {
+      const result = await db.select().from(siteSettings).where(eq(siteSettings.key, "fake_member_range"));
+      if (result.length > 0 && result[0].value) {
+        const parsed = JSON.parse(result[0].value);
+        return { min: parsed.min || 5, max: parsed.max || 20, base: parsed.base || 563 };
+      }
+    } catch {}
+    return { min: 5, max: 20, base: 563 };
+  }
+
+  async function getRandomBaseCount(): Promise<number> {
+    const range = await getFakeVisitorRange();
+    return Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
+  }
+
+  async function getFakeMemberCount(): Promise<number> {
+    const range = await getFakeMemberRange();
     const startDate = new Date("2026-02-07");
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const diffDays = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays <= 0) return 563;
-    let count = 563;
+    if (diffDays <= 0) return range.base;
+    let count = range.base;
     let seed = 20260207;
     for (let i = 0; i < diffDays; i++) {
       seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-      count += (seed % 10) + 1;
+      count += (seed % (range.max - range.min + 1)) + range.min;
     }
     return count;
   }
 
   app.get("/api/member-count", async (req, res) => {
     try {
-      const fakeMemberCount = getFakeMemberCount();
+      const fakeMemberCount = await getFakeMemberCount();
       const realMemberResult = await db.select({ count: sql<number>`count(*)` }).from(users);
       const realMemberCount = Number(realMemberResult[0]?.count || 0);
       res.json({ fakeMemberCount, realMemberCount });
