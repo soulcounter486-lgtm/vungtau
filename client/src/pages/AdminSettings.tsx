@@ -52,6 +52,10 @@ export default function AdminSettings() {
   const defaultTabOrder = ["calculator", "planner", "guide", "board", "shop", "chat", "expenses", "realestate"];
   const tabLabels: Record<string, string> = { calculator: "견적", planner: "AI플래너", guide: "관광", board: "소식", shop: "쇼핑", chat: "채팅", expenses: "가계부", realestate: "매물" };
   const [tabOrder, setTabOrder] = useState<string[]>(defaultTabOrder);
+  const defaultCatOrder = ["villa", "vehicle", "golf", "guide"];
+  const catLabels: Record<string, string> = { villa: "럭셔리 풀빌라 숙박", vehicle: "프라이빗 차량렌트 및 투어", golf: "골프 라운딩", guide: "한국어 투어 가이드" };
+  const [catOrder, setCatOrder] = useState<string[]>(defaultCatOrder);
+  const { data: customQuoteCats } = useQuery<any[]>({ queryKey: ["/api/quote-categories"] });
 
   useEffect(() => {
     if (settings) {
@@ -90,8 +94,27 @@ export default function AdminSettings() {
           }
         } catch {}
       }
+      if (settings["category_order"]) {
+        try {
+          const parsed = JSON.parse(settings["category_order"]);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setCatOrder(parsed);
+          }
+        } catch {}
+      }
     }
   }, [settings]);
+
+  useEffect(() => {
+    if (customQuoteCats && customQuoteCats.length > 0) {
+      setCatOrder(prev => {
+        const allKeys = [...defaultCatOrder, ...customQuoteCats.filter((c: any) => c.isActive).map((c: any) => `custom-${c.id}`)];
+        const missing = allKeys.filter(k => !prev.includes(k));
+        const valid = prev.filter(k => allKeys.includes(k));
+        return [...valid, ...missing];
+      });
+    }
+  }, [customQuoteCats]);
 
   const saveSetting = async (key: string, value: string) => {
     const res = await fetch("/api/admin/site-settings", {
@@ -134,6 +157,7 @@ export default function AdminSettings() {
         ["biz_phone", bizPhone],
         ["biz_email", bizEmail],
         ["tab_order", JSON.stringify(tabOrder)],
+        ["category_order", JSON.stringify(catOrder)],
       ];
       for (const [key, value] of entries) {
         await saveSetting(key, String(value).trim());
@@ -567,6 +591,59 @@ export default function AdminSettings() {
               </div>
             ))}
             <p className="text-xs text-muted-foreground mt-2">화살표를 눌러 탭 순서를 변경한 뒤 상단 저장 버튼을 누르세요</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <GripVertical className="w-5 h-5" />
+              견적 카테고리 순서 관리
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {catOrder.map((key, index) => {
+              const customMatch = key.match(/^custom-(\d+)$/);
+              const label = customMatch
+                ? (customQuoteCats?.find((c: any) => c.id === parseInt(customMatch[1]))?.name || key)
+                : (catLabels[key] || key);
+              return (
+                <div key={key} className="flex items-center gap-2 p-2 rounded-md border bg-muted/30" data-testid={`cat-order-item-${key}`}>
+                  <GripVertical className="w-4 h-4 text-muted-foreground" />
+                  <span className="flex-1 text-sm font-medium">{label}</span>
+                  {customMatch && <span className="text-xs text-muted-foreground">커스텀</span>}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    disabled={index === 0}
+                    onClick={() => {
+                      const newOrder = [...catOrder];
+                      [newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]];
+                      setCatOrder(newOrder);
+                    }}
+                    data-testid={`cat-order-up-${key}`}
+                  >
+                    <ArrowUp className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    disabled={index === catOrder.length - 1}
+                    onClick={() => {
+                      const newOrder = [...catOrder];
+                      [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+                      setCatOrder(newOrder);
+                    }}
+                    data-testid={`cat-order-down-${key}`}
+                  >
+                    <ArrowDown className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              );
+            })}
+            <p className="text-xs text-muted-foreground mt-2">화살표를 눌러 견적 카테고리 순서를 변경한 뒤 상단 저장 버튼을 누르세요</p>
           </CardContent>
         </Card>
 

@@ -153,6 +153,21 @@ export default function Home() {
     }, 500);
   }, []);
 
+  const categoryOrder = (() => {
+    try {
+      const raw = siteSettingsData["category_order"];
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed as string[];
+      }
+    } catch {}
+    return ["villa", "vehicle", "golf", "guide"];
+  })();
+  const getCatOrder = (key: string) => {
+    const idx = categoryOrder.indexOf(key);
+    return idx >= 0 ? idx : 100;
+  };
+
   const shareCategory = (categoryId: string, categoryName: string) => {
     const shareUrl = `${window.location.origin}/?cat=${categoryId}`;
     if (navigator.share) {
@@ -1612,7 +1627,8 @@ export default function Home() {
 
       <div className="container mx-auto px-4 py-10">
         <div className="grid lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-8 space-y-6 pb-20">
+          <div className="lg:col-span-8 space-y-6 pb-20 flex flex-col gap-6" style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ order: getCatOrder("villa") }}>
             <Controller
               control={form.control}
               name="villa.enabled"
@@ -2371,7 +2387,9 @@ export default function Home() {
                 </SectionCard>
               )}
             />
+            </div>
 
+            <div style={{ order: getCatOrder("vehicle") }}>
             <Controller
               control={form.control}
               name="vehicle.enabled"
@@ -2602,7 +2620,9 @@ export default function Home() {
                 </SectionCard>
               )}
             />
+            </div>
 
+            <div style={{ order: getCatOrder("golf") }}>
             <Controller
               control={form.control}
               name="golf.enabled"
@@ -2666,7 +2686,9 @@ export default function Home() {
                 </SectionCard>
               )}
             />
+            </div>
 
+            <div style={{ order: getCatOrder("guide") }}>
             <Controller control={form.control} name="guide.enabled" render={({ field }) => (<SectionCard id="cat-guide" title={t("guide.title")} icon={Users} isEnabled={field.value ?? false} onToggle={field.onChange} gradient="from-emerald-500/10" onShare={() => shareCategory("guide", String(t("guide.title")))}><div className="grid md:grid-cols-2 gap-6"><div className="space-y-2"><Label>{t("guide.days")}</Label><Controller control={form.control} name="guide.days" render={({ field }) => (<Input type="number" min="0" {...field} value={field.value ?? ""} onChange={(e) => { const val = e.target.value; field.onChange(val === "" ? "" : parseInt(val)); }} className="h-12 rounded-xl" />)} /></div><div className="space-y-2"><Label>{t("guide.groupSize")}</Label><Controller control={form.control} name="guide.groupSize" render={({ field }) => (<Input type="number" min="1" {...field} value={field.value ?? ""} onChange={(e) => { const val = e.target.value; field.onChange(val === "" ? "" : parseInt(val)); }} className="h-12 rounded-xl" />)} /></div></div><div className="mt-2 text-sm text-emerald-600 font-medium">{t("guide.infoText")}</div>
                   {guideEstimate.price > 0 && (
                     <div className="mt-4 bg-gradient-to-r from-teal-600 to-teal-500 text-white p-4 rounded-xl shadow-lg">
@@ -2786,6 +2808,7 @@ export default function Home() {
                 )}
               </SectionCard>
             )} />
+            </div>
 
             {customQuoteCategories.length > 0 && customQuoteCategories.map((cat: any) => {
               const customSel = values.customCategories?.find((s: any) => s.categoryId === cat.id);
@@ -2850,6 +2873,7 @@ export default function Home() {
               };
 
               return (
+                <div style={{ order: getCatOrder(`custom-${cat.id}`) }} key={`custom-cat-wrapper-${cat.id}`}>
                 <SectionCard
                   key={`custom-cat-${cat.id}`}
                   id={`cat-custom-${cat.id}`}
@@ -3010,6 +3034,7 @@ export default function Home() {
                     </div>
                   )}
                 </SectionCard>
+                </div>
               );
             })}
 
