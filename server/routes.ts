@@ -2314,8 +2314,20 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
       } else {
         await db.update(visitorCount).set({ count: baseCount, lastResetDate: today }).where(eq(visitorCount.id, 1));
       }
-      const fakeMemberCount = await getFakeMemberCount();
-      res.json({ visitorCount: baseCount, fakeMemberCount });
+      const range = await getFakeMemberRange();
+      const increment = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
+      const countResult = await db.select().from(siteSettings).where(eq(siteSettings.key, "fake_member_count"));
+      let currentCount = 685;
+      if (countResult.length > 0 && countResult[0].value) {
+        currentCount = Number(countResult[0].value) || 685;
+      }
+      currentCount += increment;
+      if (countResult.length > 0) {
+        await db.update(siteSettings).set({ value: String(currentCount) }).where(eq(siteSettings.key, "fake_member_count"));
+      } else {
+        await db.insert(siteSettings).values({ key: "fake_member_count", value: String(currentCount) });
+      }
+      res.json({ visitorCount: baseCount, fakeMemberCount: currentCount, increment });
     } catch (err) {
       console.error("Reset visitor count error:", err);
       res.status(500).json({ message: "Failed to reset" });

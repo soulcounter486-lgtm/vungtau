@@ -713,7 +713,7 @@ export default function AdminSettings() {
                   const res = await fetch("/api/admin/reset-visitor-count", { method: "POST", credentials: "include" });
                   if (res.ok) {
                     const data = await res.json();
-                    toast({ title: `카운터 적용 완료 (방문자: ${data.visitorCount}명, 회원: ${data.fakeMemberCount}명)` });
+                    toast({ title: `적용 완료! 방문자: ${data.visitorCount}명, 회원: ${data.fakeMemberCount}명 (+${data.increment})` });
                   }
                 } catch {
                   toast({ title: "적용 실패", variant: "destructive" });
