@@ -161,11 +161,11 @@ export default function Home() {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed as string[];
       }
     } catch {}
-    return ["villa", "vehicle", "golf", "guide"];
+    return ["villa", "vehicle", "golf", "guide", "eco"];
   })();
   const getCatOrder = (key: string) => {
     const idx = categoryOrder.indexOf(key);
-    return idx >= 0 ? idx : 100;
+    return idx >= 0 ? idx : categoryOrder.length;
   };
 
   const shareCategory = (categoryId: string, categoryName: string) => {
@@ -1627,7 +1627,7 @@ export default function Home() {
 
       <div className="container mx-auto px-4 py-10">
         <div className="grid lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-8 space-y-6 pb-20 flex flex-col gap-6" style={{ display: "flex", flexDirection: "column" }}>
+          <div className="lg:col-span-8 pb-20 flex flex-col gap-6">
             <div style={{ order: getCatOrder("villa") }}>
             <Controller
               control={form.control}
