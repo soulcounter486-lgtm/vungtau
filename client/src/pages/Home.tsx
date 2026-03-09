@@ -3039,13 +3039,16 @@ export default function Home() {
             })}
 
             {(isAdmin || user?.canViewNightlife18) && (
+              <div style={{ order: getCatOrder("eco") }}>
               <Controller control={form.control} name="ecoGirl.enabled" render={({ field }) => (
                 <SectionCard 
+                  id="cat-eco"
                   title={language === "ko" ? "에코" : language === "en" ? "Eco" : language === "zh" ? "生态" : language === "vi" ? "Eco" : language === "ru" ? "Эко" : language === "ja" ? "エコ" : "에코"} 
                   icon={Users} 
                   isEnabled={field.value ?? false} 
                   onToggle={field.onChange} 
                   gradient="from-pink-500/10"
+                  onShare={() => shareCategory("eco", "에코")}
                 >
                   {ecoImageUrl && (
                     <div className="mb-4 rounded-xl overflow-hidden">
@@ -3262,6 +3265,7 @@ export default function Home() {
                   )}
                 </SectionCard>
               )} />
+              </div>
             )}
             {ecoPhotoModal && (() => {
               const sel = values.ecoGirl?.selections?.[ecoPhotoModal.dayIndex];
