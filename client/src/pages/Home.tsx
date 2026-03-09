@@ -777,7 +777,7 @@ export default function Home() {
   const form = useForm<CalculateQuoteRequest>({
     resolver: zodResolver(calculateQuoteSchema),
     defaultValues: {
-      villa: { enabled: true },
+      villa: { enabled: false },
       vehicle: { enabled: false, selections: [] },
       golf: { enabled: false, selections: [] },
       ecoGirl: { enabled: false, selections: [] },
@@ -1628,7 +1628,10 @@ export default function Home() {
 
       <div className="container mx-auto px-4 py-10">
         <div className="grid lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-8 pb-20 flex flex-col gap-3">
+          <div className="lg:col-span-8 pb-20 flex flex-col gap-2">
+            <div className="text-center py-3 px-4 bg-primary/10 rounded-xl border border-primary/20" style={{ order: -1 }}>
+              <p className="text-sm font-medium text-primary" data-testid="text-category-guide">원하시는 견적 카테고리를 눌러 주세요</p>
+            </div>
             <div style={{ order: getCatOrder("villa") }}>
             <Controller
               control={form.control}
