@@ -2154,15 +2154,15 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
     return { min: 50, max: 300 };
   }
 
-  async function getFakeMemberRange(): Promise<{min: number; max: number; base: number}> {
+  async function getFakeMemberRange(): Promise<{min: number; max: number}> {
     try {
       const result = await db.select().from(siteSettings).where(eq(siteSettings.key, "fake_member_range"));
       if (result.length > 0 && result[0].value) {
         const parsed = JSON.parse(result[0].value);
-        return { min: parsed.min || 5, max: parsed.max || 20, base: parsed.base || 563 };
+        return { min: parsed.min || 5, max: parsed.max || 20 };
       }
     } catch {}
-    return { min: 5, max: 20, base: 563 };
+    return { min: 5, max: 20 };
   }
 
   async function getRandomBaseCount(): Promise<number> {
@@ -2171,19 +2171,30 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
   }
 
   async function getFakeMemberCount(): Promise<number> {
-    const range = await getFakeMemberRange();
-    const startDate = new Date("2026-02-07");
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const diffDays = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays <= 0) return range.base;
-    let count = range.base;
-    let seed = 20260207;
-    for (let i = 0; i < diffDays; i++) {
-      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-      count += (seed % (range.max - range.min + 1)) + range.min;
+    const today = getTodayDateString();
+    const countResult = await db.select().from(siteSettings).where(eq(siteSettings.key, "fake_member_count"));
+    const dateResult = await db.select().from(siteSettings).where(eq(siteSettings.key, "fake_member_last_date"));
+    let currentCount = 685;
+    if (countResult.length > 0 && countResult[0].value) {
+      currentCount = Number(countResult[0].value) || 685;
     }
-    return count;
+    const lastDate = dateResult.length > 0 ? dateResult[0].value : null;
+    if (lastDate !== today) {
+      const range = await getFakeMemberRange();
+      const increment = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
+      currentCount += increment;
+      if (countResult.length > 0) {
+        await db.update(siteSettings).set({ value: String(currentCount) }).where(eq(siteSettings.key, "fake_member_count"));
+      } else {
+        await db.insert(siteSettings).values({ key: "fake_member_count", value: String(currentCount) });
+      }
+      if (dateResult.length > 0) {
+        await db.update(siteSettings).set({ value: today }).where(eq(siteSettings.key, "fake_member_last_date"));
+      } else {
+        await db.insert(siteSettings).values({ key: "fake_member_last_date", value: today });
+      }
+    }
+    return currentCount;
   }
 
   app.get("/api/member-count", async (req, res) => {

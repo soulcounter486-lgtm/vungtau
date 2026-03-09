@@ -53,7 +53,6 @@ export default function AdminSettings() {
   const [fakeVisitorMax, setFakeVisitorMax] = useState("300");
   const [fakeMemberMin, setFakeMemberMin] = useState("5");
   const [fakeMemberMax, setFakeMemberMax] = useState("20");
-  const [fakeMemberBase, setFakeMemberBase] = useState("563");
   const defaultTabOrder = ["calculator", "planner", "guide", "board", "shop", "chat", "expenses", "realestate"];
   const tabLabels: Record<string, string> = { calculator: "견적", planner: "AI플래너", guide: "관광", board: "소식", shop: "쇼핑", chat: "채팅", expenses: "가계부", realestate: "매물" };
   const [tabOrder, setTabOrder] = useState<string[]>(defaultTabOrder);
@@ -102,7 +101,6 @@ export default function AdminSettings() {
           const parsed = JSON.parse(settings["fake_member_range"]);
           setFakeMemberMin(String(parsed.min || 5));
           setFakeMemberMax(String(parsed.max || 20));
-          setFakeMemberBase(String(parsed.base || 563));
         } catch {}
       }
       if (settings["tab_order"]) {
@@ -691,11 +689,7 @@ export default function AdminSettings() {
             </div>
             <div>
               <p className="text-sm font-medium mb-2">일일 회원 증가 범위</p>
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <Label className="text-xs">기준값</Label>
-                  <Input type="number" value={fakeMemberBase} onChange={(e) => setFakeMemberBase(e.target.value)} className="h-8 text-sm" data-testid="input-fake-member-base" />
-                </div>
+              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label className="text-xs">일 최소 증가</Label>
                   <Input type="number" value={fakeMemberMin} onChange={(e) => setFakeMemberMin(e.target.value)} className="h-8 text-sm" data-testid="input-fake-member-min" />
@@ -705,7 +699,7 @@ export default function AdminSettings() {
                   <Input type="number" value={fakeMemberMax} onChange={(e) => setFakeMemberMax(e.target.value)} className="h-8 text-sm" data-testid="input-fake-member-max" />
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">기준값부터 시작하여 매일 이 범위만큼 증가합니다</p>
+              <p className="text-xs text-muted-foreground mt-1">현재 가짜 회원 수에서 매일 이 범위만큼 랜덤 증가합니다</p>
             </div>
             <Button
               variant="outline"
@@ -715,7 +709,7 @@ export default function AdminSettings() {
               onClick={async () => {
                 try {
                   await saveSetting("fake_visitor_range", JSON.stringify({ min: Number(fakeVisitorMin) || 50, max: Number(fakeVisitorMax) || 300 }));
-                  await saveSetting("fake_member_range", JSON.stringify({ min: Number(fakeMemberMin) || 5, max: Number(fakeMemberMax) || 20, base: Number(fakeMemberBase) || 563 }));
+                  await saveSetting("fake_member_range", JSON.stringify({ min: Number(fakeMemberMin) || 5, max: Number(fakeMemberMax) || 20 }));
                   const res = await fetch("/api/admin/reset-visitor-count", { method: "POST", credentials: "include" });
                   if (res.ok) {
                     const data = await res.json();
