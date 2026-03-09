@@ -1341,10 +1341,6 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
                 // 토요일
                 dailyPrice = weekendPrice;
                 dayType = "주말";
-              } else if (dayOfWeek === 0) {
-                // 일요일
-                dailyPrice = weekendPrice;
-                dayType = "주말";
               }
               breakdown.villa.price += dailyPrice;
               breakdown.villa.details.push(`${dateStr}(${dayName},${dayType}): $${dailyPrice}`);

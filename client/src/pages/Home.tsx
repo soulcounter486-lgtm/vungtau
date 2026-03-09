@@ -810,9 +810,6 @@ export default function Home() {
         } else if (dayOfWeek === 6) {
           dailyPrice = weekendPrice;
           dayName += ` (${t("villa.saturday")})`;
-        } else if (dayOfWeek === 0) {
-          dailyPrice = weekendPrice;
-          dayName += ` (${language === "ko" ? "일요일" : "Sunday"})`;
         }
         totalPrice += dailyPrice;
         details.push({ day: dayName, price: dailyPrice });
