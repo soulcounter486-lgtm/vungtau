@@ -153,20 +153,6 @@ export default function Home() {
     }, 500);
   }, []);
 
-  const categoryOrder = (() => {
-    try {
-      const raw = siteSettingsData["category_order"];
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed as string[];
-      }
-    } catch {}
-    return ["villa", "vehicle", "golf", "guide", "eco"];
-  })();
-  const getCatOrder = (key: string) => {
-    const idx = categoryOrder.indexOf(key);
-    return idx >= 0 ? idx : categoryOrder.length;
-  };
 
   const shareCategory = (categoryId: string, categoryName: string) => {
     const shareUrl = `${window.location.origin}/?cat=${categoryId}`;
@@ -372,6 +358,21 @@ export default function Home() {
   const { data: customQuoteCategories = [] } = useQuery<any[]>({
     queryKey: ["/api/quote-categories"],
   });
+
+  const categoryOrder = useMemo(() => {
+    try {
+      const raw = siteSettingsData["category_order"];
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed as string[];
+      }
+    } catch {}
+    return ["villa", "vehicle", "golf", "guide", "eco"];
+  }, [siteSettingsData]);
+  const getCatOrder = (key: string) => {
+    const idx = categoryOrder.indexOf(key);
+    return idx >= 0 ? idx : categoryOrder.length;
+  };
 
   // 에코 프로필 조회
   const { data: vehicleTypesData = [] } = useQuery<VehicleType[]>({
