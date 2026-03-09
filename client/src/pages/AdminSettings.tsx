@@ -49,6 +49,11 @@ export default function AdminSettings() {
   const [bizAddress, setBizAddress] = useState("");
   const [bizPhone, setBizPhone] = useState("");
   const [bizEmail, setBizEmail] = useState("");
+  const [fakeVisitorMin, setFakeVisitorMin] = useState("50");
+  const [fakeVisitorMax, setFakeVisitorMax] = useState("300");
+  const [fakeMemberMin, setFakeMemberMin] = useState("5");
+  const [fakeMemberMax, setFakeMemberMax] = useState("20");
+  const [fakeMemberBase, setFakeMemberBase] = useState("563");
   const defaultTabOrder = ["calculator", "planner", "guide", "board", "shop", "chat", "expenses", "realestate"];
   const tabLabels: Record<string, string> = { calculator: "견적", planner: "AI플래너", guide: "관광", board: "소식", shop: "쇼핑", chat: "채팅", expenses: "가계부", realestate: "매물" };
   const [tabOrder, setTabOrder] = useState<string[]>(defaultTabOrder);
@@ -85,6 +90,21 @@ export default function AdminSettings() {
       setBizAddress(settings["biz_address"] || "");
       setBizPhone(settings["biz_phone"] || "");
       setBizEmail(settings["biz_email"] || "");
+      if (settings["fake_visitor_range"]) {
+        try {
+          const parsed = JSON.parse(settings["fake_visitor_range"]);
+          setFakeVisitorMin(String(parsed.min || 50));
+          setFakeVisitorMax(String(parsed.max || 300));
+        } catch {}
+      }
+      if (settings["fake_member_range"]) {
+        try {
+          const parsed = JSON.parse(settings["fake_member_range"]);
+          setFakeMemberMin(String(parsed.min || 5));
+          setFakeMemberMax(String(parsed.max || 20));
+          setFakeMemberBase(String(parsed.base || 563));
+        } catch {}
+      }
       if (settings["tab_order"]) {
         try {
           const parsed = JSON.parse(settings["tab_order"]);
@@ -158,6 +178,8 @@ export default function AdminSettings() {
         ["biz_email", bizEmail],
         ["tab_order", JSON.stringify(tabOrder)],
         ["category_order", JSON.stringify(catOrder)],
+        ["fake_visitor_range", JSON.stringify({ min: Number(fakeVisitorMin) || 50, max: Number(fakeVisitorMax) || 300 })],
+        ["fake_member_range", JSON.stringify({ min: Number(fakeMemberMin) || 5, max: Number(fakeMemberMax) || 20, base: Number(fakeMemberBase) || 563 })],
       ];
       for (const [key, value] of entries) {
         await saveSetting(key, String(value).trim());
@@ -644,6 +666,49 @@ export default function AdminSettings() {
               );
             })}
             <p className="text-xs text-muted-foreground mt-2">화살표를 눌러 견적 카테고리 순서를 변경한 뒤 상단 저장 버튼을 누르세요</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              가짜 카운터 설정
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <p className="text-sm font-medium mb-2">일일 방문자 수 범위</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">최소</Label>
+                  <Input type="number" value={fakeVisitorMin} onChange={(e) => setFakeVisitorMin(e.target.value)} className="h-8 text-sm" data-testid="input-fake-visitor-min" />
+                </div>
+                <div>
+                  <Label className="text-xs">최대</Label>
+                  <Input type="number" value={fakeVisitorMax} onChange={(e) => setFakeVisitorMax(e.target.value)} className="h-8 text-sm" data-testid="input-fake-visitor-max" />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">하루 시작 시 이 범위 내 랜덤 값으로 설정됩니다</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium mb-2">일일 회원 증가 범위</p>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <Label className="text-xs">기준값</Label>
+                  <Input type="number" value={fakeMemberBase} onChange={(e) => setFakeMemberBase(e.target.value)} className="h-8 text-sm" data-testid="input-fake-member-base" />
+                </div>
+                <div>
+                  <Label className="text-xs">일 최소 증가</Label>
+                  <Input type="number" value={fakeMemberMin} onChange={(e) => setFakeMemberMin(e.target.value)} className="h-8 text-sm" data-testid="input-fake-member-min" />
+                </div>
+                <div>
+                  <Label className="text-xs">일 최대 증가</Label>
+                  <Input type="number" value={fakeMemberMax} onChange={(e) => setFakeMemberMax(e.target.value)} className="h-8 text-sm" data-testid="input-fake-member-max" />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">기준값부터 시작하여 매일 이 범위만큼 증가합니다</p>
+            </div>
           </CardContent>
         </Card>
 
