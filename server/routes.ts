@@ -4849,7 +4849,7 @@ ${adultContext}`;
         console.log(`Starting compression: ${req.file.originalname} (${(req.file.size / 1024 / 1024).toFixed(1)}MB)`);
         await execFileAsync(ffmpegPath, [
           "-i", inputPath,
-          "-vf", "scale='min(720,iw)':'min(720,ih)':force_original_aspect_ratio=decrease",
+          "-vf", "scale=720:-2",
           "-c:v", "libx264", "-preset", "fast", "-crf", "28",
           "-c:a", "aac", "-b:a", "64k", "-ac", "1",
           "-movflags", "+faststart",
