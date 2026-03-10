@@ -745,7 +745,7 @@ export function QuoteSummary({ breakdown, isLoading, onSave, isSaving, onPersonC
               ) : (
                 <FileText className="mr-2 h-5 w-5" />
               )}
-              {language === "ko" ? "데이터 저장" : "Save Data"}
+              {language === "ko" ? "견적서 저장" : "Save Quote"}
             </Button>
           )}
         </div>

@@ -162,7 +162,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "quote.guide": "한국어 가이드",
     "quote.note": "실제 가격은 현지 상황에 따라 다를 수 있습니다.",
     "quote.actualLower": "실견적 금액은 예상금액보다 적습니다.",
-    "quote.save": "견적서 저장",
+    "quote.save": "견적서 이미지로 다운로드",
     "quote.ready": "준비되셨나요?",
     "quote.readyDesc": "왼쪽 옵션을 조정하여 맞춤 여행 견적을 실시간으로 확인하세요.",
     "quote.calculating": "견적을 계산하고 있습니다...",
