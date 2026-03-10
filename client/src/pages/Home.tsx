@@ -142,6 +142,15 @@ export default function Home() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const catParam = params.get("cat");
+    const villaParam = params.get("villa");
+    if (villaParam) {
+      form.setValue("villa.enabled", true);
+      setTimeout(() => {
+        const el = document.getElementById("cat-villa");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 500);
+      return;
+    }
     if (!catParam) return;
     const enableMap: Record<string, string> = { villa: "villa.enabled", vehicle: "vehicle.enabled", golf: "golf.enabled", guide: "guide.enabled" };
     if (enableMap[catParam]) {
