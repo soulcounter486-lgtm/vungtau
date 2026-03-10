@@ -3220,9 +3220,13 @@ Example response format:
       if (userId) {
         const [dbUser] = await db.select({ gender: users.gender, canViewNightlife18: users.canViewNightlife18, isAdmin: users.isAdmin }).from(users).where(eq(users.id, userId)).limit(1);
         if (dbUser) {
-          if (dbUser.gender) resolvedGender = dbUser.gender;
-          if (dbUser.canViewNightlife18) resolvedGender = "male";
-          if (dbUser.isAdmin) resolvedGender = "male";
+          if (dbUser.isAdmin) {
+            resolvedGender = "male";
+          } else if (dbUser.canViewNightlife18) {
+            resolvedGender = "male";
+          } else {
+            resolvedGender = "";
+          }
         }
         console.log(`[TravelPlan] userId: ${userId}, clientGender: ${clientGender}, dbGender: ${dbUser?.gender}, canView18: ${dbUser?.canViewNightlife18}, isAdmin: ${dbUser?.isAdmin}, resolved: ${resolvedGender}`);
       } else {
