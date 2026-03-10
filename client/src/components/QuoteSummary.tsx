@@ -731,7 +731,7 @@ export function QuoteSummary({ breakdown, isLoading, onSave, isSaving, onPersonC
             ) : (
               <Save className="mr-1.5 h-4 w-4 shrink-0" />
             )}
-            {t("quote.save")}
+            <span className="flex flex-col items-start"><span>견적서 이미지로</span><span>다운로드</span></span>
           </Button>
           {isAuthenticated && (
             <Button 
