@@ -17,6 +17,8 @@ A travel quote calculator application for generating custom trip estimates. The 
 - **홈 화면 연동**: 차량 선택 드롭다운, 가격 표시, 설명 모두 DB 기반
 - **API**: GET /api/vehicle-types, GET/POST/PUT/DELETE /api/admin/vehicle-types
 - **자동 시딩**: 최초 실행 시 기본 8종 차량 자동 등록
+- **차량 이미지**: vehicle_types.images (jsonb string[]) - 관리자가 차량별 사진 여러 장 업로드, 첫 번째 사진이 대표 썸네일
+- **이미지 갤러리**: 견적 화면/저장된 견적서에서 차량 썸네일 클릭 시 전체화면 스와이프 갤러리 (좌우 스와이프, 화살표 버튼, 점 인디케이터)
 
 ### Real Estate Tab (2026-02-26 추가)
 - **부동산 탭**: `/realestate` 경로, 관광탭과 동일한 구조 (카테고리 관리 + 매물 추가)

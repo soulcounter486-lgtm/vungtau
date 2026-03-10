@@ -29,8 +29,10 @@ export default function AdminVehicleTypes() {
     roundtripPrice: 0, roundtripLabel: "호치민 ↔ 붕따우 (왕복)",
     cityPickupDropPrice: 0, cityPickupDropLabel: "호치민 ↔ 붕따우(픽드랍+시내)",
     customRoutes: [] as { key: string; label: string; price: number }[],
+    images: [] as string[],
     sortOrder: 0, isActive: true,
   });
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const { data: vehicleTypesList = [], isLoading } = useQuery<VehicleType[]>({
     queryKey: ["/api/admin/vehicle-types"],
@@ -38,7 +40,7 @@ export default function AdminVehicleTypes() {
   });
 
   const resetForm = () => {
-    setFormData({ key: "", nameKo: "", nameEn: "", descriptionKo: "", descriptionEn: "", cityPrice: 0, cityLabel: "붕따우 시내", onewayPrice: 0, onewayLabel: "호치민 ↔ 붕따우 (편도)", hochamOnewayPrice: 0, hochamOnewayLabel: "호치민 ↔ 호짬 (편도)", phanthietOnewayPrice: 0, phanthietOnewayLabel: "호치민 ↔ 판티엣 (편도)", roundtripPrice: 0, roundtripLabel: "호치민 ↔ 붕따우 (왕복)", cityPickupDropPrice: 0, cityPickupDropLabel: "호치민 ↔ 붕따우(픽드랍+시내)", customRoutes: [], sortOrder: 0, isActive: true });
+    setFormData({ key: "", nameKo: "", nameEn: "", descriptionKo: "", descriptionEn: "", cityPrice: 0, cityLabel: "붕따우 시내", onewayPrice: 0, onewayLabel: "호치민 ↔ 붕따우 (편도)", hochamOnewayPrice: 0, hochamOnewayLabel: "호치민 ↔ 호짬 (편도)", phanthietOnewayPrice: 0, phanthietOnewayLabel: "호치민 ↔ 판티엣 (편도)", roundtripPrice: 0, roundtripLabel: "호치민 ↔ 붕따우 (왕복)", cityPickupDropPrice: 0, cityPickupDropLabel: "호치민 ↔ 붕따우(픽드랍+시내)", customRoutes: [], images: [], sortOrder: 0, isActive: true });
     setEditingId(null);
     setShowForm(false);
   };
@@ -54,6 +56,7 @@ export default function AdminVehicleTypes() {
       roundtripPrice: vt.roundtripPrice, roundtripLabel: vt.roundtripLabel || "호치민 ↔ 붕따우 (왕복)",
       cityPickupDropPrice: vt.cityPickupDropPrice, cityPickupDropLabel: vt.cityPickupDropLabel || "호치민 ↔ 붕따우(픽드랍+시내)",
       customRoutes: vt.customRoutes || [],
+      images: vt.images || [],
       sortOrder: vt.sortOrder ?? 0, isActive: vt.isActive ?? true,
     });
     setEditingId(vt.id);
@@ -198,6 +201,45 @@ export default function AdminVehicleTypes() {
                 <Plus className="w-3.5 h-3.5 mr-1" /> 경로 추가
               </Button>
             </div>
+            <div className="border-t pt-4">
+              <Label className="text-sm font-bold mb-3 block">차량 사진</Label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {formData.images.map((img, idx) => (
+                  <div key={idx} className="relative w-20 h-20 rounded overflow-hidden border">
+                    <img src={img} alt={`차량 ${idx + 1}`} className="w-full h-full object-cover" />
+                    <button type="button" className="absolute top-0 right-0 bg-red-500 text-white rounded-bl w-5 h-5 flex items-center justify-center text-xs" onClick={() => setFormData({ ...formData, images: formData.images.filter((_, i) => i !== idx) })} data-testid={`button-remove-vt-image-${idx}`}>×</button>
+                  </div>
+                ))}
+                <label className="w-20 h-20 border-2 border-dashed rounded flex flex-col items-center justify-center cursor-pointer hover:border-primary text-muted-foreground" data-testid="button-add-vt-image">
+                  {uploadingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <><ImagePlus className="w-5 h-5" /><span className="text-[10px] mt-1">추가</span></>}
+                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setUploadingImage(true);
+                    try {
+                      const reader = new FileReader();
+                      reader.onload = async () => {
+                        const base64 = reader.result as string;
+                        const res = await fetch("/api/upload-image", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ base64Data: base64, fileName: file.name, contentType: file.type }) });
+                        if (res.ok) {
+                          const data = await res.json();
+                          setFormData(prev => ({ ...prev, images: [...prev.images, data.url] }));
+                        } else {
+                          toast({ title: "이미지 업로드 실패", variant: "destructive" });
+                        }
+                        setUploadingImage(false);
+                      };
+                      reader.readAsDataURL(file);
+                    } catch {
+                      toast({ title: "이미지 업로드 실패", variant: "destructive" });
+                      setUploadingImage(false);
+                    }
+                    e.target.value = "";
+                  }} />
+                </label>
+              </div>
+              <p className="text-xs text-muted-foreground">첫 번째 사진이 대표 썸네일로 표시됩니다</p>
+            </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Switch checked={formData.isActive} onCheckedChange={(v) => setFormData({ ...formData, isActive: v })} data-testid="switch-vt-active" />
@@ -223,12 +265,16 @@ export default function AdminVehicleTypes() {
             <Card key={vt.id} className={`${!vt.isActive ? "opacity-50" : ""}`}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4">
+                  {vt.images && vt.images.length > 0 && (
+                    <img src={vt.images[0]} alt={vt.nameKo} className="w-14 h-14 rounded object-cover shrink-0" />
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" />
                       <span className="text-xs text-muted-foreground">#{vt.sortOrder}</span>
                       <span className="font-bold text-sm">{vt.nameKo}</span>
                       <span className="text-xs text-muted-foreground">({vt.nameEn})</span>
+                      {vt.images && vt.images.length > 0 && <span className="text-xs text-muted-foreground">📷{vt.images.length}</span>}
                       {!vt.isActive && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded">비활성</span>}
                     </div>
                     <div className="text-xs text-muted-foreground mb-2">key: {vt.key}</div>

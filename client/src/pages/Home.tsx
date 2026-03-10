@@ -475,6 +475,7 @@ export default function Home() {
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [loadedQuoteId, setLoadedQuoteId] = useState<number | null>(null);
+  const [vehicleGallery, setVehicleGallery] = useState<{ images: string[]; name: string; index: number } | null>(null);
   const [quotePeopleCount, setQuotePeopleCount] = useState<number>(1);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
   const isLoadingQuoteRef = useRef(false);
@@ -2504,6 +2505,18 @@ export default function Home() {
                                       </div>
                                     );
                                   })()}
+                                  {field.value && (() => {
+                                    const vtImg = vehicleTypesData.find(v => v.key === field.value);
+                                    if (!vtImg?.images || vtImg.images.length === 0) return null;
+                                    return (
+                                      <div className="mt-2 pt-2 border-t border-slate-200">
+                                        <button type="button" className="flex items-center gap-2" onClick={() => setVehicleGallery({ images: vtImg.images!, name: language === "ko" ? vtImg.nameKo : vtImg.nameEn, index: 0 })} data-testid={`button-vehicle-thumb-${field.value}`}>
+                                          <img src={vtImg.images[0]} alt={vtImg.nameKo} className="w-12 h-12 rounded object-cover border" />
+                                          <span className="text-[10px] text-primary font-medium">사진 보기 ({vtImg.images.length}장)</span>
+                                        </button>
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                               )}
                             </div>
@@ -3924,6 +3937,28 @@ export default function Home() {
           )}
         </DialogContent>
       </Dialog>
+      {vehicleGallery && (
+        <div className="fixed inset-0 z-[10000] bg-black/95 flex items-center justify-center" onClick={() => setVehicleGallery(null)} data-testid="vehicle-gallery-modal">
+          <button type="button" className="absolute top-4 right-4 text-white text-3xl z-10 w-10 h-10 flex items-center justify-center" onClick={() => setVehicleGallery(null)} data-testid="button-close-vehicle-gallery">×</button>
+          <div className="absolute top-4 left-4 text-white text-sm font-medium z-10">{vehicleGallery.name} ({vehicleGallery.index + 1}/{vehicleGallery.images.length})</div>
+          {vehicleGallery.images.length > 1 && vehicleGallery.index > 0 && (
+            <button type="button" className="absolute left-2 top-1/2 -translate-y-1/2 text-white text-4xl z-10 w-12 h-12 flex items-center justify-center bg-black/30 rounded-full" onClick={(e) => { e.stopPropagation(); setVehicleGallery(prev => prev ? { ...prev, index: prev.index - 1 } : null); }} data-testid="button-vehicle-gallery-prev">‹</button>
+          )}
+          {vehicleGallery.images.length > 1 && vehicleGallery.index < vehicleGallery.images.length - 1 && (
+            <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-white text-4xl z-10 w-12 h-12 flex items-center justify-center bg-black/30 rounded-full" onClick={(e) => { e.stopPropagation(); setVehicleGallery(prev => prev ? { ...prev, index: prev.index + 1 } : null); }} data-testid="button-vehicle-gallery-next">›</button>
+          )}
+          <div className="w-full h-full flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()} onTouchStart={(e) => { (e.currentTarget as any)._touchX = e.touches[0].clientX; }} onTouchEnd={(e) => { const startX = (e.currentTarget as any)._touchX; if (startX === undefined) return; const diff = startX - e.changedTouches[0].clientX; if (Math.abs(diff) > 50) { if (diff > 0 && vehicleGallery.index < vehicleGallery.images.length - 1) { setVehicleGallery(prev => prev ? { ...prev, index: prev.index + 1 } : null); } else if (diff < 0 && vehicleGallery.index > 0) { setVehicleGallery(prev => prev ? { ...prev, index: prev.index - 1 } : null); } } }}>
+            <img src={vehicleGallery.images[vehicleGallery.index]} alt={`${vehicleGallery.name} ${vehicleGallery.index + 1}`} className="max-w-full max-h-full object-contain" />
+          </div>
+          {vehicleGallery.images.length > 1 && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+              {vehicleGallery.images.map((_, i) => (
+                <button key={i} type="button" className={`w-2 h-2 rounded-full transition-all ${i === vehicleGallery.index ? "bg-white scale-125" : "bg-white/40"}`} onClick={(e) => { e.stopPropagation(); setVehicleGallery(prev => prev ? { ...prev, index: i } : null); }} data-testid={`button-vehicle-gallery-dot-${i}`} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
