@@ -721,7 +721,7 @@ export function QuoteSummary({ breakdown, isLoading, onSave, isSaving, onPersonC
       <div className="sticky bottom-0 left-0 right-0 z-50 bg-background pt-3 pb-3 border-t border-slate-200 dark:border-slate-700 -mx-4 px-4 mt-4 shadow-[0_-4px_10px_rgba(0,0,0,0.1)]">
         <div className="flex gap-2">
           <Button 
-            className={`${isAuthenticated ? "flex-1" : "w-full"} h-12 text-sm font-bold rounded-xl shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] min-w-0 px-3`}
+            className={`${isAuthenticated ? "flex-1" : "w-full"} h-auto min-h-12 py-2 text-sm font-bold rounded-xl shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] min-w-0 px-3 whitespace-normal text-center leading-tight`}
             onClick={handleDownloadImage}
             disabled={!breakdown || isCapturing}
             data-testid="button-save-quote"
@@ -731,7 +731,7 @@ export function QuoteSummary({ breakdown, isLoading, onSave, isSaving, onPersonC
             ) : (
               <Save className="mr-1.5 h-4 w-4 shrink-0" />
             )}
-            <span className="truncate">{t("quote.save")}</span>
+            {t("quote.save")}
           </Button>
           {isAuthenticated && (
             <Button 
