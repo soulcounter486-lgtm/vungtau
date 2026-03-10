@@ -810,7 +810,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                 )}
                 {depositPaid && !quote.completed && (
                   <span className="text-[10px] bg-green-500 text-white px-1.5 py-0.5 rounded-full shrink-0">
-                    {language === "ko" ? "입금" : "Paid"}
+                    {language === "ko" ? "예약확정" : "Confirmed"}
                   </span>
                 )}
                 <span className={`font-medium ${quote.completed ? "text-slate-500 dark:text-slate-400" : "text-slate-800 dark:text-slate-200"}`}>
