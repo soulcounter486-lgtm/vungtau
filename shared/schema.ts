@@ -38,6 +38,7 @@ export const quotes = pgTable("quotes", {
   peopleCount: integer("people_count").default(1), // 인원수
   assignedBy: text("assigned_by"), // 관리자가 배정한 경우 관리자 ID
   assignedUsers: jsonb("assigned_users").$type<string[]>().default([]), // 여러 명 배정 (userId 배열)
+  vehicleImages: jsonb("vehicle_images").$type<string[]>().default([]), // 견적서 전용 차량 사진
   createdAt: timestamp("created_at").defaultNow(),
 });
 

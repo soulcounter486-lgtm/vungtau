@@ -2015,6 +2015,27 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
     }
   });
 
+  app.patch("/api/quotes/:id/vehicle-images", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user as any;
+      const userId = user?.claims?.sub || user?.id || (req.session as any)?.userId;
+      const userEmail = user?.claims?.email || user?.email;
+      if (!isUserAdmin(userId, userEmail)) {
+        return res.status(403).json({ message: "Only admin can update vehicle images" });
+      }
+      const { vehicleImages } = req.body;
+      if (!Array.isArray(vehicleImages)) {
+        return res.status(400).json({ message: "vehicleImages must be an array" });
+      }
+      const [updated] = await db.update(quotes).set({ vehicleImages }).where(eq(quotes.id, id)).returning();
+      if (!updated) return res.status(404).json({ message: "Quote not found" });
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // 견적서 총금액 및 세부내역 업데이트
   app.patch("/api/quotes/:id/total", isAuthenticated, async (req, res) => {
     try {

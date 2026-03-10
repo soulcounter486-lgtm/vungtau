@@ -69,6 +69,9 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [vehicleGallery, setVehicleGallery] = useState<{ images: string[]; name: string; index: number } | null>(null);
   const { data: vehicleTypesData = [] } = useQuery<VehicleType[]>({ queryKey: ["/api/vehicle-types"] });
+  const [quoteVehicleImages, setQuoteVehicleImages] = useState<string[]>((quote.vehicleImages as string[]) || []);
+  const [isUploadingVehicleImage, setIsUploadingVehicleImage] = useState(false);
+  const vehicleFileInputRef = useRef<HTMLInputElement>(null);
   const [previewProfileIdx, setPreviewProfileIdx] = useState<number | null>(null);
   const [previewProfileList, setPreviewProfileList] = useState<typeof ecoProfiles | null>(null);
   const [previewContext, setPreviewContext] = useState<{ date: string; personIndex: number } | null>(null);
@@ -1149,10 +1152,58 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
                 {breakdown?.vehicle?.price > 0 && (
                   <div className="space-y-1">
                     <div className="flex justify-between font-semibold text-sm text-slate-800">
-                      <span>{language === "ko" ? "차량" : "Vehicle"}</span>
+                      <div className="flex items-center gap-2">
+                        <span>{language === "ko" ? "차량" : "Vehicle"}</span>
+                        {quoteVehicleImages.length > 0 && (
+                          <button type="button" className="flex items-center gap-1" onClick={() => setVehicleGallery({ images: quoteVehicleImages, name: language === "ko" ? "차량 사진" : "Vehicle Photos", index: 0 })} data-testid={`button-quote-vehicle-gallery-${quote.id}`}>
+                            <img src={quoteVehicleImages[0]} alt="차량" className="w-8 h-8 rounded object-cover border" />
+                            <span className="text-[10px] text-primary font-medium">{quoteVehicleImages.length}장</span>
+                          </button>
+                        )}
+                        {isAdmin && !isCapturing && (
+                          <>
+                            <button type="button" className="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full font-medium hover:bg-amber-200" onClick={() => vehicleFileInputRef.current?.click()} data-testid={`button-change-vehicle-photo-${quote.id}`}>
+                              {isUploadingVehicleImage ? <Loader2 className="w-3 h-3 animate-spin inline" /> : <><ImagePlus className="w-3 h-3 inline mr-0.5" />사진{quoteVehicleImages.length > 0 ? "변경" : "추가"}</>}
+                            </button>
+                            <input ref={vehicleFileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={async (e) => {
+                              const files = e.target.files;
+                              if (!files || files.length === 0) return;
+                              setIsUploadingVehicleImage(true);
+                              try {
+                                const newImages: string[] = [];
+                                for (const file of Array.from(files)) {
+                                  const base64 = await new Promise<string>((resolve) => { const r = new FileReader(); r.onload = () => resolve(r.result as string); r.readAsDataURL(file); });
+                                  const res = await fetch("/api/upload-image", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ base64Data: base64, fileName: file.name, contentType: file.type }) });
+                                  if (res.ok) { const data = await res.json(); newImages.push(data.url); }
+                                }
+                                if (newImages.length > 0) {
+                                  const updated = [...quoteVehicleImages, ...newImages];
+                                  const patchRes = await fetch(`/api/quotes/${quote.id}/vehicle-images`, { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ vehicleImages: updated }) });
+                                  if (patchRes.ok) {
+                                    setQuoteVehicleImages(updated);
+                                    queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
+                                  }
+                                }
+                              } catch { }
+                              setIsUploadingVehicleImage(false);
+                              e.target.value = "";
+                            }} />
+                            {quoteVehicleImages.length > 0 && (
+                              <button type="button" className="text-[10px] text-red-500 hover:text-red-700" onClick={async () => {
+                                if (!confirm("차량 사진을 모두 삭제하시겠습니까?")) return;
+                                const res = await fetch(`/api/quotes/${quote.id}/vehicle-images`, { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ vehicleImages: [] }) });
+                                if (res.ok) { setQuoteVehicleImages([]); queryClient.invalidateQueries({ queryKey: ["/api/quotes"] }); }
+                              }} data-testid={`button-delete-vehicle-photos-${quote.id}`}>
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
                       <span>${vehicleTotal.toLocaleString()}</span>
                     </div>
                     {(() => {
+                      if (quoteVehicleImages.length > 0) return null;
                       const vtNames = new Set<string>();
                       breakdown.vehicle.description.split(" | ").forEach((d: string) => {
                         const m = d.match(/^\d{4}-\d{2}-\d{2}:\s*(.+?)\s*\(/);
