@@ -69,6 +69,10 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
   const [ecoRepickMode, setEcoRepickMode] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [vehicleGallery, setVehicleGallery] = useState<{ images: string[]; name: string; index: number } | null>(null);
+  useEffect(() => {
+    if (vehicleGallery) { document.body.style.overflow = "hidden"; } else { document.body.style.overflow = ""; }
+    return () => { document.body.style.overflow = ""; };
+  }, [vehicleGallery]);
   const { data: vehicleTypesData = [] } = useQuery<VehicleType[]>({ queryKey: ["/api/vehicle-types"] });
   const [quoteVehicleImages, setQuoteVehicleImages] = useState<string[]>((quote.vehicleImages as string[]) || []);
   const [isUploadingVehicleImage, setIsUploadingVehicleImage] = useState(false);
@@ -2280,7 +2284,7 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
         </DialogContent>
       </Dialog>
       {vehicleGallery && createPortal(
-        <div className="fixed inset-0 z-[99999] bg-black flex items-center justify-center" onClick={() => setVehicleGallery(null)} data-testid="vehicle-gallery-modal-quote" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0 }}>
+        <div className="fixed inset-0 z-[99999] bg-black flex items-center justify-center" onClick={() => setVehicleGallery(null)} data-testid="vehicle-gallery-modal-quote" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, touchAction: "none", overscrollBehavior: "none" }}>
           <button type="button" className="absolute top-4 right-4 z-[100000] bg-black/60 hover:bg-black/80 text-white rounded-full w-12 h-12 flex items-center justify-center text-2xl font-bold shadow-lg border border-white/20" onClick={(e) => { e.stopPropagation(); setVehicleGallery(null); }} data-testid="button-close-vehicle-gallery-quote">✕</button>
           <div className="absolute top-4 left-4 text-white text-sm font-medium z-[100000] bg-black/60 px-3 py-1 rounded-full">{vehicleGallery.name} ({vehicleGallery.index + 1}/{vehicleGallery.images.length})</div>
           {vehicleGallery.images.length > 1 && vehicleGallery.index > 0 && (
