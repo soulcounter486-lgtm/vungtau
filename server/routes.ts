@@ -4831,22 +4831,38 @@ ${adultContext}`;
       const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
       if (!bucketId) return res.status(500).json({ error: "Object storage not configured" });
 
+      if (!fs.existsSync("/tmp/uploads")) fs.mkdirSync("/tmp/uploads", { recursive: true });
+
       const inputPath = req.file.path;
       const outputPath = `${inputPath}_compressed.mp4`;
 
+      let ffmpegPath = "ffmpeg";
       try {
-        await execFileAsync("ffmpeg", [
+        const { stdout } = await execFileAsync("which", ["ffmpeg"]);
+        ffmpegPath = stdout.trim();
+        console.log("ffmpeg found at:", ffmpegPath);
+      } catch {
+        console.log("ffmpeg 'which' failed, trying default path");
+      }
+
+      try {
+        console.log(`Starting compression: ${req.file.originalname} (${(req.file.size / 1024 / 1024).toFixed(1)}MB)`);
+        await execFileAsync(ffmpegPath, [
           "-i", inputPath,
           "-vf", "scale='min(720,iw)':'min(720,ih)':force_original_aspect_ratio=decrease",
           "-c:v", "libx264", "-preset", "fast", "-crf", "28",
           "-c:a", "aac", "-b:a", "64k", "-ac", "1",
           "-movflags", "+faststart",
           "-y", outputPath
-        ], { timeout: 120000 });
+        ], { timeout: 300000, maxBuffer: 10 * 1024 * 1024 });
       } catch (ffErr: any) {
-        console.error("ffmpeg error:", ffErr.stderr?.substring(0, 500));
+        console.error("ffmpeg error code:", ffErr.code);
+        console.error("ffmpeg stderr:", ffErr.stderr?.substring(0, 1000));
+        console.error("ffmpeg stdout:", ffErr.stdout?.substring(0, 500));
+        console.error("ffmpeg message:", ffErr.message?.substring(0, 500));
         try { fs.unlinkSync(inputPath); } catch {}
-        return res.status(500).json({ error: "Video compression failed" });
+        try { fs.unlinkSync(outputPath); } catch {}
+        return res.status(500).json({ error: "Video compression failed: " + (ffErr.message || "unknown error").substring(0, 200) });
       }
 
       const compressedBuffer = fs.readFileSync(outputPath);
