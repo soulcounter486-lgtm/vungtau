@@ -2,6 +2,11 @@ import type { Express } from "express";
 import type { Server } from "http";
 import path from "path";
 import fs from "fs";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import multer from "multer";
+const execFileAsync = promisify(execFile);
+const upload = multer({ dest: "/tmp/uploads", limits: { fileSize: 200 * 1024 * 1024 } });
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
@@ -4817,6 +4822,53 @@ ${adultContext}`;
     } catch (error) {
       console.error("Download blog images error:", error);
       res.status(500).json({ error: "Failed to download images" });
+    }
+  });
+
+  app.post("/api/upload-video", isAuthenticated, upload.single("video"), async (req: any, res) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: "No video file" });
+      const bucketId = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+      if (!bucketId) return res.status(500).json({ error: "Object storage not configured" });
+
+      const inputPath = req.file.path;
+      const outputPath = `${inputPath}_compressed.mp4`;
+
+      try {
+        await execFileAsync("ffmpeg", [
+          "-i", inputPath,
+          "-vf", "scale='min(720,iw)':'min(720,ih)':force_original_aspect_ratio=decrease",
+          "-c:v", "libx264", "-preset", "fast", "-crf", "28",
+          "-c:a", "aac", "-b:a", "64k", "-ac", "1",
+          "-movflags", "+faststart",
+          "-y", outputPath
+        ], { timeout: 120000 });
+      } catch (ffErr: any) {
+        console.error("ffmpeg error:", ffErr.stderr?.substring(0, 500));
+        try { fs.unlinkSync(inputPath); } catch {}
+        return res.status(500).json({ error: "Video compression failed" });
+      }
+
+      const compressedBuffer = fs.readFileSync(outputPath);
+      const uniqueFileName = `video_${Date.now()}_${Math.random().toString(36).substring(7)}.mp4`;
+      const bucket = objectStorageClient.bucket(bucketId);
+      const file = bucket.file(`public/${uniqueFileName}`);
+      await file.save(compressedBuffer, {
+        contentType: "video/mp4",
+        metadata: { cacheControl: "public, max-age=31536000" },
+      });
+
+      try { fs.unlinkSync(inputPath); } catch {}
+      try { fs.unlinkSync(outputPath); } catch {}
+
+      const publicUrl = `/api/public-images/${uniqueFileName}`;
+      const originalSize = req.file.size;
+      const compressedSize = compressedBuffer.length;
+      console.log(`Video upload: ${(originalSize / 1024 / 1024).toFixed(1)}MB → ${(compressedSize / 1024 / 1024).toFixed(1)}MB`);
+      res.json({ url: publicUrl, success: true, originalSize, compressedSize });
+    } catch (error) {
+      console.error("Video upload error:", error);
+      res.status(500).json({ error: "Failed to upload video" });
     }
   });
 

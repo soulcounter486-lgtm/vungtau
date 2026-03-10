@@ -522,6 +522,8 @@ function VillaForm({ villa, onSubmit, isLoading, onCancel }: VillaFormProps) {
       alert("이미지 업로드 실패: " + error.message);
     },
   });
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [videoProgress, setVideoProgress] = useState("");
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -530,6 +532,33 @@ function VillaForm({ villa, onSubmit, isLoading, onCancel }: VillaFormProps) {
     for (let i = 0; i < files.length; i++) {
       await uploadFile(files[i]);
     }
+    e.target.value = "";
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setIsUploadingVideo(true);
+    try {
+      for (const file of Array.from(files)) {
+        setVideoProgress(`${file.name} 압축 및 업로드 중... (${(file.size / 1024 / 1024).toFixed(1)}MB)`);
+        const formData = new FormData();
+        formData.append("video", file);
+        const res = await fetch("/api/upload-video", { method: "POST", body: formData, credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          setFormData(prev => ({ ...prev, images: [...prev.images, data.url] }));
+          setVideoProgress(`완료! ${(data.originalSize / 1024 / 1024).toFixed(1)}MB → ${(data.compressedSize / 1024 / 1024).toFixed(1)}MB`);
+        } else {
+          const err = await res.json().catch(() => ({ error: "업로드 실패" }));
+          alert("동영상 업로드 실패: " + (err.error || "알 수 없는 오류"));
+        }
+      }
+    } catch (err) {
+      alert("동영상 업로드 중 오류가 발생했습니다");
+    }
+    setIsUploadingVideo(false);
+    setTimeout(() => setVideoProgress(""), 3000);
     e.target.value = "";
   };
 
@@ -772,6 +801,18 @@ function VillaForm({ villa, onSubmit, isLoading, onCancel }: VillaFormProps) {
             </label>
             <p className="text-xs text-muted-foreground mt-1">JPG, PNG 이미지를 직접 업로드 하세요</p>
           </div>
+          <div className="mt-2">
+            <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md cursor-pointer hover:bg-blue-700 transition-colors w-fit">
+              {isUploadingVideo ? (
+                <><Loader2 className="h-4 w-4 animate-spin" />동영상 압축 중...</>
+              ) : (
+                <><Upload className="h-4 w-4" />동영상 파일 선택</>
+              )}
+              <input type="file" accept="video/*" multiple className="hidden" onChange={handleVideoUpload} disabled={isUploadingVideo} data-testid="input-video-upload" />
+            </label>
+            {videoProgress && <p className="text-xs text-blue-600 mt-1">{videoProgress}</p>}
+            <p className="text-xs text-muted-foreground mt-1">MP4, MOV 등 동영상 파일 (자동 압축됨, 최대 200MB)</p>
+          </div>
         </div>
 
         <div>
@@ -791,21 +832,39 @@ function VillaForm({ villa, onSubmit, isLoading, onCancel }: VillaFormProps) {
             <div className="grid grid-cols-4 gap-2 mt-3">
               {formData.images.map((img: string, idx: number) => (
                 <div key={idx} className="relative">
-                  <img
-                    src={img}
-                    alt={`사진 ${idx + 1}`}
-                    className={`h-20 w-full object-cover rounded-md cursor-pointer hover:opacity-80 transition-opacity ${idx === 0 ? "ring-2 ring-primary" : ""}`}
-                    onError={(e) => (e.currentTarget.src = "/placeholder.png")}
-                    onClick={() => {
-                      if (idx !== 0) {
-                        const newImages = [...formData.images];
-                        const [selected] = newImages.splice(idx, 1);
-                        newImages.unshift(selected);
-                        setFormData({ ...formData, images: newImages });
-                      }
-                    }}
-                    title={idx === 0 ? "현재 대표 이미지" : "클릭하여 대표 이미지로 설정"}
-                  />
+                  {(/\.(mp4|mov|webm|avi)$/i.test(img) || (img.includes("video_") && img.includes(".mp4"))) ? (
+                    <div
+                      className={`h-20 w-full rounded-md cursor-pointer hover:opacity-80 transition-opacity bg-gray-800 flex items-center justify-center ${idx === 0 ? "ring-2 ring-primary" : ""}`}
+                      onClick={() => {
+                        if (idx !== 0) {
+                          const newImages = [...formData.images];
+                          const [selected] = newImages.splice(idx, 1);
+                          newImages.unshift(selected);
+                          setFormData({ ...formData, images: newImages });
+                        }
+                      }}
+                      title={idx === 0 ? "현재 대표" : "클릭하여 대표로 설정"}
+                    >
+                      <span className="text-white text-2xl">▶</span>
+                      <span className="absolute bottom-0 left-0 bg-blue-600 text-white text-[9px] px-1 rounded-tr">MP4</span>
+                    </div>
+                  ) : (
+                    <img
+                      src={img}
+                      alt={`사진 ${idx + 1}`}
+                      className={`h-20 w-full object-cover rounded-md cursor-pointer hover:opacity-80 transition-opacity ${idx === 0 ? "ring-2 ring-primary" : ""}`}
+                      onError={(e) => (e.currentTarget.src = "/placeholder.png")}
+                      onClick={() => {
+                        if (idx !== 0) {
+                          const newImages = [...formData.images];
+                          const [selected] = newImages.splice(idx, 1);
+                          newImages.unshift(selected);
+                          setFormData({ ...formData, images: newImages });
+                        }
+                      }}
+                      title={idx === 0 ? "현재 대표 이미지" : "클릭하여 대표 이미지로 설정"}
+                    />
+                  )}
                   {idx === 0 && (
                     <span className="absolute top-0 left-0 bg-primary text-white text-[10px] px-1 rounded-br">대표</span>
                   )}

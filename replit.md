@@ -20,6 +20,14 @@ A travel quote calculator application for generating custom trip estimates. The 
 - **차량 이미지**: vehicle_types.images (jsonb string[]) - 관리자가 차량별 사진 여러 장 업로드, 첫 번째 사진이 대표 썸네일
 - **이미지 갤러리**: 견적 화면/저장된 견적서에서 차량 썸네일 클릭 시 전체화면 스와이프 갤러리 (좌우 스와이프, 화살표 버튼, 점 인디케이터)
 
+### Villa Video Upload (2026-03-10 추가)
+- **동영상 업로드**: AdminVillas에서 동영상 파일 업로드 (MP4, MOV 등, 최대 200MB)
+- **서버 압축**: ffmpeg로 자동 압축 (720p, CRF 28, fast preset, AAC 64k mono)
+- **API**: POST /api/upload-video (multer multipart, 인증 필요)
+- **갤러리 재생**: Home.tsx 빌라 갤러리에서 동영상 자동 감지 및 재생 (video 태그, controls, playsInline)
+- **비활성 정지**: 갤러리 슬라이드 변경 시 비활성 동영상 자동 일시정지
+- **동영상 감지**: 파일 확장자 기반 (.mp4, .mov, .webm, .avi) + video_ 패턴 fallback
+
 ### Real Estate Tab (2026-02-26 추가)
 - **부동산 탭**: `/realestate` 경로, 관광탭과 동일한 구조 (카테고리 관리 + 매물 추가)
 - **DB 테이블**: real_estate_categories (place_categories와 동일 구조), real_estate_listings (places와 동일 구조)

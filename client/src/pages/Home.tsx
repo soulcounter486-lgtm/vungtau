@@ -3581,24 +3581,38 @@ export default function Home() {
               }
             }}
           >
-            {selectedVilla.images.map((img, idx) => (
-              <img
-                key={idx}
-                src={img}
-                alt={`${selectedVilla.name} - ${idx + 1}`}
-                className="absolute max-w-full max-h-full object-contain select-none transition-opacity duration-300 ease-in-out"
-                style={{ 
-                  maxHeight: '100%', 
-                  maxWidth: '100%',
-                  opacity: idx === galleryIndex ? 1 : 0,
-                  pointerEvents: idx === galleryIndex ? 'auto' : 'none',
-                  transform: idx === galleryIndex ? `scale(${zoomScale}) translate(${panOffset.x / zoomScale}px, ${panOffset.y / zoomScale}px)` : undefined,
-                  transformOrigin: idx === galleryIndex ? `${zoomOrigin.x}% ${zoomOrigin.y}%` : undefined,
-                }}
-                draggable={false}
-                data-testid={idx === galleryIndex ? `gallery-image-${idx}` : undefined}
-              />
-            ))}
+            {selectedVilla.images.map((img, idx) => {
+              const isVideo = /\.(mp4|mov|webm|avi)$/i.test(img) || (img.includes("video_") && img.includes(".mp4"));
+              return isVideo ? (
+                <video
+                  key={idx}
+                  src={idx === galleryIndex ? img : undefined}
+                  controls
+                  playsInline
+                  autoPlay={idx === galleryIndex}
+                  className="absolute max-w-full max-h-full object-contain select-none transition-opacity duration-300 ease-in-out"
+                  style={{ maxHeight: '100%', maxWidth: '100%', opacity: idx === galleryIndex ? 1 : 0, pointerEvents: idx === galleryIndex ? 'auto' : 'none' }}
+                  data-testid={idx === galleryIndex ? `gallery-video-${idx}` : undefined}
+                  ref={(el) => { if (el && idx !== galleryIndex) { el.pause(); el.currentTime = 0; } }}
+                />
+              ) : (
+                <img
+                  key={idx}
+                  src={img}
+                  alt={`${selectedVilla.name} - ${idx + 1}`}
+                  className="absolute max-w-full max-h-full object-contain select-none transition-opacity duration-300 ease-in-out"
+                  style={{ 
+                    maxHeight: '100%', maxWidth: '100%',
+                    opacity: idx === galleryIndex ? 1 : 0,
+                    pointerEvents: idx === galleryIndex ? 'auto' : 'none',
+                    transform: idx === galleryIndex ? `scale(${zoomScale}) translate(${panOffset.x / zoomScale}px, ${panOffset.y / zoomScale}px)` : undefined,
+                    transformOrigin: idx === galleryIndex ? `${zoomOrigin.x}% ${zoomOrigin.y}%` : undefined,
+                  }}
+                  draggable={false}
+                  data-testid={idx === galleryIndex ? `gallery-image-${idx}` : undefined}
+                />
+              );
+            })}
             
             {/* 네비게이션 버튼 */}
             {selectedVilla.images.length > 1 && (
@@ -3638,7 +3652,13 @@ export default function Home() {
                   )}
                   data-testid={`gallery-thumb-${idx}`}
                 >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
+                  {(/\.(mp4|mov|webm|avi)$/i.test(img) || (img.includes("video_") && img.includes(".mp4"))) ? (
+                    <div className="w-full h-full bg-gray-800 flex items-center justify-center relative">
+                      <span className="text-white text-xs">▶</span>
+                    </div>
+                  ) : (
+                    <img src={img} alt="" className="w-full h-full object-cover" />
+                  )}
                 </div>
               ))}
             </div>
