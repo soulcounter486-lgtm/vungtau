@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { EcoProfile, VehicleType } from "@shared/schema";
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useLanguage } from "@/lib/i18n";
 import { useQuotes } from "@/hooks/use-quotes";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -2278,27 +2279,28 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
           </div>
         </DialogContent>
       </Dialog>
-      {vehicleGallery && (
-        <div className="fixed inset-0 z-[10000] bg-black/95 flex items-center justify-center" onClick={() => setVehicleGallery(null)} data-testid="vehicle-gallery-modal-quote">
-          <button type="button" className="absolute top-4 right-4 text-white text-3xl z-10 w-10 h-10 flex items-center justify-center" onClick={() => setVehicleGallery(null)} data-testid="button-close-vehicle-gallery-quote">×</button>
-          <div className="absolute top-4 left-4 text-white text-sm font-medium z-10">{vehicleGallery.name} ({vehicleGallery.index + 1}/{vehicleGallery.images.length})</div>
+      {vehicleGallery && createPortal(
+        <div className="fixed inset-0 z-[99999] bg-black flex items-center justify-center" onClick={() => setVehicleGallery(null)} data-testid="vehicle-gallery-modal-quote" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0 }}>
+          <button type="button" className="absolute top-4 right-4 z-[100000] bg-black/60 hover:bg-black/80 text-white rounded-full w-12 h-12 flex items-center justify-center text-2xl font-bold shadow-lg border border-white/20" onClick={(e) => { e.stopPropagation(); setVehicleGallery(null); }} data-testid="button-close-vehicle-gallery-quote">✕</button>
+          <div className="absolute top-4 left-4 text-white text-sm font-medium z-[100000] bg-black/60 px-3 py-1 rounded-full">{vehicleGallery.name} ({vehicleGallery.index + 1}/{vehicleGallery.images.length})</div>
           {vehicleGallery.images.length > 1 && vehicleGallery.index > 0 && (
-            <button type="button" className="absolute left-2 top-1/2 -translate-y-1/2 text-white text-4xl z-10 w-12 h-12 flex items-center justify-center bg-black/30 rounded-full" onClick={(e) => { e.stopPropagation(); setVehicleGallery(prev => prev ? { ...prev, index: prev.index - 1 } : null); }}>‹</button>
+            <button type="button" className="absolute left-2 top-1/2 -translate-y-1/2 text-white text-4xl z-[100000] w-12 h-12 flex items-center justify-center bg-black/50 rounded-full" onClick={(e) => { e.stopPropagation(); setVehicleGallery(prev => prev ? { ...prev, index: prev.index - 1 } : null); }}>‹</button>
           )}
           {vehicleGallery.images.length > 1 && vehicleGallery.index < vehicleGallery.images.length - 1 && (
-            <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-white text-4xl z-10 w-12 h-12 flex items-center justify-center bg-black/30 rounded-full" onClick={(e) => { e.stopPropagation(); setVehicleGallery(prev => prev ? { ...prev, index: prev.index + 1 } : null); }}>›</button>
+            <button type="button" className="absolute right-2 top-1/2 -translate-y-1/2 text-white text-4xl z-[100000] w-12 h-12 flex items-center justify-center bg-black/50 rounded-full" onClick={(e) => { e.stopPropagation(); setVehicleGallery(prev => prev ? { ...prev, index: prev.index + 1 } : null); }}>›</button>
           )}
           <div className="w-full h-full flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()} onTouchStart={(e) => { (e.currentTarget as any)._touchX = e.touches[0].clientX; }} onTouchEnd={(e) => { const startX = (e.currentTarget as any)._touchX; if (startX === undefined) return; const diff = startX - e.changedTouches[0].clientX; if (Math.abs(diff) > 50) { if (diff > 0 && vehicleGallery.index < vehicleGallery.images.length - 1) { setVehicleGallery(prev => prev ? { ...prev, index: prev.index + 1 } : null); } else if (diff < 0 && vehicleGallery.index > 0) { setVehicleGallery(prev => prev ? { ...prev, index: prev.index - 1 } : null); } } }}>
             <img src={vehicleGallery.images[vehicleGallery.index]} alt={`${vehicleGallery.name} ${vehicleGallery.index + 1}`} className="max-w-full max-h-full object-contain" />
           </div>
           {vehicleGallery.images.length > 1 && (
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-[100000]">
               {vehicleGallery.images.map((_, i) => (
-                <button key={i} type="button" className={`w-2 h-2 rounded-full transition-all ${i === vehicleGallery.index ? "bg-white scale-125" : "bg-white/40"}`} onClick={(e) => { e.stopPropagation(); setVehicleGallery(prev => prev ? { ...prev, index: i } : null); }} />
+                <button key={i} type="button" className={`w-2.5 h-2.5 rounded-full transition-all ${i === vehicleGallery.index ? "bg-white scale-125" : "bg-white/40"}`} onClick={(e) => { e.stopPropagation(); setVehicleGallery(prev => prev ? { ...prev, index: i } : null); }} />
               ))}
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
