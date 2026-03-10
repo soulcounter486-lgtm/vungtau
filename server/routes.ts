@@ -2053,9 +2053,13 @@ Sitemap: https://vungtau.blog/sitemap.xml`);
         return res.status(403).json({ message: "Only admin can update total price" });
       }
 
-      const { totalPrice, breakdown, depositAmount, peopleCount } = req.body;
+      const { totalPrice, breakdown, depositAmount, peopleCount, customerName } = req.body;
       if (typeof totalPrice !== "number" || totalPrice < 0) {
         return res.status(400).json({ message: "Invalid total price" });
+      }
+
+      if (customerName !== undefined) {
+        await db.update(quotes).set({ customerName }).where(eq(quotes.id, id));
       }
 
       const quote = await storage.updateQuoteTotalAndBreakdown(id, totalPrice, breakdown, depositAmount, peopleCount);

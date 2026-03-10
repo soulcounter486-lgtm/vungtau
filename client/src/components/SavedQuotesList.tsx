@@ -774,7 +774,8 @@ function QuoteItem({ quote, language, currencyInfo, exchangeRate, onDelete, isDe
       await apiRequest("PATCH", `/api/quotes/${quote.id}/total`, { 
         totalPrice: adjustedTotal,
         breakdown: updatedBreakdown,
-        depositAmount: depositAmount
+        depositAmount: depositAmount,
+        customerName: customerName
       });
       queryClient.invalidateQueries({ queryKey: ["/api/quotes"] });
       setVillaAdjustments({});
