@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Plus, Trash2, Save, Loader2, Car, GripVertical, X } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Loader2, Car, GripVertical, X, ImagePlus } from "lucide-react";
 import { Link } from "wouter";
 import type { VehicleType } from "@shared/schema";
 

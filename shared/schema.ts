@@ -640,6 +640,7 @@ export const vehicleTypes = pgTable("vehicle_types", {
   cityPickupDropPrice: integer("city_pickup_drop_price").notNull().default(0),
   cityPickupDropLabel: text("city_pickup_drop_label").default("호치민 ↔ 붕따우(픽드랍+시내)"),
   customRoutes: jsonb("custom_routes").$type<{ key: string; label: string; price: number }[]>().default([]),
+  images: jsonb("images").$type<string[]>().default([]),
   sortOrder: integer("sort_order").default(0),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
