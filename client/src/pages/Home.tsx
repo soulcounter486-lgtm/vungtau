@@ -2008,11 +2008,26 @@ export default function Home() {
                               </div>
                             )}
                           </div>
-                          {/* 사진 클릭 안내 */}
+                          {/* 사진 클릭 안내 + 동영상 버튼 */}
                           {selectedVilla.images && selectedVilla.images.length > 1 && (
-                            <p className="text-center text-xs text-muted-foreground py-1.5 bg-muted/30">
-                              👆 더 많은 사진을 보려면 클릭하세요
-                            </p>
+                            <div className="flex items-center justify-center gap-3 py-1.5 bg-muted/30">
+                              <p className="text-xs text-muted-foreground">
+                                👆 더 많은 사진을 보려면 클릭하세요
+                              </p>
+                              {selectedVilla.images.some(img => /\.(mp4|mov|webm|avi)$/i.test(img) || (img.includes("video_") && img.includes(".mp4"))) && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const vidIdx = selectedVilla.images!.findIndex(img => /\.(mp4|mov|webm|avi)$/i.test(img) || (img.includes("video_") && img.includes(".mp4")));
+                                    if (vidIdx >= 0) { setGalleryIndex(vidIdx); setGalleryOpen(true); }
+                                  }}
+                                  className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 text-white text-xs rounded-full hover:bg-blue-700 transition-colors"
+                                  data-testid="button-villa-video"
+                                >
+                                  ▶ 동영상 보기
+                                </button>
+                              )}
+                            </div>
                           )}
                           <div className="p-4 bg-card">
                             <div className="grid grid-cols-2 gap-2 text-sm">
