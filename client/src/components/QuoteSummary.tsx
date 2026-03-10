@@ -721,31 +721,31 @@ export function QuoteSummary({ breakdown, isLoading, onSave, isSaving, onPersonC
       <div className="sticky bottom-0 left-0 right-0 z-50 bg-background pt-3 pb-3 border-t border-slate-200 dark:border-slate-700 -mx-4 px-4 mt-4 shadow-[0_-4px_10px_rgba(0,0,0,0.1)]">
         <div className="flex gap-2">
           <Button 
-            className={`${isAuthenticated ? "flex-1" : "w-full"} h-12 text-base font-bold rounded-xl shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]`}
+            className={`${isAuthenticated ? "flex-1" : "w-full"} h-12 text-sm font-bold rounded-xl shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] min-w-0 px-3`}
             onClick={handleDownloadImage}
             disabled={!breakdown || isCapturing}
             data-testid="button-save-quote"
           >
             {isCapturing ? (
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin shrink-0" />
             ) : (
-              <Save className="mr-2 h-5 w-5" />
+              <Save className="mr-1.5 h-4 w-4 shrink-0" />
             )}
-            {t("quote.save")}
+            <span className="truncate">{t("quote.save")}</span>
           </Button>
           {isAuthenticated && (
             <Button 
-              className="flex-1 h-12 text-base font-bold rounded-xl shadow-lg shadow-green-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] bg-green-600 hover:bg-green-700"
+              className="flex-1 h-12 text-sm font-bold rounded-xl shadow-lg shadow-green-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] bg-green-600 hover:bg-green-700 min-w-0 px-3"
               onClick={onSave}
               disabled={!breakdown || isSaving}
               data-testid="button-save-data"
             >
               {isSaving ? (
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin shrink-0" />
               ) : (
-                <FileText className="mr-2 h-5 w-5" />
+                <FileText className="mr-1.5 h-4 w-4 shrink-0" />
               )}
-              {language === "ko" ? "견적서 저장" : "Save Quote"}
+              <span className="truncate">{language === "ko" ? "견적서 저장" : "Save Quote"}</span>
             </Button>
           )}
         </div>
