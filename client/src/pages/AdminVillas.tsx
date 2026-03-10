@@ -541,24 +541,54 @@ function VillaForm({ villa, onSubmit, isLoading, onCancel }: VillaFormProps) {
     setIsUploadingVideo(true);
     try {
       for (const file of Array.from(files)) {
-        setVideoProgress(`${file.name} 압축 및 업로드 중... (${(file.size / 1024 / 1024).toFixed(1)}MB)`);
-        const formData = new FormData();
-        formData.append("video", file);
-        const res = await fetch("/api/upload-video", { method: "POST", body: formData, credentials: "include" });
-        if (res.ok) {
-          const data = await res.json();
-          setFormData(prev => ({ ...prev, images: [...prev.images, data.url] }));
-          setVideoProgress(`완료! ${(data.originalSize / 1024 / 1024).toFixed(1)}MB → ${(data.compressedSize / 1024 / 1024).toFixed(1)}MB`);
-        } else {
-          const err = await res.json().catch(() => ({ error: "업로드 실패" }));
-          alert("동영상 업로드 실패: " + (err.error || "알 수 없는 오류"));
+        const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+        const startTime = Date.now();
+        const timerRef = setInterval(() => {
+          const elapsed = Math.floor((Date.now() - startTime) / 1000);
+          setVideoProgress(`${file.name} 서버 압축 중... (${sizeMB}MB) - ${elapsed}초 경과`);
+        }, 1000);
+        setVideoProgress(`${file.name} 업로드 중... (${sizeMB}MB)`);
+        try {
+          const result = await new Promise<any>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/api/upload-video");
+            xhr.withCredentials = true;
+            xhr.upload.onprogress = (ev) => {
+              if (ev.lengthComputable) {
+                const pct = Math.round((ev.loaded / ev.total) * 100);
+                if (pct < 100) setVideoProgress(`${file.name} 업로드 ${pct}%... (${sizeMB}MB)`);
+                else setVideoProgress(`${file.name} 서버 압축 중... (${sizeMB}MB) - 잠시 기다려주세요`);
+              }
+            };
+            xhr.onload = () => {
+              clearInterval(timerRef);
+              try { resolve(JSON.parse(xhr.responseText)); } catch { reject(new Error("응답 파싱 실패")); }
+            };
+            xhr.onerror = () => { clearInterval(timerRef); reject(new Error("네트워크 오류")); };
+            xhr.ontimeout = () => { clearInterval(timerRef); reject(new Error("시간 초과")); };
+            xhr.timeout = 300000;
+            const fd = new FormData();
+            fd.append("video", file);
+            xhr.send(fd);
+          });
+          clearInterval(timerRef);
+          if (result.success) {
+            setFormData(prev => ({ ...prev, images: [...prev.images, result.url] }));
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            setVideoProgress(`완료! ${sizeMB}MB → ${(result.compressedSize / 1024 / 1024).toFixed(1)}MB (${elapsed}초)`);
+          } else {
+            alert("동영상 업로드 실패: " + (result.error || "알 수 없는 오류"));
+          }
+        } catch (err: any) {
+          clearInterval(timerRef);
+          alert("동영상 업로드 실패: " + (err.message || "알 수 없는 오류"));
         }
       }
     } catch (err) {
       alert("동영상 업로드 중 오류가 발생했습니다");
     }
     setIsUploadingVideo(false);
-    setTimeout(() => setVideoProgress(""), 3000);
+    setTimeout(() => setVideoProgress(""), 5000);
     e.target.value = "";
   };
 
