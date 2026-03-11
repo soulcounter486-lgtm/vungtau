@@ -299,11 +299,13 @@ export default function AdminQuoteCategories() {
       </div>
       <div className="space-y-2">
         <Label>설명</Label>
-        <Input
+        <textarea
           data-testid="input-category-description"
           value={form.description}
           onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))}
-          placeholder="카테고리 설명"
+          placeholder="카테고리 설명 (줄바꿈/공백 그대로 반영됩니다)"
+          rows={3}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
         />
       </div>
       <div className="grid grid-cols-2 gap-3">
