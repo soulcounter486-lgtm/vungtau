@@ -2965,7 +2965,7 @@ export default function Home() {
                     <div className="mb-2 flex flex-wrap gap-1">
                       {catOptions.map((opt: any, oi: number) => (
                         <span key={oi} className="text-xs bg-indigo-500/10 text-indigo-400 rounded-full px-2 py-0.5">
-                          {opt.name}: ${opt.price}/{cat.unitLabel}
+                          {opt.name}: ${opt.price}/{opt.unitLabel || cat.unitLabel}
                         </span>
                       ))}
                     </div>
@@ -3059,11 +3059,13 @@ export default function Home() {
                       </div>
                       {schedules.map((sched: any, idx: number) => {
                         const schedPrice = getSchedulePrice(sched);
+                        const selectedOptObj = hasOptions && sched.selectedOption ? catOptions.find((o: any) => o.name === sched.selectedOption) : null;
+                        const schedUnit = selectedOptObj?.unitLabel || cat.unitLabel;
                         return (
                           <div key={idx} className="flex justify-between text-indigo-300 text-xs">
                             <span>
                               {hasOptions && sched.selectedOption ? `${sched.selectedOption} ` : ""}
-                              ${schedPrice} × {sched.quantity || 1}{cat.unitLabel}
+                              ${schedPrice} × {sched.quantity || 1}{schedUnit}
                             </span>
                             {sched.date && <span>{sched.date}</span>}
                           </div>

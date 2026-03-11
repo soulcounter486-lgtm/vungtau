@@ -17,6 +17,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -32,6 +39,7 @@ interface CategoryOption {
   name: string;
   price: number;
   description?: string;
+  unitLabel?: string;
 }
 
 interface CategoryForm {
@@ -315,12 +323,20 @@ export default function AdminQuoteCategories() {
         </div>
         <div className="space-y-2">
           <Label>단위</Label>
-          <Input
-            data-testid="input-category-unit"
+          <Select
             value={form.unitLabel}
-            onChange={(e) => setForm(prev => ({ ...prev, unitLabel: e.target.value }))}
-            placeholder="인, 회, 팀, 건"
-          />
+            onValueChange={(val) => setForm(prev => ({ ...prev, unitLabel: val }))}
+          >
+            <SelectTrigger data-testid="select-category-unit">
+              <SelectValue placeholder="단위 선택" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="인">인 (1인당 가격)</SelectItem>
+              <SelectItem value="팀">팀 (팀당 가격)</SelectItem>
+              <SelectItem value="회">회 (1회당 가격)</SelectItem>
+              <SelectItem value="건">건 (1건당 가격)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
       <div className="space-y-2">
@@ -330,7 +346,7 @@ export default function AdminQuoteCategories() {
             variant="outline"
             size="sm"
             type="button"
-            onClick={() => setForm(prev => ({ ...prev, options: [...prev.options, { name: "", price: 0, description: "" }] }))}
+            onClick={() => setForm(prev => ({ ...prev, options: [...prev.options, { name: "", price: 0, description: "", unitLabel: prev.unitLabel }] }))}
             data-testid="button-add-option"
           >
             <Plus className="w-3 h-3 mr-1" /> 옵션 추가
@@ -366,6 +382,24 @@ export default function AdminQuoteCategories() {
                     className="w-20"
                     data-testid={`input-option-price-${idx}`}
                   />
+                  <Select
+                    value={opt.unitLabel || form.unitLabel}
+                    onValueChange={(val) => {
+                      const newOptions = [...form.options];
+                      newOptions[idx] = { ...newOptions[idx], unitLabel: val };
+                      setForm(prev => ({ ...prev, options: newOptions }));
+                    }}
+                  >
+                    <SelectTrigger className="w-16" data-testid={`select-option-unit-${idx}`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="인">인</SelectItem>
+                      <SelectItem value="팀">팀</SelectItem>
+                      <SelectItem value="회">회</SelectItem>
+                      <SelectItem value="건">건</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <Button
                     variant="ghost"
                     size="icon"
