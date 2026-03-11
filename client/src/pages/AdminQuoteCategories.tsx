@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Pencil, Trash2, Save, X, Upload, Loader2, ChevronUp, ChevronDown, ImageIcon } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Save, X, Upload, Loader2, ChevronUp, ChevronDown, ImageIcon, Star } from "lucide-react";
 import { Link } from "wouter";
 import type { QuoteCategory } from "@shared/schema";
 import {
@@ -443,20 +443,42 @@ export default function AdminQuoteCategories() {
           </label>
         </div>
         {form.images.length > 0 && (
-          <div className="grid grid-cols-3 gap-2 mt-2">
-            {form.images.map((img, idx) => (
-              <div key={idx} className="relative group">
-                <img src={img} alt={`image-${idx}`} className="w-full h-20 object-cover rounded-md" />
-                <button
-                  type="button"
-                  onClick={() => removeImage(idx)}
-                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-80 hover:opacity-100"
-                  data-testid={`button-remove-image-${idx}`}
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">⭐ 별을 누르면 대표사진으로 설정됩니다 (첫 번째 사진이 썸네일)</p>
+            <div className="grid grid-cols-3 gap-2 mt-1">
+              {form.images.map((img, idx) => (
+                <div key={idx} className="relative group">
+                  <img src={img} alt={`image-${idx}`} className={`w-full h-20 object-cover rounded-md ${idx === 0 ? "ring-2 ring-yellow-400" : ""}`} />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newImages = [...form.images];
+                      newImages.splice(idx, 1);
+                      newImages.unshift(img);
+                      setForm(prev => ({ ...prev, images: newImages }));
+                    }}
+                    className={`absolute top-1 left-1 rounded-full w-5 h-5 flex items-center justify-center text-xs ${idx === 0 ? "bg-yellow-400 text-yellow-900" : "bg-black/50 text-white opacity-70 hover:opacity-100"}`}
+                    title="대표사진으로 설정"
+                    data-testid={`button-set-main-image-${idx}`}
+                  >
+                    <Star className="w-3 h-3" fill={idx === 0 ? "currentColor" : "none"} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeImage(idx)}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-80 hover:opacity-100"
+                    data-testid={`button-remove-image-${idx}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                  {idx === 0 && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-yellow-400/80 text-yellow-900 text-[9px] text-center py-0.5 font-bold rounded-b-md">
+                      대표사진
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

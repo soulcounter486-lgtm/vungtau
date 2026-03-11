@@ -2932,7 +2932,7 @@ export default function Home() {
                   onShare={() => shareCategory(`custom-${cat.id}`, cat.name)}
                 >
                   {cat.description && (
-                    <p className="text-sm text-muted-foreground mb-3">{cat.description}</p>
+                    <p className="text-sm text-muted-foreground mb-3 whitespace-pre-line">{cat.description}</p>
                   )}
                   {catImages.length > 0 && (
                     <div
