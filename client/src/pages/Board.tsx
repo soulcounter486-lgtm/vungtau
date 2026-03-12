@@ -516,6 +516,19 @@ export default function Board() {
     }
   }, [matchRoute, params?.id, posts]);
 
+  useEffect(() => {
+    if (zoomedImage) {
+      history.pushState({ boardZoom: true }, "");
+      const handlePop = () => {
+        setZoomedImage(null);
+        setImgScale(1);
+        setImgTranslate({ x: 0, y: 0 });
+      };
+      window.addEventListener("popstate", handlePop);
+      return () => window.removeEventListener("popstate", handlePop);
+    }
+  }, [zoomedImage]);
+
   const { data: postComments = [], isLoading: commentsLoading } = useQuery<Comment[]>({
     queryKey: ["/api/posts", selectedPost?.id, "comments"],
     enabled: !!selectedPost,
@@ -1422,7 +1435,7 @@ export default function Board() {
         >
           <button
             className="absolute top-4 right-4 text-white bg-black/50 rounded-full w-10 h-10 flex items-center justify-center text-xl hover:bg-black/80 z-10"
-            onClick={() => { setZoomedImage(null); setImgScale(1); setImgTranslate({ x: 0, y: 0 }); }}
+            onClick={() => history.back()}
             data-testid="button-close-zoom"
           >
             ✕
@@ -1445,7 +1458,7 @@ export default function Board() {
             }}
             onClick={(e) => {
               e.stopPropagation();
-              if (imgScale <= 1) { setZoomedImage(null); setImgScale(1); setImgTranslate({ x: 0, y: 0 }); }
+              if (imgScale <= 1) history.back();
             }}
             onDoubleClick={() => { setImgScale(1); setImgTranslate({ x: 0, y: 0 }); }}
             data-testid="img-zoomed"

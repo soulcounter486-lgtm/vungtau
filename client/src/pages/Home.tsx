@@ -560,6 +560,32 @@ export default function Home() {
       window.removeEventListener('selectVilla', handleSelectVilla as EventListener);
     };
   }, []);
+
+  useEffect(() => {
+    if (galleryOpen) {
+      history.pushState({ homeGallery: true }, "");
+      const handlePop = () => {
+        setGalleryOpen(false);
+        setZoomScale(1);
+        setPanOffset({ x: 0, y: 0 });
+      };
+      window.addEventListener("popstate", handlePop);
+      return () => window.removeEventListener("popstate", handlePop);
+    }
+  }, [galleryOpen]);
+
+  useEffect(() => {
+    if (catGalleryOpen) {
+      history.pushState({ homeCatGallery: true }, "");
+      const handlePop = () => {
+        setCatGalleryOpen(false);
+        setZoomScale(1);
+        setPanOffset({ x: 0, y: 0 });
+      };
+      window.addEventListener("popstate", handlePop);
+      return () => window.removeEventListener("popstate", handlePop);
+    }
+  }, [catGalleryOpen]);
   
   // 빌라 지도 초기화
   useEffect(() => {
@@ -3526,7 +3552,7 @@ export default function Home() {
               variant="ghost"
               size="icon"
               className="text-white hover:bg-white/20"
-              onClick={() => { setGalleryOpen(false); setZoomScale(1); setPanOffset({ x: 0, y: 0 }); }}
+              onClick={() => history.back()}
               data-testid="button-close-gallery"
             >
               <X className="w-6 h-6" />
@@ -3696,7 +3722,7 @@ export default function Home() {
               variant="ghost"
               size="icon"
               className="text-white hover:bg-white/20"
-              onClick={() => setCatGalleryOpen(false)}
+              onClick={() => history.back()}
               data-testid="button-close-cat-gallery"
             >
               <X className="w-6 h-6" />
