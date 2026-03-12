@@ -290,6 +290,7 @@ export default function Board() {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [isEditUploading, setIsEditUploading] = useState(false);
   const editFileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -732,7 +733,9 @@ export default function Board() {
               key={i} 
               src={src} 
               alt={alt || "이미지"} 
-              className="w-full max-w-full h-auto rounded-lg my-4 object-contain"
+              className="w-full max-w-full h-auto rounded-lg my-4 object-contain cursor-zoom-in"
+              onClick={() => setZoomedImage(src)}
+              data-testid={`img-post-content-${i}`}
             />
           );
         }
@@ -1368,6 +1371,30 @@ export default function Board() {
       </main>
 
       <FixedBottomBar />
+
+      {zoomedImage && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center"
+          onClick={() => setZoomedImage(null)}
+          data-testid="overlay-image-zoom"
+        >
+          <button
+            className="absolute top-4 right-4 text-white bg-black/50 rounded-full w-10 h-10 flex items-center justify-center text-xl hover:bg-black/80 z-10"
+            onClick={() => setZoomedImage(null)}
+            data-testid="button-close-zoom"
+          >
+            ✕
+          </button>
+          <img
+            src={zoomedImage}
+            alt="확대 이미지"
+            className="max-w-full max-h-full object-contain select-none"
+            style={{ maxHeight: "95dvh", maxWidth: "95dvw" }}
+            onClick={(e) => e.stopPropagation()}
+            data-testid="img-zoomed"
+          />
+        </div>
+      )}
     </div>
   );
 }
