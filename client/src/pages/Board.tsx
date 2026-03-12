@@ -291,6 +291,10 @@ export default function Board() {
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [imgScale, setImgScale] = useState(1);
+  const [imgTranslate, setImgTranslate] = useState({ x: 0, y: 0 });
+  const pinchRef = useRef<{ dist: number; scale: number; tx: number; ty: number; cx: number; cy: number } | null>(null);
+  const dragRef = useRef<{ startX: number; startY: number; tx: number; ty: number } | null>(null);
   const [isEditUploading, setIsEditUploading] = useState(false);
   const editFileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
@@ -1374,23 +1378,76 @@ export default function Board() {
 
       {zoomedImage && (
         <div
-          className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center"
-          onClick={() => setZoomedImage(null)}
+          className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center overflow-hidden"
           data-testid="overlay-image-zoom"
+          onTouchStart={(e) => {
+            if (e.touches.length === 2) {
+              const dx = e.touches[0].clientX - e.touches[1].clientX;
+              const dy = e.touches[0].clientY - e.touches[1].clientY;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+              const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+              pinchRef.current = { dist, scale: imgScale, tx: imgTranslate.x, ty: imgTranslate.y, cx, cy };
+              dragRef.current = null;
+            } else if (e.touches.length === 1) {
+              dragRef.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, tx: imgTranslate.x, ty: imgTranslate.y };
+              pinchRef.current = null;
+            }
+          }}
+          onTouchMove={(e) => {
+            e.preventDefault();
+            if (e.touches.length === 2 && pinchRef.current) {
+              const dx = e.touches[0].clientX - e.touches[1].clientX;
+              const dy = e.touches[0].clientY - e.touches[1].clientY;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              const newScale = Math.min(8, Math.max(1, pinchRef.current.scale * (dist / pinchRef.current.dist)));
+              setImgScale(newScale);
+            } else if (e.touches.length === 1 && dragRef.current && imgScale > 1) {
+              const nx = dragRef.current.tx + (e.touches[0].clientX - dragRef.current.startX);
+              const ny = dragRef.current.ty + (e.touches[0].clientY - dragRef.current.startY);
+              setImgTranslate({ x: nx, y: ny });
+            }
+          }}
+          onTouchEnd={(e) => {
+            if (e.touches.length === 0) {
+              if (imgScale <= 1.05) {
+                setImgScale(1);
+                setImgTranslate({ x: 0, y: 0 });
+              }
+              pinchRef.current = null;
+              dragRef.current = null;
+            }
+          }}
+          style={{ touchAction: "none" }}
         >
           <button
             className="absolute top-4 right-4 text-white bg-black/50 rounded-full w-10 h-10 flex items-center justify-center text-xl hover:bg-black/80 z-10"
-            onClick={() => setZoomedImage(null)}
+            onClick={() => { setZoomedImage(null); setImgScale(1); setImgTranslate({ x: 0, y: 0 }); }}
             data-testid="button-close-zoom"
           >
             ✕
           </button>
+          {imgScale <= 1 && (
+            <div className="absolute bottom-6 left-0 right-0 text-center text-white/50 text-xs pointer-events-none">
+              두 손가락으로 확대 · 배경 탭으로 닫기
+            </div>
+          )}
           <img
             src={zoomedImage}
             alt="확대 이미지"
-            className="max-w-full max-h-full object-contain select-none"
-            style={{ maxHeight: "95dvh", maxWidth: "95dvw" }}
-            onClick={(e) => e.stopPropagation()}
+            className="object-contain select-none"
+            style={{
+              maxHeight: "95dvh",
+              maxWidth: "95dvw",
+              transform: `scale(${imgScale}) translate(${imgTranslate.x / imgScale}px, ${imgTranslate.y / imgScale}px)`,
+              transition: pinchRef.current ? "none" : "transform 0.1s ease",
+              cursor: imgScale > 1 ? "grab" : "zoom-in",
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (imgScale <= 1) { setZoomedImage(null); setImgScale(1); setImgTranslate({ x: 0, y: 0 }); }
+            }}
+            onDoubleClick={() => { setImgScale(1); setImgTranslate({ x: 0, y: 0 }); }}
             data-testid="img-zoomed"
           />
         </div>
