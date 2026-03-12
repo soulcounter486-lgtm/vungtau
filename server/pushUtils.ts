@@ -17,6 +17,29 @@ if (vapidPublicKey && vapidPrivateKey) {
 
 const PUSH_OPTIONS = { TTL: 86400 };
 
+export async function sendAllUsersPushNotifications(title: string, body: string, url: string = "/") {
+  if (!pushConfigured) return;
+  try {
+    const allSubs = await db.select().from(pushSubscriptions);
+    const payload = JSON.stringify({ title, body, url });
+    for (const sub of allSubs) {
+      try {
+        await webpush.sendNotification(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+          payload,
+          PUSH_OPTIONS
+        );
+      } catch (err: any) {
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          await db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, sub.endpoint));
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[PUSH-ALL] error:", err);
+  }
+}
+
 export async function sendAdminPushNotifications(title: string, body: string, url: string = "/admin/chat") {
   if (!pushConfigured) return;
   try {

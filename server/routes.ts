@@ -26,6 +26,7 @@ import bcrypt from "bcryptjs";
 import nodemailer from "nodemailer";
 import { execSync } from "child_process";
 import os from "os";
+import { sendAdminPushNotifications, sendAllUsersPushNotifications } from "./pushUtils";
 
 // Web Push 설정
 const vapidPublicKey = process.env.PUSH_PUB || "";
@@ -7149,6 +7150,15 @@ ${adultContext}`;
 
       const [announcement] = await db.insert(announcements).values(parsed.data).returning();
       res.json(announcement);
+
+      // 전체 회원에게 푸시 알림 발송 (백그라운드)
+      if (announcement.isActive !== false) {
+        sendAllUsersPushNotifications(
+          `📢 새 공지사항: ${announcement.title}`,
+          announcement.content ? String(announcement.content).slice(0, 80) : "새로운 공지사항을 확인하세요.",
+          "/"
+        ).catch(() => {});
+      }
     } catch (err) {
       console.error("공지사항 생성 오류:", err);
       res.status(500).json({ error: "공지사항 생성 실패" });
